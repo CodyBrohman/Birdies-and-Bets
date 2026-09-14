@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Birdies & Bets mark: a golf flag whose hole is a poker chip. Ink ground, blurple flag, chip-red cup. -->
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1B1D2A"/>
+      <stop offset="1" stop-color="#14161F"/>
+    </linearGradient>
+    <clipPath id="chipClip"><circle cx="512" cy="742" r="150"/></clipPath>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#ground)"/>
+
+  <!-- ground line / green edge -->
+  <path d="M 120 742 Q 512 690 904 742" fill="none" stroke="#1F6B4A" stroke-width="18" stroke-linecap="round" opacity="0.9"/>
+
+  <!-- chip cup -->
+  <g>
+    <circle cx="512" cy="742" r="150" fill="#A83A33"/>
+    <!-- edge striping -->
+    <g clip-path="url(#chipClip)" fill="#F3F5FE">
+      <rect x="490" y="592" width="44" height="52"/>
+      <rect x="490" y="840" width="44" height="52"/>
+      <rect x="362" y="720" width="52" height="44"/>
+      <rect x="610" y="720" width="52" height="44"/>
+      <g transform="rotate(45 512 742)">
+        <rect x="490" y="592" width="44" height="52"/>
+        <rect x="490" y="840" width="44" height="52"/>
+        <rect x="362" y="720" width="52" height="44"/>
+        <rect x="610" y="720" width="52" height="44"/>
+      </g>
+    </g>
+    <circle cx="512" cy="742" r="104" fill="none" stroke="#F3F5FE" stroke-width="10" opacity="0.9"/>
+    <circle cx="512" cy="742" r="150" fill="none" stroke="#14161F" stroke-width="10"/>
+    <!-- hole -->
+    <circle cx="512" cy="742" r="34" fill="#14161F"/>
+  </g>
+
+  <!-- pole -->
+  <rect x="496" y="150" width="32" height="600" rx="16" fill="#E9E9ED"/>
+
+  <!-- flag -->
+  <path d="M 528 170 L 830 270 L 528 370 Z" fill="#9184D9"/>
+  <path d="M 528 170 L 830 270 L 528 370 Z" fill="none" stroke="#5D5294" stroke-width="14" stroke-linejoin="round"/>
+</svg>

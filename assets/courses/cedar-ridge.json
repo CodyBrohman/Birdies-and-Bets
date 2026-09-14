@@ -1,0 +1,30 @@
+{
+  "id": "cedar-ridge-golf-club",
+  "name": "Cedar Ridge Golf Club",
+  "location": "Elk Grove, CA",
+  "teeBoxes": [
+    { "id": "blue", "name": "Blue", "color": "#3F5FB8", "rating": 71.4, "slope": 128, "totalYards": 6412 },
+    { "id": "white", "name": "White", "color": "#F3F5FE", "rating": 69.5, "slope": 122, "totalYards": 6020 },
+    { "id": "gold", "name": "Gold", "color": "#C9A24A", "rating": 67.0, "slope": 115, "totalYards": 5480 }
+  ],
+  "holes": [
+    { "number": 1, "par": 4, "strokeIndex": 7, "yardage": { "blue": 388 } },
+    { "number": 2, "par": 5, "strokeIndex": 1, "yardage": { "blue": 481 } },
+    { "number": 3, "par": 4, "strokeIndex": 11, "yardage": { "blue": 402 } },
+    { "number": 4, "par": 4, "strokeIndex": 5, "yardage": { "blue": 377 } },
+    { "number": 5, "par": 4, "strokeIndex": 13, "yardage": { "blue": 395 } },
+    { "number": 6, "par": 3, "strokeIndex": 17, "yardage": { "blue": 166 } },
+    { "number": 7, "par": 4, "strokeIndex": 3, "yardage": { "blue": 412 } },
+    { "number": 8, "par": 5, "strokeIndex": 9, "yardage": { "blue": 488 } },
+    { "number": 9, "par": 3, "strokeIndex": 15, "yardage": { "blue": 181 } },
+    { "number": 10, "par": 4, "strokeIndex": 2, "yardage": { "blue": 341 } },
+    { "number": 11, "par": 3, "strokeIndex": 16, "yardage": { "blue": 158 } },
+    { "number": 12, "par": 5, "strokeIndex": 6, "yardage": { "blue": 490 } },
+    { "number": 13, "par": 4, "strokeIndex": 10, "yardage": { "blue": 379 } },
+    { "number": 14, "par": 4, "strokeIndex": 8, "yardage": { "blue": 380 } },
+    { "number": 15, "par": 3, "strokeIndex": 18, "yardage": { "blue": 149 } },
+    { "number": 16, "par": 4, "strokeIndex": 12, "yardage": { "blue": 362 } },
+    { "number": 17, "par": 5, "strokeIndex": 4, "yardage": { "blue": 482 } },
+    { "number": 18, "par": 4, "strokeIndex": 14, "yardage": { "blue": 381 } }
+  ]
+}
