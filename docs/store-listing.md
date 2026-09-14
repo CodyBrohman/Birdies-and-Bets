@@ -54,9 +54,9 @@ golf,scorecard,skins,nassau,match play,stableford,wolf,handicap,score,card,vegas
 
 ## URLs
 
-- Privacy policy: https://codybrohman.github.io/Birdies-and-Bets/privacy.html (live once Pages is enabled)
-- Support: https://codybrohman.github.io/Birdies-and-Bets/support.html
-- Hosting: GitHub Pages from the `docs/` folder of github.com/CodyBrohman/Birdies-and-Bets.
+- Privacy policy: https://codybrohman.github.io/Birdies-and-Bets/docs/privacy.html
+- Support: https://codybrohman.github.io/Birdies-and-Bets/docs/support.html
+- Hosting: GitHub Pages on github.com/CodyBrohman/Birdies-and-Bets, root of `main` (the pages live under `docs/`).
 
 ## Screenshots (6.9" and 6.5" required)
 
