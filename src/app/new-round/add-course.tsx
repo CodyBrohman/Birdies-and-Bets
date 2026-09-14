@@ -76,7 +76,7 @@ export default function AddCourseScreen() {
     <Screen noBottomInset>
       <SetupHeader title="Add course" meta={`Par ${totalPar}`} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ gap: space[4], paddingBottom: space[4] }} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={{ gap: space[4], paddingBottom: space[4] }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
           <TextField placeholder="Course name" value={name} onChangeText={setName} accessibilityLabel="Course name" autoCapitalize="words" />
 
           <View style={{ flexDirection: 'row', gap: space[2] }}>
@@ -162,10 +162,15 @@ export default function AddCourseScreen() {
             </Text>
           ) : null}
         </ScrollView>
+        <View style={{ paddingVertical: space[3], borderTopWidth: 1, borderTopColor: c.divider, gap: space[2] }}>
+          {!canSave && !siProblem ? (
+            <Text step="caption" tone="secondary" tabular={false} align="center">
+              Give the course a name to continue
+            </Text>
+          ) : null}
+          <Button label="Save and choose players" disabled={!canSave} onPress={() => void save()} />
+        </View>
       </KeyboardAvoidingView>
-      <View style={{ paddingVertical: space[3], borderTopWidth: 1, borderTopColor: c.divider }}>
-        <Button label="Save and choose players" disabled={!canSave} onPress={() => void save()} />
-      </View>
     </Screen>
   );
 }

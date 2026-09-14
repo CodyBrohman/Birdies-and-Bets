@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Button, Screen, Segmented, Text, TextField } from '@/components/ui';
 import { SetupHeader } from '@/components/SetupHeader';
@@ -59,7 +59,13 @@ export default function PlayersScreen() {
 
   const full = draft.players.length >= MAX_PLAYERS;
   const named = draft.players.filter((p) => p.name.trim().length > 0);
-  const canContinue = named.length >= 1 && named.length === draft.players.length;
+  // One name is enough. Blank rows are dropped on continue rather than blocking it.
+  const canContinue = named.length >= 1;
+  const continueToGames = () => {
+    Keyboard.dismiss();
+    if (named.length !== draft.players.length) setDraftPlayers(named);
+    router.push('/new-round/games');
+  };
   const recentAvailable = recentPlayers.filter((rp) => !draft.players.some((p) => p.name.trim().toLowerCase() === rp.name.trim().toLowerCase()));
 
   if (!course) return null;
@@ -68,7 +74,7 @@ export default function PlayersScreen() {
     <Screen noBottomInset>
       <SetupHeader title="Players" meta={tee ? `${course.name.split(' ')[0]} · ${tee.name}` : course.name} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ gap: space[3], paddingBottom: space[4] }} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={{ gap: space[3], paddingBottom: space[4] }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
           {course.holes.length >= 18 ? (
             <Segmented
               options={[
@@ -94,7 +100,8 @@ export default function PlayersScreen() {
                     onChangeText={(name) => patch(p.id, { name })}
                     accessibilityLabel={`Player ${i + 1} name`}
                     autoCapitalize="words"
-                    returnKeyType="next"
+                    returnKeyType="done"
+                    onSubmitEditing={() => Keyboard.dismiss()}
                   />
                   <IndexField value={p.handicapIndex} onChange={(handicapIndex) => patch(p.id, { handicapIndex })} label={`Player ${i + 1} handicap index`} />
                   {draft.players.length > 1 ? (
@@ -177,10 +184,16 @@ export default function PlayersScreen() {
             </View>
           ) : null}
         </ScrollView>
+        {/* Footer lives inside the keyboard-avoiding view so it rises above the keyboard. */}
+        <View style={{ paddingVertical: space[3], borderTopWidth: 1, borderTopColor: c.divider, gap: space[2] }}>
+          {!canContinue ? (
+            <Text step="caption" tone="secondary" tabular={false} align="center">
+              Enter at least one name to continue
+            </Text>
+          ) : null}
+          <Button label="Choose games" disabled={!canContinue} onPress={continueToGames} />
+        </View>
       </KeyboardAvoidingView>
-      <View style={{ paddingVertical: space[3], borderTopWidth: 1, borderTopColor: c.divider }}>
-        <Button label="Choose games" disabled={!canContinue} onPress={() => router.push('/new-round/games')} />
-      </View>
     </Screen>
   );
 }
