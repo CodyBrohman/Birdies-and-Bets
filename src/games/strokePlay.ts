@@ -1,5 +1,5 @@
 import type { GameMode, GameState, Settlement, Standings } from './types';
-import { scoresFor, stakeOf } from './types';
+import { positionOf, scoresFor, stakeOf } from './types';
 import { formatToPar } from '../lib/format';
 
 interface StrokeState extends GameState {
@@ -45,7 +45,7 @@ export const strokePlay: GameMode = {
     for (const p of ctx.participants) {
       if (!scored.has(p.id) && hole.scores[p.id] === null) noCard[p.id] = true;
     }
-    return { totals, par: parTotals, holes, noCard, thru: hole.holeNumber };
+    return { totals, par: parTotals, holes, noCard, thru: positionOf(ctx, hole.holeNumber) };
   },
 
   getStandings(prev, ctx): Standings {

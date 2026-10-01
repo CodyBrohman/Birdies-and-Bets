@@ -1,7 +1,9 @@
 import { View } from 'react-native';
-import { useTheme } from '@/theme';
+import { useFontScale, useTheme } from '@/theme';
 import { Text } from '@/components/ui';
 import type { Relation } from '@/lib/scoring';
+import { describeScore } from '@/lib/format';
+import { StrokeDots } from './StrokeDots';
 
 export interface ScoreCellProps {
   /** Score for the active basis. Undefined = not entered, null = picked up. */
@@ -9,31 +11,40 @@ export interface ScoreCellProps {
   relation?: Relation;
   /** Strokes received on this hole (dots in the corner). */
   strokes: number;
-  current?: boolean;
+  /** Hidden from VoiceOver when the containing row already reads the score. */
+  hidden?: boolean;
 }
 
-const BOX = 26;
+const BOX = 40;
 
 /**
- * 40pt cell with a 26pt marker box. Birdie = positive circle, eagle = double circle,
- * bogey = negative square, double+ = double square. Stroke dots sit in the top-right corner.
+ * One scorecard cell. Birdie = green circle, eagle = double circle, bogey = gold rounded square,
+ * double+ = double square. Stroke dots sit in the top-right corner. Unentered shows a faint dot.
+ * The box grows with the user's text size so a large-type "10" still fits inside its marker.
  */
-export function ScoreCell({ value, relation, strokes, current }: ScoreCellProps) {
+export function ScoreCell({ value, relation, strokes, hidden }: ScoreCellProps) {
   const { c, radius } = useTheme();
+  const scale = useFontScale();
+  const box = Math.round(BOX * scale);
   const under = relation === 'birdie' || relation === 'eagle' || relation === 'albatross';
   const over = relation === 'bogey' || relation === 'double' || relation === 'triple-plus';
   const double = relation === 'eagle' || relation === 'albatross' || relation === 'double' || relation === 'triple-plus';
-  const markerColor = under ? c.positive : over ? c.negative : 'transparent';
+  const markerColor = under ? c.accent : over ? c.gold : 'transparent';
   const scored = typeof value === 'number';
 
-  const a11y = value === undefined ? 'not entered' : value === null ? 'picked up' : `${value}${relation ? `, ${relation.replace('-plus', ' or worse')}` : ''}${strokes ? `, ${strokes > 0 ? `${strokes} stroke${strokes > 1 ? 's' : ''}` : 'gives one back'}` : ''}`;
   return (
-    <View accessible accessibilityLabel={a11y} style={{ flex: 1, height: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: current ? c.currentHole : 'transparent' }}>
+    <View
+      accessible={!hidden}
+      accessibilityElementsHidden={hidden}
+      importantForAccessibility={hidden ? 'no-hide-descendants' : 'auto'}
+      accessibilityLabel={describeScore(value, relation, strokes)}
+      style={{ flex: 1, minHeight: box + 12, alignItems: 'center', justifyContent: 'center' }}
+    >
       <View
         style={{
-          width: BOX,
-          height: BOX,
-          borderRadius: under ? 999 : radius.xs,
+          width: box,
+          height: box,
+          borderRadius: under ? 999 : radius.md,
           borderWidth: scored && (under || over) ? 2 : 0,
           borderColor: markerColor,
           alignItems: 'center',
@@ -41,35 +52,17 @@ export function ScoreCell({ value, relation, strokes, current }: ScoreCellProps)
         }}
       >
         {scored && double ? (
-          <View
-            pointerEvents="none"
-            style={{
-              position: 'absolute',
-              width: BOX + 7,
-              height: BOX + 7,
-              borderRadius: under ? 999 : radius.xs + 2,
-              borderWidth: 1.5,
-              borderColor: markerColor,
-            }}
-          />
+          <View pointerEvents="none" style={{ position: 'absolute', width: box + 8, height: box + 8, borderRadius: under ? 999 : radius.md + 3, borderWidth: 1.5, borderColor: markerColor }} />
         ) : null}
-        <Text step="cell">{value === undefined ? '' : value === null ? '–' : String(value)}</Text>
+        {value === undefined ? (
+          <View style={{ width: 4, height: 4, borderRadius: 999, backgroundColor: c.textTertiary }} />
+        ) : (
+          <Text step="cell">{value === null ? '–' : String(value)}</Text>
+        )}
       </View>
       {strokes !== 0 ? (
-        <View style={{ position: 'absolute', top: 3, right: 3, flexDirection: 'row', gap: 2 }}>
-          {Array.from({ length: Math.min(Math.abs(strokes), 3) }, (_, i) => (
-            <View
-              key={i}
-              style={{
-                width: 5,
-                height: 5,
-                borderRadius: 999,
-                backgroundColor: strokes < 0 ? 'transparent' : c.strokeMarker,
-                borderWidth: strokes < 0 ? 1.5 : 0,
-                borderColor: c.strokeMarker,
-              }}
-            />
-          ))}
+        <View style={{ position: 'absolute', top: 6, right: 4 }}>
+          <StrokeDots strokes={strokes} size={4} max={3} />
         </View>
       ) : null}
     </View>

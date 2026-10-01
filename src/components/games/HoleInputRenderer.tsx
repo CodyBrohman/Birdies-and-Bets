@@ -1,6 +1,5 @@
-import { Pressable, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
-import { Text } from '@/components/ui';
+import { View } from 'react-native';
+import { Card, Chip, Text } from '@/components/ui';
 import { useTheme } from '@/theme';
 import type { GameMode, HoleInputSpec, Player } from '@/types';
 
@@ -26,7 +25,7 @@ export function missingInputs(specs: HoleInputSpec[], answers: Record<string, st
  * `confirm` prompts as 44pt chips from the spec alone. No branching on game id.
  */
 export function HoleInputCard({ mode, participants, answers, onAnswer }: HoleInputCardProps) {
-  const { c, radius, space } = useTheme();
+  const { c, space } = useTheme();
   const specs = mode.holeInputs ?? [];
   const visible = visibleInputs(specs, answers);
   const required = visible.filter((s) => s.type !== 'confirm');
@@ -34,15 +33,15 @@ export function HoleInputCard({ mode, participants, answers, onAnswer }: HoleInp
   const complete = done === required.length;
 
   return (
-    <View style={{ backgroundColor: c.surfaceRaised, borderRadius: radius.lg, borderWidth: 1, borderColor: c.divider, overflow: 'hidden' }}>
-      <ChipEdge />
-      <View style={{ padding: space[3], gap: space[3] }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text step="title" style={{ fontSize: 17, lineHeight: 22 }}>
+    <Card>
+      <View style={{ gap: space[3] }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[2] }}>
+          <View style={{ width: 12, height: 12, borderRadius: 999, backgroundColor: mode.category === 'betting' ? c.accent : c.gold }} />
+          <Text step="title" style={{ flex: 1 }}>
             {mode.name}
           </Text>
           {required.length > 0 ? (
-            <Text step="caption" tone={complete ? 'positive' : 'negative'}>
+            <Text step="caption" tone={complete ? 'positiveText' : 'accent'}>
               {done} of {required.length}
             </Text>
           ) : null}
@@ -60,30 +59,13 @@ export function HoleInputCard({ mode, participants, answers, onAnswer }: HoleInp
                   const value = spec.type === 'confirm' ? 'yes' : opt;
                   const on = current === value;
                   return (
-                    <Pressable
+                    <Chip
                       key={opt}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: on }}
+                      label={spec.type === 'confirm' && on ? '✓ Done' : opt}
                       accessibilityLabel={`${spec.label}: ${opt}`}
-                      onPress={() => {
-                        Haptics.selectionAsync().catch(() => undefined);
-                        onAnswer(spec.key, on && spec.type === 'confirm' ? undefined : value);
-                      }}
-                      style={{
-                        height: 44,
-                        paddingHorizontal: 14,
-                        borderRadius: radius.md,
-                        borderWidth: 1.5,
-                        borderColor: on ? c.accent : c.divider,
-                        backgroundColor: on ? c.accent : c.surface,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Text step="label" style={{ color: on ? c.onAccent : c.textPrimary }}>
-                        {spec.type === 'confirm' && on ? '✓ Done' : opt}
-                      </Text>
-                    </Pressable>
+                      selected={on}
+                      onPress={() => onAnswer(spec.key, on && spec.type === 'confirm' ? undefined : value)}
+                    />
                   );
                 })}
               </View>
@@ -91,17 +73,6 @@ export function HoleInputCard({ mode, participants, answers, onAnswer }: HoleInp
           );
         })}
       </View>
-    </View>
-  );
-}
-
-function ChipEdge() {
-  const { c } = useTheme();
-  return (
-    <View style={{ height: 4, flexDirection: 'row', overflow: 'hidden' }}>
-      {Array.from({ length: 40 }, (_, i) => (
-        <View key={i} style={{ width: i % 2 === 0 ? 12 : 8, backgroundColor: i % 2 === 0 ? c.accent : c.divider }} />
-      ))}
-    </View>
+    </Card>
   );
 }

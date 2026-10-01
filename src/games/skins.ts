@@ -1,7 +1,7 @@
-import type { GameMode, GameContext, GameState, HoleResult, ProgressionCell, Settlement, Standings } from './types';
-import { cfg, initialOf, nameOf, scoresFor, stakeOf } from './types';
+import type { GameMode, GameState, HoleResult, ProgressionCell, Settlement, Standings } from './types';
+import { cfg, initialOf, isLastHole, nameOf, nextAfter, progressionFor, scoresFor, stakeOf } from './types';
 import { lowest } from '../lib/scoring';
-import { plural } from '../lib/format';
+import { formatStake, plural } from '../lib/format';
 
 interface HoleOutcome {
   holeNumber: number;
@@ -82,7 +82,7 @@ export const skins: GameMode = {
 
     if (low.length === 1) {
       const winner = low[0]!.playerId;
-      const isLast = hole.holeNumber >= ctx.holeCount;
+      const isLast = isLastHole(ctx, hole.holeNumber);
       outcomes.push({ holeNumber: hole.holeNumber, winner, skins: pot });
       if (validation && !isLast) {
         pending = { playerId: winner, skins: pot };
@@ -112,23 +112,23 @@ export const skins: GameMode = {
     if (state.pending) parts.push(`${nameOf(ctx, state.pending.playerId)} ${plural(state.pending.skins, 'skin')} pending`);
     const headline = parts.length ? parts.join(' · ') : thru ? 'No skins yet' : 'Nothing won yet';
 
-    const next = thru + 1;
+    const next = nextAfter(ctx, thru);
     const stake = stakeOf(ctx);
     const subline =
-      next <= ctx.holeCount
-        ? `Hole ${next} is worth ${plural(state.pot, 'skin')}${stake ? ` · ${state.pot * stake} ${unit(ctx)} from each player` : ''}`
+      next != null
+        ? `Hole ${next} is worth ${plural(state.pot, 'skin')}${stake ? ` · ${formatStake(state.pot * stake, ctx.settings.stakeLabel)} from each player` : ''}`
         : 'Round complete';
 
     const byHole = new Map(state.outcomes.map((o) => [o.holeNumber, o]));
-    const progression: ProgressionCell[] = [];
-    for (let n = 1; n <= ctx.holeCount; n++) {
+    const progression: ProgressionCell[] = progressionFor(ctx, (n) => {
       const o = byHole.get(n);
-      if (!o) progression.push({ holeNumber: n, tone: 'none' });
-      else if (o.winner) {
+      if (!o) return { holeNumber: n, tone: 'none' };
+      if (o.winner) {
         const p = ctx.participants.find((x) => x.id === o.winner);
-        progression.push({ holeNumber: n, tone: 'win', label: `${p ? initialOf(p) : '?'}${o.skins > 1 ? `×${o.skins}` : ''}` });
-      } else progression.push({ holeNumber: n, tone: 'carry', label: '↷' });
-    }
+        return { holeNumber: n, tone: 'win', label: `${p ? initialOf(p) : '?'}${o.skins > 1 ? `×${o.skins}` : ''}` };
+      }
+      return { holeNumber: n, tone: 'carry', label: '↷' };
+    });
 
     return {
       gameId: 'skins',
@@ -156,8 +156,4 @@ export const skins: GameMode = {
     return { gameId: 'skins', entries };
   },
 };
-
-function unit(ctx: GameContext): string {
-  return ctx.settings.stakeLabel === 'points' ? 'pts' : ctx.settings.stakeLabel;
-}
 

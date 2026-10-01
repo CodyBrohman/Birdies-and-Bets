@@ -1,20 +1,41 @@
 import { create } from 'zustand';
-import type { ActiveGame, Course, GrossScore, HoleCount, HoleResult, Player, PlayerId, PlayerScores, Round, RoundSettings } from '@/types';
+import type { ActiveGame, Course, GrossScore, HoleResult, Player, PlayerId, PlayerScores, Round, RoundSettings } from '@/types';
 import { newId } from '@/lib/id';
+import { holesInPlay } from '@/lib/handicap';
+import { holePosition, playOrder } from '@/lib/scoring';
 import { storage, STORAGE_KEYS } from './storage';
+import { draftDefaults } from './preferencesStore';
+import { useProfileStore } from './profileStore';
 
-const MAX_RECENT_PLAYERS = 8;
+export const MIN_PLAYERS = 2;
+export const MAX_PLAYERS = 4;
 
 export interface Draft {
   course: Course | null;
   teeBoxId: string | null;
   players: Player[];
-  holeCount: HoleCount;
+  settings: RoundSettings;
 }
 
-const emptyDraft = (): Draft => ({ course: null, teeBoxId: null, players: [], holeCount: 18 });
+/** Undo keeps this many score changes, in memory only. */
+export const MAX_UNDO = 20;
+export const MAX_NOTE_LENGTH = 140;
 
-export const DEFAULT_SETTINGS: RoundSettings = { holeCount: 18, allowance: 100, stakeLabel: 'points' };
+/** What a score change replaced: undefined = the player had no score on that hole. */
+export interface UndoEntry {
+  holeNumber: number;
+  previous: Record<PlayerId, GrossScore | undefined>;
+}
+
+export const DEFAULT_SETTINGS: RoundSettings = { holeCount: 18, allowance: 100, stakeLabel: 'points', nine: 'front' };
+
+/** A fresh draft picks up the user's default stake label and allowance (see preferencesStore). */
+const emptyDraft = (): Draft => ({ course: null, teeBoxId: null, players: [], settings: { ...DEFAULT_SETTINGS, ...draftDefaults() } });
+
+/** Holes in play for a round's settings, in the order they are played. */
+export function orderFor(course: Course, settings: RoundSettings) {
+  return playOrder(holesInPlay(course, settings.holeCount, settings.nine), settings.startHole);
+}
 
 interface RoundState {
   hydrated: boolean;
@@ -22,22 +43,30 @@ interface RoundState {
   hydrateError: string | null;
   draft: Draft;
   round: Round | null;
-  recentPlayers: Player[];
+  /** Most recent last. Cleared whenever the round changes hands. */
+  undo: UndoEntry[];
 
   hydrate(): Promise<void>;
 
   // Setup
   setDraftCourse(course: Course, teeBoxId: string): void;
   setDraftPlayers(players: Player[]): void;
-  setDraftHoleCount(holeCount: HoleCount): void;
+  setDraftSettings(patch: Partial<RoundSettings>): void;
   startRound(games: ActiveGame[]): Round | null;
 
   // Play
   setScore(playerId: PlayerId, holeNumber: number, score: GrossScore): void;
+  /** Several players on one hole in one step ("everyone par"): one undo entry. */
+  setScores(holeNumber: number, scores: PlayerScores): void;
+  /** Revert the last score change; returns to that hole when it is not the current one. */
+  undoLastScore(): UndoEntry | null;
+  setHoleNote(holeNumber: number, note: string): void;
   recordHole(holeNumber: number, scores: PlayerScores): void;
   setGameInputs(holeNumber: number, gameId: string, inputs: Record<string, string>): void;
   setCurrentHole(holeNumber: number): void;
   setGames(games: ActiveGame[]): void;
+  /** Mid-round settings changes. Start hole and nine are locked once a score exists. */
+  updateSettings(patch: Partial<RoundSettings>): void;
   finishRound(): void;
   discardRound(): void;
 }
@@ -67,24 +96,22 @@ export const useRoundStore = create<RoundState>()((set, get) => {
     hydrateError: null,
     draft: emptyDraft(),
     round: null,
-    recentPlayers: [],
+    undo: [],
 
     async hydrate() {
       try {
-        const [round, recentPlayers] = await Promise.all([
-          storage.get<Round>(STORAGE_KEYS.activeRound),
-          storage.get<Player[]>(STORAGE_KEYS.recentPlayers),
-        ]);
+        const round = await storage.get<Round>(STORAGE_KEYS.activeRound);
         const valid = round && Array.isArray(round.players) && Array.isArray(round.holeResults) && round.course?.holes?.length ? round : null;
         set({
+          draft: emptyDraft(),
           round: valid,
-          recentPlayers: Array.isArray(recentPlayers) ? recentPlayers : [],
+          undo: [],
           hydrated: true,
           hydrateError: round && !valid ? 'The saved round was unreadable, so it was cleared.' : null,
         });
         if (round && !valid) persist(null);
       } catch (e) {
-        set({ round: null, recentPlayers: [], hydrated: true, hydrateError: e instanceof Error ? e.message : 'Could not read saved data.' });
+        set({ round: null, hydrated: true, hydrateError: e instanceof Error ? e.message : 'Could not read saved data.' });
       }
     },
 
@@ -96,6 +123,8 @@ export const useRoundStore = create<RoundState>()((set, get) => {
           teeBoxId,
           // Keep players, but point them at the new tee.
           players: s.draft.players.map((p) => ({ ...p, teeBoxId })),
+          // A start hole from another course may not exist here.
+          settings: { ...s.draft.settings, startHole: undefined },
         },
       }));
     },
@@ -104,16 +133,22 @@ export const useRoundStore = create<RoundState>()((set, get) => {
       set((s) => ({ draft: { ...s.draft, players } }));
     },
 
-    setDraftHoleCount(holeCount) {
-      set((s) => ({ draft: { ...s.draft, holeCount } }));
+    setDraftSettings(patch) {
+      set((s) => ({ draft: { ...s.draft, settings: { ...s.draft.settings, ...patch } } }));
     },
 
     startRound(games) {
       const { draft } = get();
       if (!draft.course || !draft.teeBoxId) return null;
-      const players = draft.players.filter((p) => p.name.trim().length > 0);
-      if (players.length < 1) return null;
+      const named = draft.players.filter((p) => p.name.trim().length > 0);
+      if (named.length < MIN_PLAYERS || named.length > MAX_PLAYERS) return null;
       const now = new Date().toISOString();
+      // Profiles: link, record index changes and the date played.
+      const players = useProfileStore.getState().syncFromRound(named, now);
+      const settings: RoundSettings = { ...DEFAULT_SETTINGS, ...draft.settings };
+      const inPlay = holesInPlay(draft.course, settings.holeCount, settings.nine);
+      if (settings.startHole != null && !inPlay.some((h) => h.number === settings.startHole)) delete settings.startHole;
+      const order = playOrder(inPlay, settings.startHole);
       const round: Round = {
         id: newId('round'),
         createdAt: now,
@@ -123,24 +158,59 @@ export const useRoundStore = create<RoundState>()((set, get) => {
         teeBoxId: draft.teeBoxId,
         players,
         games,
-        settings: { ...DEFAULT_SETTINGS, holeCount: draft.holeCount },
+        settings,
         holeResults: [],
-        currentHole: 1,
+        currentHole: order[0]?.number ?? 1,
       };
-      const recentPlayers = [
-        ...players,
-        ...get().recentPlayers.filter((rp) => !players.some((p) => p.name.trim().toLowerCase() === rp.name.trim().toLowerCase())),
-      ].slice(0, MAX_RECENT_PLAYERS);
-      set({ round, recentPlayers, draft: emptyDraft() });
+      set({ round, draft: emptyDraft(), undo: [] });
       persist(round);
-      void storage.set(STORAGE_KEYS.recentPlayers, recentPlayers);
       return round;
     },
 
     setScore(playerId, holeNumber, score) {
+      get().setScores(holeNumber, { [playerId]: score });
+    },
+
+    setScores(holeNumber, scores) {
+      const current = get().round;
+      if (!current) return;
+      const existing = current.holeResults.find((h) => h.holeNumber === holeNumber)?.scores ?? {};
+      const previous: UndoEntry['previous'] = {};
+      for (const id of Object.keys(scores)) previous[id] = id in existing ? existing[id] : undefined;
+      set((s) => ({ undo: [...s.undo, { holeNumber, previous }].slice(-MAX_UNDO) }));
       update((r) => ({
         ...r,
-        holeResults: upsertHole(r.holeResults, holeNumber, (h) => ({ ...h, scores: { ...h.scores, [playerId]: score } })),
+        holeResults: upsertHole(r.holeResults, holeNumber, (h) => ({ ...h, scores: { ...h.scores, ...scores } })),
+      }));
+    },
+
+    undoLastScore() {
+      const entry = get().undo[get().undo.length - 1];
+      if (!entry || !get().round) return null;
+      set((s) => ({ undo: s.undo.slice(0, -1) }));
+      update((r) => ({
+        ...r,
+        currentHole: holePosition(orderFor(r.course, r.settings), entry.holeNumber) ? entry.holeNumber : r.currentHole,
+        holeResults: upsertHole(r.holeResults, entry.holeNumber, (h) => {
+          const next = { ...h.scores };
+          for (const [id, prev] of Object.entries(entry.previous)) {
+            if (prev === undefined) delete next[id];
+            else next[id] = prev;
+          }
+          return { ...h, scores: next };
+        }),
+      }));
+      return entry;
+    },
+
+    setHoleNote(holeNumber, note) {
+      const text = note.trim().slice(0, MAX_NOTE_LENGTH);
+      update((r) => ({
+        ...r,
+        holeResults: upsertHole(r.holeResults, holeNumber, (h) => {
+          const { note: _old, ...rest } = h;
+          return text ? { ...rest, note: text } : rest;
+        }),
       }));
     },
 
@@ -162,11 +232,27 @@ export const useRoundStore = create<RoundState>()((set, get) => {
     },
 
     setCurrentHole(holeNumber) {
-      update((r) => ({ ...r, currentHole: Math.max(1, Math.min(r.settings.holeCount, holeNumber)) }));
+      const current = get().round;
+      if (!current) return;
+      if (holePosition(orderFor(current.course, current.settings), holeNumber) === 0) return;
+      update((r) => ({ ...r, currentHole: holeNumber }));
     },
 
     setGames(games) {
       update((r) => ({ ...r, games }));
+    },
+
+    updateSettings(patch) {
+      update((r) => {
+        const locked = r.holeResults.some((h) => Object.keys(h.scores).length > 0);
+        const next: RoundSettings = { ...r.settings, ...patch };
+        if (locked) {
+          next.holeCount = r.settings.holeCount;
+          next.nine = r.settings.nine;
+          next.startHole = r.settings.startHole;
+        }
+        return { ...r, settings: next };
+      });
     },
 
     finishRound() {
@@ -174,7 +260,7 @@ export const useRoundStore = create<RoundState>()((set, get) => {
     },
 
     discardRound() {
-      set({ round: null });
+      set({ round: null, undo: [] });
       persist(null);
     },
   };

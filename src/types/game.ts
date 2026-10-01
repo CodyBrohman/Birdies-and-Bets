@@ -1,4 +1,4 @@
-import type { Course } from './course';
+import type { Course, Hole } from './course';
 import type { Player, PlayerId, PlayerRoundState } from './player';
 import type { ActiveGame, GameId, HoleResult, RoundSettings, ScoringBasis } from './round';
 
@@ -6,8 +6,17 @@ export type GameCategory = 'betting' | 'social';
 
 // ---------- Setup-time configuration ----------
 
-export type ConfigField =
-  | {
+/** Props every config field may carry: conditional visibility, declared once so the sheet stays generic. */
+export interface ConfigFieldShared {
+  /** Show only while another field of the same game has this value. */
+  showWhen?: { key: string; equals: string | number | boolean };
+  /** Show only when the group has at least this many players. */
+  requiresPlayers?: number;
+}
+
+export type ConfigField = ConfigFieldShared &
+  (
+    | {
       key: string;
       label: string;
       type: 'number';
@@ -29,7 +38,7 @@ export type ConfigField =
     }
   | { key: string; label: string; type: 'list'; default: string[]; help?: string }
   /** Split the participants into two teams. Value = player ids on team A; everyone else is team B. */
-  | { key: string; label: string; type: 'teams'; default: string[]; teamSize: number; help?: string };
+  | { key: string; label: string; type: 'teams'; default: string[]; teamSize: number; help?: string });
 
 // ---------- Per-hole extra input ----------
 
@@ -55,6 +64,9 @@ export interface GameContext {
   handicaps: Record<PlayerId, PlayerRoundState>;
   active: ActiveGame;
   settings: RoundSettings;
+  /** Holes in play, in the order they are played (rotated for a shotgun start). */
+  holes: Hole[];
+  /** Number of holes in play. Equals holes.length. */
   holeCount: number;
 }
 
@@ -126,6 +138,8 @@ export interface GameMode {
    * (e.g. a two-player match inside a foursome). Otherwise everyone plays.
    */
   participantCount?: number;
+  /** Config-dependent override of participantCount (e.g. 2 v 2 means everyone plays). Undefined = everyone. */
+  participantCountFor?(config: ActiveGame['config']): number | undefined;
 
   configFields: ConfigField[];
   holeInputs?: HoleInputSpec[];

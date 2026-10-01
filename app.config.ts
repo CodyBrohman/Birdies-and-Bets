@@ -7,16 +7,26 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: 'Birdies & Bets',
   slug: 'birdies-and-bets',
   owner: 'dodger1123s-team',
-  version: '0.1.0',
+  version: '1.0.0',
   scheme: 'birdiesandbets',
   orientation: 'portrait',
   icon: './assets/icon.png',
-  userInterfaceStyle: 'automatic',
+  userInterfaceStyle: 'light',
   ios: {
     bundleIdentifier: 'com.birdiesandbets.app',
     supportsTablet: false,
     infoPlist: {
       UIRequiresFullScreen: true,
+      ITSAppUsesNonExemptEncryption: false,
+    },
+    // AsyncStorage/MMKV touch UserDefaults and file timestamps; declare the approved reasons.
+    privacyManifests: {
+      NSPrivacyTracking: false,
+      NSPrivacyCollectedDataTypes: [],
+      NSPrivacyAccessedAPITypes: [
+        { NSPrivacyAccessedAPIType: 'NSPrivacyAccessedAPICategoryUserDefaults', NSPrivacyAccessedAPITypeReasons: ['CA92.1'] },
+        { NSPrivacyAccessedAPIType: 'NSPrivacyAccessedAPICategoryFileTimestamp', NSPrivacyAccessedAPITypeReasons: ['C617.1'] },
+      ],
     },
   },
   web: {
@@ -32,10 +42,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         image: './assets/splash-icon.png',
         imageWidth: 200,
         resizeMode: 'contain',
-        backgroundColor: '#EEF0F7',
-        dark: { backgroundColor: '#161826' },
+        backgroundColor: '#F5F4EC',
       },
     ],
+    ['expo-image-picker', { photosPermission: 'Birdies & Bets uses a photo you pick as your profile picture. It stays on this device.', cameraPermission: false, microphonePermission: false }],
   ],
   experiments: {
     typedRoutes: true,
@@ -45,8 +55,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   updates: {
     url: 'https://u.expo.dev/f833d42f-93f8-4a00-ba9d-fae063662729',
+    checkAutomatically: 'ON_LOAD',
+    fallbackToCacheTimeout: 0,
   },
-  runtimeVersion: {
-    policy: 'sdkVersion',
-  },
+  // Fingerprint: an OTA update can only reach binaries with the same native modules.
+  // EXPO_GO_UPDATE=1 (npm run update:expo-go) targets Expo Go instead, which only loads "exposdk:<sdk>" runtimes.
+  runtimeVersion: process.env.EXPO_GO_UPDATE === '1' ? 'exposdk:57.0.0' : { policy: 'fingerprint' },
 });

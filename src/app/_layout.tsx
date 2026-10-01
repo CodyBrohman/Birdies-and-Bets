@@ -1,18 +1,23 @@
 import '../../global.css';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Platform, View } from 'react-native';
 import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
-// Per-weight subpath imports so Metro bundles only the four faces the app uses.
-import { FamiljenGrotesk_700Bold } from '@expo-google-fonts/familjen-grotesk/700Bold';
+// Per-weight subpath imports so Metro bundles only the eight faces the app uses (see tokens.ts `font`).
+import { PlayfairDisplay_900Black } from '@expo-google-fonts/playfair-display/900Black';
+import { PlayfairDisplay_900Black_Italic } from '@expo-google-fonts/playfair-display/900Black_Italic';
+import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
 import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
 import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
 import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
+import { Inter_800ExtraBold } from '@expo-google-fonts/inter/800ExtraBold';
+import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono/500Medium';
+import { JetBrainsMono_700Bold } from '@expo-google-fonts/jetbrains-mono/700Bold';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
-import { useCourseStore, useRoundStore } from '@/store';
+import { hydrateThemePreference, migrate, storage, useCourseStore, useHistoryStore, usePreferences, useProfileStore, useRoundStore } from '@/store';
 import { Button, Text } from '@/components/ui';
 
 void SplashScreen.preventAutoHideAsync();
@@ -20,22 +25,51 @@ void SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const { c, scheme } = useTheme();
   const [fontsLoaded, fontError] = useFonts({
-    FamiljenGrotesk_700Bold,
+    PlayfairDisplay_900Black,
+    PlayfairDisplay_900Black_Italic,
+    Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
+    Inter_800ExtraBold,
+    JetBrainsMono_500Medium,
+    JetBrainsMono_700Bold,
   });
   const roundHydrated = useRoundStore((s) => s.hydrated);
   const courseHydrated = useCourseStore((s) => s.hydrated);
+  const historyHydrated = useHistoryStore((s) => s.hydrated);
+  const profilesHydrated = useProfileStore((s) => s.hydrated);
   const hydrateRound = useRoundStore((s) => s.hydrate);
   const hydrateCourses = useCourseStore((s) => s.hydrate);
+  const hydrateHistory = useHistoryStore((s) => s.hydrate);
+  const hydratePreferences = usePreferences((s) => s.hydrate);
+  const hydrateProfiles = useProfileStore((s) => s.hydrate);
 
+  const [migrated, setMigrated] = useState(false);
   useEffect(() => {
-    void hydrateRound();
-    void hydrateCourses();
-  }, [hydrateRound, hydrateCourses]);
+    let cancelled = false;
+    (async () => {
+      try {
+        await migrate(storage);
+      } catch {
+        // Stores hydrate best-effort; an unreadable value is dropped there.
+      }
+      // Preferences first: the round store's fresh draft reads the default stake label and allowance.
+      await hydratePreferences();
+      if (cancelled) return;
+      setMigrated(true);
+      void hydrateRound();
+      void hydrateCourses();
+      void hydrateHistory();
+      void hydrateProfiles();
+      void hydrateThemePreference();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hydrateRound, hydrateCourses, hydrateHistory, hydratePreferences, hydrateProfiles]);
 
-  const ready = (fontsLoaded || !!fontError) && roundHydrated && courseHydrated;
+  const ready = (fontsLoaded || !!fontError) && migrated && roundHydrated && courseHydrated && historyHydrated && profilesHydrated;
 
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync();
@@ -55,9 +89,11 @@ export default function RootLayout() {
             contentStyle: { backgroundColor: c.surface },
           }}
         >
-          <Stack.Screen name="index" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
           <Stack.Screen name="new-round" />
           <Stack.Screen name="round" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="settings" />
         </Stack>
       </PhoneFrame>
     </SafeAreaProvider>
@@ -65,8 +101,8 @@ export default function RootLayout() {
 }
 
 /**
- * Dev-only: on web, render inside a 393×852 iPhone-sized frame so browser previews match the
- * design frame. On iOS this is a passthrough.
+ * Dev-only: on web, render inside a 402×874 iPhone-sized frame so browser previews match the
+ * mockup frame. On iOS this is a passthrough.
  */
 function PhoneFrame({ children }: { children: ReactNode }) {
   const { c } = useTheme();
@@ -75,8 +111,8 @@ function PhoneFrame({ children }: { children: ReactNode }) {
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: c.scrim }}>
       <View
         style={{
-          width: 393,
-          height: 852,
+          width: 402,
+          height: 874,
           maxHeight: '100%',
           overflow: 'hidden',
           borderRadius: 40,

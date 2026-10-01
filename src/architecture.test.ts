@@ -60,4 +60,19 @@ describe('architecture', () => {
   it('components/ui imports only theme/ and React Native', () => {
     expect(offenders(join(SRC, 'components', 'ui'), (s) => /(^|\/)(store|games|lib)(\/|$)/.test(s))).toEqual([]);
   });
+
+  it('theme/ never imports the store, components or screens', () => {
+    expect(offenders(join(SRC, 'theme'), (s) => /(^|\/)(store|components|app|games|lib|services)(\/|$)/.test(s))).toEqual([]);
+  });
+
+  it('services/ is the only layer that talks to the network; nothing below it imports it', () => {
+    const usesServices = (s: string) => /(^|\/)services(\/|$)/.test(s);
+    expect(offenders(join(SRC, 'lib'), usesServices)).toEqual([]);
+    expect(offenders(join(SRC, 'games'), usesServices)).toEqual([]);
+    expect(offenders(join(SRC, 'store'), usesServices)).toEqual([]);
+    expect(offenders(join(SRC, 'types'), usesServices)).toEqual([]);
+    expect(offenders(join(SRC, 'services'), (s) => /(^|\/)(app|components)(\/|$)/.test(s))).toEqual([]);
+    const fetchers = walk(SRC).filter((f) => !/[\\/]services[\\/]/.test(f) && /\bfetch\(/.test(readFileSync(f, 'utf8')));
+    expect(fetchers.map((f) => relative(SRC, f))).toEqual([]);
+  });
 });

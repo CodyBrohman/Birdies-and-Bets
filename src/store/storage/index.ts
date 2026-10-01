@@ -4,6 +4,7 @@ import { asyncStorageAdapter } from './asyncStorage';
 import { createMmkvAdapter } from './mmkv';
 
 export * from './adapter';
+export * from './migrate';
 
 /**
  * MMKV on a development or production build; AsyncStorage in Expo Go and on web.

@@ -32,3 +32,22 @@ export function resultsFrom(scores: Record<string, (number | null)[]>): HoleResu
   }
   return out;
 }
+
+/** Back nine only: holes 10-18 in play. */
+export function backNineRound(opts: { players?: Player[]; results?: HoleResult[]; games?: ActiveGame[] } = {}): Round {
+  const r = makeRound({ ...opts, holeCount: 9 });
+  return { ...r, settings: { ...r.settings, nine: 'back' }, currentHole: 10 };
+}
+
+/** Shotgun start: all 18 holes, the first hole played is startHole. */
+export function shotgunRound(startHole: number, opts: { players?: Player[]; results?: HoleResult[]; games?: ActiveGame[] } = {}): Round {
+  const r = makeRound(opts);
+  return { ...r, settings: { ...r.settings, startHole }, currentHole: startHole };
+}
+
+/** Build hole results for explicit hole numbers: resultsAt({ 10: { cody: 4, marcus: 5 } }). */
+export function resultsAt(byHole: Record<number, HoleResult['scores']>): HoleResult[] {
+  return Object.entries(byHole)
+    .map(([n, scores]) => ({ holeNumber: Number(n), scores }))
+    .sort((a, b) => a.holeNumber - b.holeNumber);
+}

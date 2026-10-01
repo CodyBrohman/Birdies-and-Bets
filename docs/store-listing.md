@@ -20,7 +20,12 @@ The golf scorecard that also runs your group's games. Skins, Nassau, match play,
 
 Birdies & Bets is a golf scorecard for a group of two to four, with the games you already play layered on top.
 
-Enter scores with big, glove-friendly steppers, one hole at a time. See a real scorecard with front nine, back nine, birdies and bogeys marked, and the handicap strokes shown on every hole. Then pick the games your group plays and watch the standings update after every hole: 2 up through 7, three skins carrying, who's in the hot seat.
+Tap a score chip, one hole at a time, and the hole advances itself. See a real scorecard with front nine, back nine, birdies and bogeys marked, and the handicap strokes shown on every hole. Then pick the games your group plays and watch the standings update after every hole: 2 up through 7, three skins carrying, who's in the hot seat.
+
+AFTER THE ROUND
+• Every finished round is kept: the full card, the game results and who owes whom
+• Share the scorecard as an image to the group chat
+• Back up everything to a file and restore it on a new phone
 
 GAME FORMATS
 • Skins, with carryover and optional validation
@@ -34,19 +39,19 @@ GAME FORMATS
 • Hot Seat, with punishments your group writes
 
 HANDICAPS DONE PROPERLY
-Enter each player's index and the app computes the course handicap for the tee you're playing, shows exactly which holes get a stroke, and lets each game score gross or net. Plus handicaps are handled. Nine-hole rounds are handled.
+Enter each player's index and the app computes the course handicap for the tee you're playing, shows exactly which holes get a stroke, and lets each game score gross or net. Plus handicaps and allowances are handled. Play the front nine, the back nine, or a shotgun start from any hole.
 
 BUILT FOR THE COURSE
+• Search thousands of courses and download the scorecard, or add one by hand in a minute
 • Works fully offline once a course is loaded
 • Every score is saved instantly; close the app and resume where you were
 • Screen stays awake during the round
-• High contrast for sunlight, full dark mode for the evening nine
-• Add any course by hand in about a minute
+• Cream in the sun, full dark mode for the evening nine
 
 WHAT IT DOESN'T DO
 Birdies & Bets keeps a tally of points between players and nothing more. It has no real-money gambling, no deposits, no withdrawals, no payments, and no links to payment services. Settling up is between friends, in the parking lot, as it always was.
 
-No account. No sign-in. No data leaves your phone.
+No account. No sign-in. Nothing you enter leaves your phone unless you share or back it up.
 
 ## Keywords (100)
 
@@ -54,26 +59,32 @@ golf,scorecard,skins,nassau,match play,stableford,wolf,handicap,score,card,vegas
 
 ## URLs
 
-- Privacy policy: https://codybrohman.github.io/Birdies-and-Bets/docs/privacy.html
-- Support: https://codybrohman.github.io/Birdies-and-Bets/docs/support.html
-- Hosting: GitHub Pages on github.com/CodyBrohman/Birdies-and-Bets, root of `main` (the pages live under `docs/`).
+- Marketing: https://www.birdiesandbets.com/
+- Privacy policy: https://www.birdiesandbets.com/privacy.html
+- Support: https://www.birdiesandbets.com/support.html
+- Hosting: GitHub Pages on github.com/CodyBrohman/birdies-and-bets-site (the `../website/` folder, its own repo, root of `main`).
+  The old `docs/privacy.html` and `docs/support.html` in this repo are redirect stubs to the new site; keep them until every submitted listing points at the new URLs.
 
 ## Screenshots (6.9" and 6.5" required)
 
 Order matters for review. Golf first, settlement never first.
 
-1. Card tab, net view, six holes played, markers visible.
-2. Play tab, hole 7, four rows with stroke dots, ticker showing three games.
+1. Card tab, net view, six holes played, birdie and bogey markers visible.
+2. Hole screen, hole 7, four players with stroke badges and score chips.
 3. Games tab with Skins, Match Play and Hot Seat cards.
 4. Players screen showing computed course handicaps, including a plus handicap.
-5. Game select with the catalog.
-6. Summary with per-game results and the no-money footer visible.
+5. Round summary with game results and the settle-up rows.
+6. Home with a round in progress and recent rounds.
+7. (optional) The shared scorecard image in the share sheet.
 
-Capture from a device or simulator in light mode for 1–4, dark mode for 5–6.
+Capture from a device or simulator in light mode for 1–4, dark mode for 5–6. See `scripts/screenshots.md`.
 
 ## App Privacy questionnaire
 
-- Data collected: **None.** No accounts, no analytics, no crash reporting, no third-party SDKs that collect data, no network requests during use.
+- Data collected: **None.** No accounts, no analytics, no crash reporting, no third-party SDKs that collect data.
+  The app makes two kinds of network request, neither of which carries user data: an EAS Update check on
+  launch (app version and platform only) and course search (the typed search text). Both are described in the
+  privacy policy. Under Apple's definitions this is still "Data Not Collected".
 - Tracking: No.
 
 ## Age rating questionnaire
@@ -95,9 +106,9 @@ Paste into the review notes field:
 >
 > The app does not offer or facilitate real-money gambling. It has no payment processing, no in-app purchases, no deposits or withdrawals, no wallet, and no links to payment or money-transfer services. Stakes are abstract "points" that the users themselves agree on. The settlement screen displays a tally and provides no action to pay.
 >
-> No account is required and no data is collected or transmitted; everything is stored locally on the device.
+> No account is required and no personal data is collected; everything is stored locally on the device. The app's only network use is an update check on launch and, if the user types in the course search box, a course-name lookup.
 >
-> To try it: Start Round → choose Cedar Ridge Golf Club → Blue tees → enter two names (add an index such as 8.2 to see the handicap) → Choose games → pick Skins → Start round. Enter a few scores and open the Games and Card tabs.
+> To try it: Start Round → Cedar Ridge Golf Club is preselected → Blue tees → Continue → enter two names (add an index such as 8.2 to see the handicap) → Choose games → tap Skins → Tee off. Tap a score chip for each player; the hole advances by itself. Open the Card and Games tabs, then finish with the arrow to see the summary.
 
 ## Before submitting
 

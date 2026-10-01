@@ -41,3 +41,16 @@ describe('Nassau', () => {
     expect(run.standings.headline).toBe('Cody 1 up match');
   });
 });
+
+describe('Nassau 2 v 2', () => {
+  it('runs three team bets and pays each loser to the winner opposite', () => {
+    const a18 = Array(18).fill(4) as number[];
+    const b18 = Array(18).fill(4) as number[];
+    for (let i = 0; i < 3; i++) b18[i] = 5; // A wins 1-3
+    for (let i = 9; i < 13; i++) a18[i] = 5; // B wins 10-13
+    const results = resultsFrom({ cody: a18, dan: [...a18], marcus: b18, priya: [...b18] });
+    const run = runGame(makeRound({ results }), active('nassau', { format: 'teams', teams: ['cody', 'dan'], stake: 5 }, 'gross'), nassau);
+    expect(run.standings.headline).toBe('Cody & Dan won front · Marcus & Priya won back · Marcus & Priya won overall');
+    expect(run.settlement?.entries.map((e) => `${e.from}>${e.to}:${e.amount}`)).toEqual(['marcus>cody:5', 'priya>dan:5', 'cody>marcus:5', 'dan>priya:5', 'cody>marcus:5', 'dan>priya:5']);
+  });
+});

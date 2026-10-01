@@ -1,5 +1,5 @@
 import type { GameMode, GameState, Standings } from './types';
-import { cfg, nameOf, pickedUp, scoresFor } from './types';
+import { cfg, nameOf, nextAfter, pickedUp, scoresFor } from './types';
 import { highest } from '../lib/scoring';
 
 export const DEFAULT_PUNISHMENTS = [
@@ -90,16 +90,16 @@ export const hotSeat: GameMode = {
     const state = prev as HotSeatState;
     const list = cfg<string[]>(ctx, 'punishments', DEFAULT_PUNISHMENTS);
     const punishment = list.length ? list[state.punishmentIndex % list.length] : undefined;
-    const next = state.thru + 1;
+    const hasNext = nextAfter(ctx, state.thru) != null;
     let headline: string;
     let subline: string | undefined;
     if (!state.thru) {
       headline = 'Seat is empty';
       subline = 'Worst score on a hole takes it.';
     } else if (state.holder) {
-      headline = `${nameOf(ctx, state.holder)} is in the hot seat${next <= ctx.holeCount ? ' — next hole' : ''}`;
+      headline = `${nameOf(ctx, state.holder)} is in the hot seat${hasNext ? ' — next hole' : ''}`;
       const took = state.score != null ? `Took it on ${state.since} with a ${ctx.active.basis} ${state.score}` : `Picked up on ${state.since}`;
-      subline = punishment && next <= ctx.holeCount ? `${took} · ${punishment}` : took;
+      subline = punishment && hasNext ? `${took} · ${punishment}` : took;
     } else {
       headline = `Seat is empty — tied worst on ${state.thru}`;
       subline = 'Nobody serves on the next hole.';

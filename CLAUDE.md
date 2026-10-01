@@ -9,6 +9,11 @@ Expo SDK 57 · Expo Router · NativeWind 4 · Zustand · TypeScript strict.
 - `src/store/` imports `types/`, `lib/`, `games/registry`. Orchestrates only.
 - `src/app/` and `src/components/` read from the store and `types/`. Never import `games/*` directly.
 - `src/components/ui/` imports only `theme/`.
+- `src/services/` is the only layer that uses `fetch` (course search via the Cloudflare Worker in `../worker/`).
+  It may import `types/`, `lib/` and `store/`; nothing below it may import it. Screens call it directly.
+- `src/theme/` never imports `store/`; the theme preference lives in `theme/preference.ts`, persistence in `store/themeStore.ts`.
+- Persisted data is versioned: bump `SCHEMA_VERSION` in `src/store/storage/adapter.ts` and add a migration in
+  `storage/migrate.ts` whenever a stored shape changes.
 - An import of `react-native` inside `types/`, `lib/` or `games/` is a bug.
 
 ## Hard rules
@@ -19,9 +24,26 @@ Expo SDK 57 · Expo Router · NativeWind 4 · Zustand · TypeScript strict.
 - Handicap math and every game module get unit tests.
 
 ## Design
-Tokens in `src/theme/tokens.ts` are canonical (from the design handoff in
-`../Nocturne ruling and scope/`). Fonts: Familjen Grotesk 700 (display), Inter (data, tabular numerals).
-Min hit target 44pt; score steppers 56×60; primary CTA 60pt. Nothing lighter than weight 500 or smaller than 13pt.
+The 2026-10-01 redesign matches the owner's ten reference mockups. Tokens in `src/theme/tokens.ts` are canonical, and
+`design-system/birdies-and-bets/MASTER.md` explains them.
+- **Palette** (light only; `color.dark` aliases light): cream ground `#F5F4EC`, warm white hairline cards, forest ink
+  `#17372D`, pine `#245C45` for buttons and selected pills, dark forest hero cards, a gold `#E7BD5A` HCP badge.
+  Pine = good/under par, gold = over par, coral = errors only.
+- **Type:** Inter only. Display 32 bold titles under a green uppercase eyebrow, section titles 21, body 15. 11pt is the
+  floor, for eyebrows, badges and tabs only.
+- **Shape:** cards radius 20 with a hairline; hero and photo cards 22; buttons rounded rectangles (16/12); filter pills
+  are pills.
+- **Tabs:** Home · Courses · Bet (round builder) · Friends · Profile. Settings is a stack screen opened from Profile.
+- **Logos:** `assets/logo.png` is the master chip (`logo-mark.png` is the same art with the faint square trimmed; it
+  feeds BrandMark, the splash, the favicon and the website). `assets/app-logo.png` is the app icon source; `icon.png` is
+  derived from it, opaque, with the corners filled.
+- **Kit additions:** ScreenHeader, HeroCard, PhotoCard, StickyBar, ListRow, IconTile, NoteBar, AvatarStack.
+- **ListRow:** put interactive pieces in `action`/`footer`, never inside the row (no nested buttons on web).
+- **Photos:** brand photos live in `assets/photos` (shared with the website). `components/courseArt.ts` picks one per
+  course.
+- **Profile extras** (home area, photo, bag) live in preferences. A tee time is an optional `RoundSettings.teeTime`.
+  Crew helpers are in `store/crew.ts`.
+- Min hit target 48pt (pills 40 + hitSlop). Ionicons outline. States live in `components/ui/interaction.ts`.
 
 ## Commands
 `npm start` · `npm test` · `npm run typecheck`

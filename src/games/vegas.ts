@@ -1,5 +1,7 @@
 import type { GameMode, GameState, Settlement, Standings } from './types';
-import { cfg, scoresFor, stakeOf } from './types';
+import { cfg, positionOf, scoresFor, stakeOf, teamsOf } from './types';
+
+export { teamsOf };
 import { formatToPar } from '../lib/format';
 
 interface VegasState extends GameState {
@@ -15,16 +17,6 @@ export function vegasNumber(scores: (number | null)[], flipped: boolean): number
   const [lo, hi] = [s[0] ?? 10, s[1] ?? 10];
   if (hi >= 10) return Number(`${hi}${lo}`);
   return flipped ? Number(`${hi}${lo}`) : Number(`${lo}${hi}`);
-}
-
-/** Team A is the config's list; team B is everyone else among the participants. */
-export function teamsOf(ctx: { participants: { id: string }[]; active: { config: Record<string, unknown> } }): { a: string[]; b: string[] } {
-  const raw = ctx.active.config.teams;
-  const aIds = Array.isArray(raw) ? (raw as string[]) : [];
-  const ids = ctx.participants.map((p) => p.id);
-  const a = ids.filter((id) => aIds.includes(id));
-  const b = ids.filter((id) => !aIds.includes(id));
-  return { a, b };
 }
 
 /**
@@ -55,7 +47,7 @@ export const vegas: GameMode = {
   onHoleComplete(prev, hole, ctx): VegasState {
     const state = prev as VegasState;
     const { a, b } = teamsOf(ctx);
-    if (a.length !== 2 || b.length !== 2) return { ...state, thru: hole.holeNumber };
+    if (a.length !== 2 || b.length !== 2) return { ...state, thru: positionOf(ctx, hole.holeNumber) };
     const par = ctx.course.holes.find((h) => h.number === hole.holeNumber)?.par ?? 0;
     const scores = scoresFor(ctx, hole);
     const of = (ids: string[]) => ids.map((id) => scores.find((s) => s.playerId === id)?.score ?? null);
@@ -67,7 +59,7 @@ export const vegas: GameMode = {
     const na = vegasNumber(sa, birdieB && !birdieA);
     const nb = vegasNumber(sb, birdieA && !birdieB);
     const diff = state.diff + (nb - na);
-    return { diff, thru: hole.holeNumber, holes: [...state.holes, { holeNumber: hole.holeNumber, a: na, b: nb }] };
+    return { diff, thru: positionOf(ctx, hole.holeNumber), holes: [...state.holes, { holeNumber: hole.holeNumber, a: na, b: nb }] };
   },
 
   getStandings(prev, ctx): Standings {

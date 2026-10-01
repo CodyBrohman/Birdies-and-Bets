@@ -1,4 +1,12 @@
 export * from './roundStore';
 export * from './courseStore';
+export * from './historyStore';
+export * from './themeStore';
+export * from './preferencesStore';
+export * from './profileStore';
+export * from './insights';
+export * from './backup';
+export { storage, storageBackend, SCHEMA_VERSION, STORAGE_KEYS, migrate } from './storage';
 export * from './selectors';
 export * from './games';
+export * from './crew';

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Pressable } from 'react-native';
+import { Animated, Platform } from 'react-native';
+import { Pressable } from './Pressable';
 import { useReduceMotion, useTheme } from '@/theme';
 
 export interface ToggleProps {
@@ -9,13 +10,13 @@ export interface ToggleProps {
   disabled?: boolean;
 }
 
-const TRACK_W = 64;
-const TRACK_H = 38;
-const KNOB = 30;
+const TRACK_W = 52;
+const TRACK_H = 32;
+const KNOB = 26;
 
-/** 64×38 pill; accent when on, divider when off; 30pt surfaceRaised knob. Respects Reduce Motion. */
+/** 64×38 pill; accent when on, upcoming-tick grey when off; ground-colour knob. Respects Reduce Motion. */
 export function Toggle({ value, onChange, accessibilityLabel, disabled }: ToggleProps) {
-  const { c, motion } = useTheme();
+  const { c, motion, radius } = useTheme();
   const x = useRef(new Animated.Value(value ? 1 : 0)).current;
   const reduce = useReduceMotion();
 
@@ -37,21 +38,14 @@ export function Toggle({ value, onChange, accessibilityLabel, disabled }: Toggle
       style={{
         width: TRACK_W,
         height: TRACK_H,
-        borderRadius: 999,
-        backgroundColor: value ? c.accent : c.divider,
+        borderRadius: radius.pill,
+        backgroundColor: value ? c.accent : c.tickUpcoming,
         justifyContent: 'center',
         opacity: disabled ? 0.4 : 1,
+        ...(Platform.OS === 'web' ? ({ cursor: disabled ? 'default' : 'pointer' } as object) : null),
       }}
     >
-      <Animated.View
-        style={{
-          width: KNOB,
-          height: KNOB,
-          borderRadius: 999,
-          backgroundColor: c.surfaceRaised,
-          transform: [{ translateX }],
-        }}
-      />
+      <Animated.View style={{ width: KNOB, height: KNOB, borderRadius: radius.pill, backgroundColor: c.onAccent, transform: [{ translateX }] }} />
     </Pressable>
   );
 }

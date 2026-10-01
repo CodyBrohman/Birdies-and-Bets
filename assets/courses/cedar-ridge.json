@@ -3,9 +3,9 @@
   "name": "Cedar Ridge Golf Club",
   "location": "Elk Grove, CA",
   "teeBoxes": [
-    { "id": "blue", "name": "Blue", "color": "#3F5FB8", "rating": 71.4, "slope": 128, "totalYards": 6412 },
-    { "id": "white", "name": "White", "color": "#F3F5FE", "rating": 69.5, "slope": 122, "totalYards": 6020 },
-    { "id": "gold", "name": "Gold", "color": "#C9A24A", "rating": 67.0, "slope": 115, "totalYards": 5480 }
+    { "id": "blue", "name": "Blue", "color": "#3B5F8A", "rating": 71.4, "slope": 128, "totalYards": 6412 },
+    { "id": "white", "name": "White", "color": "#F5EAD8", "rating": 69.5, "slope": 122, "totalYards": 6020 },
+    { "id": "gold", "name": "Gold", "color": "#D6A84A", "rating": 67.0, "slope": 115, "totalYards": 5480 }
   ],
   "holes": [
     { "number": 1, "par": 4, "strokeIndex": 7, "yardage": { "blue": 388 } },

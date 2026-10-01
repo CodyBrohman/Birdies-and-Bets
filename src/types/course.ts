@@ -28,6 +28,11 @@ export interface Course {
   location?: string;
   holes: Hole[];
   teeBoxes: TeeBox[];
-  /** True when entered by hand rather than bundled. */
+  /** True when entered by hand or imported; such courses can be edited and deleted. */
   userEntered?: boolean;
+  source?: 'bundled' | 'user' | 'api';
+  /** Provider name and id when imported from a course service. */
+  provider?: string;
+  providerId?: string;
+  importedAt?: string; // ISO
 }

@@ -3,7 +3,7 @@ import type { ActiveGame, Round } from '../types/round';
 import type { GameContext, GameMode, GameState, Settlement, Standings } from '../types/game';
 import type { PlayerId, PlayerRoundState } from '../types/player';
 import { applyMatchDifferential, computeAllHandicaps, holesInPlay } from '../lib/handicap';
-import { playedResults } from '../lib/scoring';
+import { playOrder } from '../lib/scoring';
 import { cfg } from './types';
 
 export interface GameRun {
@@ -18,7 +18,7 @@ export interface GameRun {
 export function buildContext(round: Round, active: ActiveGame, mode: GameMode, baseHandicaps?: Record<PlayerId, PlayerRoundState>): GameContext {
   const participants = active.playerIds ? round.players.filter((p) => active.playerIds!.includes(p.id)) : round.players;
   let handicaps = baseHandicaps ?? computeAllHandicaps(round.players, round.course, round.settings);
-  const holes = holesInPlay(round.course, round.settings.holeCount);
+  const holes = playOrder(holesInPlay(round.course, round.settings.holeCount, round.settings.nine), round.settings.startHole);
   const ctx: GameContext = {
     course: round.course,
     players: round.players,
@@ -26,7 +26,8 @@ export function buildContext(round: Round, active: ActiveGame, mode: GameMode, b
     handicaps,
     active,
     settings: round.settings,
-    holeCount: round.settings.holeCount,
+    holes,
+    holeCount: holes.length,
   };
   const playOffLow = mode.configFields.some((f) => f.key === 'playOffLow') && cfg(ctx, 'playOffLow', true) === true;
   if (playOffLow && active.basis === 'net') {
@@ -40,12 +41,13 @@ export function buildContext(round: Round, active: ActiveGame, mode: GameMode, b
   return ctx;
 }
 
-/** Fold every played hole through the game, in order. Editing hole 4 at hole 12 simply reruns this. */
+/** Fold every played hole through the game, in play order. Editing hole 4 at hole 12 simply reruns this. */
 export function runGame(round: Round, active: ActiveGame, mode: GameMode, baseHandicaps?: Record<PlayerId, PlayerRoundState>): GameRun {
   const ctx = buildContext(round, active, mode, baseHandicaps);
   let state = mode.initState(ctx);
-  for (const hole of playedResults(round.holeResults)) {
-    if (hole.holeNumber > round.settings.holeCount) continue;
+  for (const h of ctx.holes) {
+    const hole = round.holeResults.find((r) => r.holeNumber === h.number);
+    if (!hole || Object.keys(hole.scores).length === 0) continue;
     state = mode.onHoleComplete(state, hole, ctx);
   }
   return {

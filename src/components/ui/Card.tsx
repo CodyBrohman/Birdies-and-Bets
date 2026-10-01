@@ -1,53 +1,75 @@
-import { View, type ViewProps } from 'react-native';
+import { View, type ViewProps, type ViewStyle } from 'react-native';
+import { Pressable } from './Pressable';
 import { useTheme } from '@/theme';
+import { DISABLED_OPACITY, interaction, stateTransition } from './interaction';
 
-export type CardEdge = 'none' | 'betting' | 'social';
+export type CardVariant = 'raised' | 'outlined' | 'tinted' | 'gold' | 'accent' | 'hero';
 
 export interface CardProps extends ViewProps {
-  /** Top edge treatment: betting = chip-edge stripe, social = solid positive bar. */
-  edge?: CardEdge;
-  /** 12 (dense) or 16 (default) padding. */
-  dense?: boolean;
-  /** Highlight with accentTint fill and accent border (selected / pressed state). */
+  /**
+   * raised = warm white card with a 1pt hairline (most cards).
+   * outlined = alias of raised, kept so older call sites compile.
+   * tinted = soft sage ("Find your next fairway", "Plan a round").
+   * gold = gold tint (attention callouts).
+   * accent = sage tint with a pine border (selected).
+   * hero = dark forest ("Your round", the profile card); put white text on it.
+   */
+  variant?: CardVariant;
+  /** Selected: keeps the fill and adds a 1.5pt pine border. */
   selected?: boolean;
+  /** 1pt coloured border: the live round card, a highlighted result. */
+  edge?: 'accent' | 'gold';
+  /** 12 (dense), 16 (default) or 20 (roomy) padding. */
+  padding?: 'dense' | 'default' | 'roomy' | 'none';
+  /** Makes the whole card a button with pressed, hover and focus states. */
+  onPress?: () => void;
+  disabled?: boolean;
 }
 
-/** Raised surface, radius 14, hairline divider. The container for nearly everything. */
-export function Card({ edge = 'none', dense, selected, style, children, ...rest }: CardProps) {
+/** The container for nearly everything. 20pt corners, warm white with a hairline on cream. */
+export function Card({ variant = 'raised', selected, edge, padding = 'default', onPress, disabled, style, children, ...rest }: CardProps) {
   const { c, e, radius, space } = useTheme();
-  return (
-    <View
-      {...rest}
-      style={[
-        {
-          backgroundColor: selected ? c.accentTint : c.surfaceRaised,
-          borderColor: selected ? c.accent : c.divider,
-          borderWidth: selected ? 1.5 : 1,
-          borderRadius: radius.lg,
-          overflow: 'hidden',
-          ...e.raised,
-        },
-        style,
-      ]}
-    >
-      {edge !== 'none' ? <Edge kind={edge} /> : null}
-      <View style={{ padding: dense ? space[3] : space[4] }}>{children}</View>
-    </View>
-  );
-}
+  const plain = variant === 'raised' || variant === 'outlined';
+  const fill = plain ? c.surfaceRaised : variant === 'hero' ? c.hero : variant === 'gold' ? c.goldTint : c.accentTint;
+  const border = selected || variant === 'accent' ? c.accent : edge === 'accent' ? c.accentBorder : edge === 'gold' ? c.goldBorder : plain ? c.divider : 'transparent';
+  const pad = padding === 'none' ? 0 : padding === 'dense' ? space[3] : padding === 'roomy' ? space[5] : space[4];
+  const baseStyle: ViewStyle = {
+    backgroundColor: fill,
+    borderColor: border,
+    borderWidth: selected || variant === 'accent' ? 1.5 : 1,
+    borderRadius: variant === 'hero' ? radius.hero : radius.xl,
+    padding: pad,
+    ...(plain ? e.raised : null),
+  };
 
-/** Betting cards get a poker-chip edge stripe (accent / divider alternating); social cards a solid positive bar. */
-function Edge({ kind }: { kind: Exclude<CardEdge, 'none'> }) {
-  const { c } = useTheme();
-  if (kind === 'social') {
-    return <View style={{ height: 5, backgroundColor: c.positive }} />;
+  if (!onPress) {
+    return (
+      <View {...rest} style={[baseStyle, { overflow: 'hidden' }, style]}>
+        {children}
+      </View>
+    );
   }
-  const segments = Array.from({ length: 40 }, (_, i) => i);
   return (
-    <View style={{ height: 5, flexDirection: 'row', overflow: 'hidden' }}>
-      {segments.map((i) => (
-        <View key={i} style={{ width: i % 2 === 0 ? 12 : 8, backgroundColor: i % 2 === 0 ? c.accent : c.divider }} />
-      ))}
-    </View>
+    <Pressable
+      {...rest}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!disabled, selected: !!selected }}
+      disabled={disabled}
+      onPress={onPress}
+      style={(s) => {
+        const { pressed, hovered } = interaction(s);
+        return [
+          baseStyle,
+          stateTransition,
+          plain && (pressed || hovered) ? e.lifted : null,
+          pressed ? { opacity: 0.85 } : null,
+          hovered && !pressed && !plain ? { opacity: 0.92 } : null,
+          disabled ? { opacity: DISABLED_OPACITY } : null,
+          style as ViewStyle,
+        ];
+      }}
+    >
+      {children}
+    </Pressable>
   );
 }

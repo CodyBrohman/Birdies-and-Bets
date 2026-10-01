@@ -33,6 +33,11 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "codybrohman@gmail.com",
+        "appleTeamId": "BHQZ3J8C6Q"
+      }
+    }
   }
 }

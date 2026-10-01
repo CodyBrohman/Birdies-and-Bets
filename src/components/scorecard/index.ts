@@ -1,4 +1,4 @@
 export * from './ScoreCell';
-export * from './ScoreGrid';
+export * from './ScoreChip';
+export * from './ScoreTable';
 export * from './StrokeDots';
-export * from './TotalsBlock';

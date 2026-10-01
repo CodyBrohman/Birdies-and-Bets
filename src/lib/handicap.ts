@@ -3,9 +3,11 @@
 
 import type { Course, Hole, TeeBox } from '../types/course';
 import type { Player, PlayerId, PlayerRoundState } from '../types/player';
-import type { RoundSettings } from '../types/round';
+import type { Nine, RoundSettings } from '../types/round';
 
 export const DEFAULT_ALLOWANCE = 100;
+/** The allowances the app offers. Anything else stored is treated as the default. */
+export const ALLOWANCE_OPTIONS = [100, 90, 85, 75] as const;
 
 /** Round half away from zero, so −2.5 → −3 and 2.5 → 3 (WHS rounding for plus handicaps). */
 export function roundHalfAwayFromZero(n: number): number {
@@ -68,9 +70,14 @@ export function rankedHoles(holes: Hole[]): { hole: Hole; rank: number }[] {
   return holes.map((hole) => ({ hole, rank: rankOf.get(hole.number) ?? hole.strokeIndex }));
 }
 
-/** Holes in play for a round: all 18, or the first nine. */
-export function holesInPlay(course: Course, holeCount: number): Hole[] {
-  return course.holes.filter((h) => h.number <= holeCount);
+/**
+ * Holes in play for a round, in natural order: all 18, the front nine, or the back nine.
+ * A back-nine request on a course with fewer than 18 holes falls back to its first nine.
+ */
+export function holesInPlay(course: Course, holeCount: number, nine: Nine = 'front'): Hole[] {
+  if (holeCount >= 18) return course.holes.filter((h) => h.number <= 18);
+  if (nine === 'back' && course.holes.some((h) => h.number > 9)) return course.holes.filter((h) => h.number > 9 && h.number <= 18);
+  return course.holes.filter((h) => h.number <= 9);
 }
 
 /**
@@ -93,9 +100,9 @@ export function allocateStrokes(playingHcp: number, holes: Hole[]): Record<numbe
 }
 
 /** Everything the app needs to display and apply a player's handicap for a round. */
-export function computePlayerRoundState(player: Player, course: Course, settings: Pick<RoundSettings, 'holeCount' | 'allowance'>): PlayerRoundState {
+export function computePlayerRoundState(player: Player, course: Course, settings: Pick<RoundSettings, 'holeCount' | 'allowance' | 'nine'>): PlayerRoundState {
   const tee = course.teeBoxes.find((t) => t.id === player.teeBoxId) ?? course.teeBoxes[0];
-  const holes = holesInPlay(course, settings.holeCount);
+  const holes = holesInPlay(course, settings.holeCount, settings.nine);
   // Rating and slope describe 18 holes, so course handicap is always computed against the full course par.
   const courseHcp = tee ? courseHandicap(player.handicapIndex, tee, parFor(course.holes)) : 0;
   const playingHcp = playingHandicap(courseHcp, settings.holeCount, settings.allowance);
@@ -108,7 +115,7 @@ export function computePlayerRoundState(player: Player, course: Course, settings
 }
 
 /** Compute round state for every player. */
-export function computeAllHandicaps(players: Player[], course: Course, settings: Pick<RoundSettings, 'holeCount' | 'allowance'>): Record<PlayerId, PlayerRoundState> {
+export function computeAllHandicaps(players: Player[], course: Course, settings: Pick<RoundSettings, 'holeCount' | 'allowance' | 'nine'>): Record<PlayerId, PlayerRoundState> {
   const out: Record<PlayerId, PlayerRoundState> = {};
   for (const p of players) out[p.id] = computePlayerRoundState(p, course, settings);
   return out;

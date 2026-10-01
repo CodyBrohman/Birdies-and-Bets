@@ -1,5 +1,5 @@
 import type { GameMode, GameState, Settlement, Standings } from './types';
-import { stakeOf } from './types';
+import { positionOf, stakeOf } from './types';
 
 interface BbbState extends GameState {
   points: Record<string, number>;
@@ -47,7 +47,7 @@ export const bingoBangoBongo: GameMode = {
       points[who.id] = (points[who.id] ?? 0) + 1;
     }
     const incomplete = answered < PROMPTS.length ? [...state.incomplete, hole.holeNumber] : state.incomplete;
-    return { points, thru: hole.holeNumber, incomplete };
+    return { points, thru: positionOf(ctx, hole.holeNumber), incomplete };
   },
 
   getStandings(prev, ctx): Standings {

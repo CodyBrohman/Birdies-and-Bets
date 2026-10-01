@@ -244,3 +244,30 @@ describe('describeStrokes', () => {
 // Keep the fixture import used even if a case above is removed.
 void marcus;
 void priya;
+
+describe('nine-hole rounds: which nine', () => {
+  it('back nine yields holes 10-18 ranked 1..9', () => {
+    const back = holesInPlay(cedarRidge, 9, 'back');
+    expect(back.map((h) => h.number)).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18]);
+    const ranks = rankedHoles(back).map((r) => r.rank).sort((a, b) => a - b);
+    expect(ranks).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  });
+
+  it('front is the default and 18 ignores the nine setting', () => {
+    expect(holesInPlay(cedarRidge, 9).map((h) => h.number)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(holesInPlay(cedarRidge, 18, 'back')).toHaveLength(18);
+  });
+
+  it('falls back to the first nine on a nine-hole course', () => {
+    const nineHole = { ...cedarRidge, holes: cedarRidge.holes.slice(0, 9) };
+    expect(holesInPlay(nineHole, 9, 'back').map((h) => h.number)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  });
+
+  it('allocates back-nine strokes to the lowest back-nine stroke indexes', () => {
+    const back = holesInPlay(cedarRidge, 9, 'back');
+    const strokes = allocateStrokes(3, back);
+    const got = Object.entries(strokes).filter(([, s]) => s > 0).map(([n]) => Number(n)).sort((a, b) => a - b);
+    const lowest = [...back].sort((a, b) => a.strokeIndex - b.strokeIndex).slice(0, 3).map((h) => h.number).sort((a, b) => a - b);
+    expect(got).toEqual(lowest);
+  });
+});

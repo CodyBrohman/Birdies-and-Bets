@@ -1,13 +1,19 @@
 import { computeAllHandicaps } from './handicap';
+import { scoreOptions } from './scoring';
 import {
   backNine,
   frontNine,
   grossOn,
   highest,
   holeScores,
+  holePosition,
+  holesPlayed,
   holesThrough,
   lowest,
+  nextHoleNumber,
+  playOrder,
   playedResults,
+  prevHoleNumber,
   relationToPar,
   scoreOn,
   totals,
@@ -111,5 +117,37 @@ describe('holeScores / lowest / highest', () => {
     expect(holeScores(r, ids, 'gross', handicaps)).toEqual([{ playerId: 'cody', score: 4 }]);
     expect(lowest([])).toEqual([]);
     expect(highest([])).toEqual([]);
+  });
+});
+
+describe('scoreOptions', () => {
+  it('offers two under through five over, never below one', () => {
+    expect(scoreOptions(3)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(scoreOptions(4)).toEqual([2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(scoreOptions(5)).toEqual([3, 4, 5, 6, 7, 8, 9, 10]);
+  });
+});
+
+describe('play order', () => {
+  const holes = Array.from({ length: 18 }, (_, i) => ({ number: i + 1, par: 4, strokeIndex: i + 1 }));
+  it('rotates to the start hole and wraps', () => {
+    const order = playOrder(holes, 10);
+    expect(order.map((h) => h.number)).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(holePosition(order, 10)).toBe(1);
+    expect(holePosition(order, 9)).toBe(18);
+    expect(nextHoleNumber(order, 18)).toBe(1);
+    expect(nextHoleNumber(order, 9)).toBeNull();
+    expect(prevHoleNumber(order, 10)).toBeNull();
+    expect(prevHoleNumber(order, 1)).toBe(18);
+  });
+  it('leaves the order alone for hole 1 or an unknown start', () => {
+    expect(playOrder(holes, 1)).toBe(holes);
+    expect(playOrder(holes, 42)).toBe(holes);
+    expect(playOrder(holes)).toBe(holes);
+    expect(holePosition(holes, 99)).toBe(0);
+  });
+  it('counts played holes regardless of number', () => {
+    const order = playOrder(holes, 10);
+    expect(holesPlayed([{ holeNumber: 10, scores: { a: 4 } }, { holeNumber: 1, scores: {} }, { holeNumber: 3, scores: { a: 5 } }], order)).toBe(2);
   });
 });

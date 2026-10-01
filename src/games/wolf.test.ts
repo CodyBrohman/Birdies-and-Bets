@@ -2,6 +2,7 @@ import { runGame } from './engine';
 import { wolf, wolfFor } from './wolf';
 import { active, makeRound, resultsFrom } from './__fixtures__/round';
 import type { HoleResult } from '../types';
+import { cody, marcus, priya } from '../lib/__fixtures__/cedarRidge';
 
 const withInputs = (results: HoleResult[], inputs: Record<number, Record<string, string>>): HoleResult[] =>
   results.map((r) => (inputs[r.holeNumber] ? { ...r, gameInputs: { wolf: inputs[r.holeNumber]! } } : r));
@@ -48,5 +49,29 @@ describe('Wolf', () => {
     const results = withInputs(resultsFrom({ cody: [3], marcus: [5], priya: [5], dan: [6] }), { 1: { mode: 'Alone' } });
     const run = runGame(makeRound({ results }), active('wolf', { points: 2 }, 'gross'), wolf);
     expect(run.standings.lines.find((l) => l.playerId === 'cody')?.value).toBe(6);
+  });
+});
+
+describe('Wolf with three players and a stake', () => {
+  const trio = [cody, marcus, priya];
+  it('rotates through three, pays a lone wolf two, and settles every pair on the points difference', () => {
+    // h1 wolf Cody alone and wins (+2). h2 wolf Marcus alone and loses: Cody, Priya +1. h3 wolf Priya takes Cody: side wins, +1 each.
+    const results = withInputs(resultsFrom({ cody: [3, 4, 4], marcus: [5, 6, 5], priya: [5, 5, 5] }), {
+      1: { mode: 'Alone' },
+      2: { mode: 'Alone' },
+      3: { mode: 'With a partner', partner: 'Cody' },
+    });
+    const run = runGame(makeRound({ players: trio, results }), active('wolf', { stake: 2 }, 'gross'), wolf);
+    const pts = Object.fromEntries(run.standings.lines.map((l) => [l.playerId, l.value]));
+    expect(pts).toEqual({ cody: 4, marcus: 0, priya: 2 });
+    expect(run.standings.subline).toBe('Cody is the wolf on 4');
+    expect(run.settlement?.entries.map((e) => `${e.from}>${e.to}:${e.amount}`)).toEqual(['marcus>cody:8', 'priya>cody:4', 'marcus>priya:4']);
+    expect(run.settlement?.entries[0]?.reason).toBe('Wolf · Cody 4 pts up on Marcus × 2 pts = 8');
+  });
+
+  it('a stake of zero means points only', () => {
+    const results = withInputs(resultsFrom({ cody: [3], marcus: [5], priya: [5] }), { 1: { mode: 'Alone' } });
+    const run = runGame(makeRound({ players: trio, results }), active('wolf', { stake: 0 }, 'gross'), wolf);
+    expect(run.settlement).toBeNull();
   });
 });

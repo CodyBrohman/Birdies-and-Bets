@@ -1,25 +1,25 @@
-import { Modal, Pressable, View, type ViewStyle } from 'react-native';
+import { Modal, View, type ViewStyle } from 'react-native';
+import { Pressable } from './Pressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReduceMotion, useTheme } from '@/theme';
 import { Text } from './Text';
+import { IconButton } from './IconButton';
+import { Button } from './Button';
 
 export interface SheetProps {
   visible: boolean;
   onClose: () => void;
   title?: string;
   subtitle?: string;
-  /** Label for the 44pt action at the right of the header. Defaults to a close glyph. */
+  /** Label for the pill action at the right of the header. Defaults to a close button. */
   actionLabel?: string;
   children: React.ReactNode;
-  /** Fill most of the screen (summary) instead of sizing to content (tee, config). */
+  /** Fill most of the screen instead of sizing to content. */
   large?: boolean;
   style?: ViewStyle;
 }
 
-/**
- * Bottom sheet with grabber, title row and 44pt Done/close. Slides up over a scrim.
- * A Modal keeps it above the tab bar; presentationDetents come with a dev build later.
- */
+/** Bottom sheet with grabber, title row and a close or Done action. Slides up over a scrim. */
 export function Sheet({ visible, onClose, title, subtitle, actionLabel, children, large, style }: SheetProps) {
   const { c, e, radius, space } = useTheme();
   const insets = useSafeAreaInsets();
@@ -31,11 +31,11 @@ export function Sheet({ visible, onClose, title, subtitle, actionLabel, children
         <View
           style={[
             {
-              backgroundColor: c.surfaceRaised,
-              borderTopLeftRadius: radius.xl,
-              borderTopRightRadius: radius.xl,
+              backgroundColor: c.surface,
+              borderTopLeftRadius: radius.sheet,
+              borderTopRightRadius: radius.sheet,
               paddingTop: space[2],
-              paddingHorizontal: space[4],
+              paddingHorizontal: space[5],
               paddingBottom: Math.max(insets.bottom, space[4]),
               maxHeight: large ? '92%' : '80%',
               minHeight: large ? '85%' : undefined,
@@ -44,7 +44,7 @@ export function Sheet({ visible, onClose, title, subtitle, actionLabel, children
             style,
           ]}
         >
-          <View style={{ alignSelf: 'center', width: 36, height: 5, borderRadius: 999, backgroundColor: c.divider, marginBottom: space[3] }} />
+          <View style={{ alignSelf: 'center', width: 36, height: 5, borderRadius: radius.pill, backgroundColor: c.dividerSoft, marginBottom: space[3] }} />
           {title ? (
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space[2], marginBottom: space[3] }}>
               <View style={{ flex: 1 }}>
@@ -55,30 +55,7 @@ export function Sheet({ visible, onClose, title, subtitle, actionLabel, children
                   </Text>
                 ) : null}
               </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={actionLabel ?? 'Close'}
-                onPress={onClose}
-                style={({ pressed }) => ({
-                  minWidth: 44,
-                  height: 44,
-                  paddingHorizontal: actionLabel ? 14 : 0,
-                  borderRadius: radius.md,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: actionLabel ? c.accentTint : pressed ? c.accentTint : 'transparent',
-                  borderWidth: actionLabel ? 1.5 : 0,
-                  borderColor: c.accent,
-                })}
-              >
-                {actionLabel ? (
-                  <Text step="label" tone="accent">
-                    {actionLabel}
-                  </Text>
-                ) : (
-                  <Text step="headline">✕</Text>
-                )}
-              </Pressable>
+              {actionLabel ? <Button label={actionLabel} variant="tinted" size="md" onPress={onClose} /> : <IconButton icon="close" label="Close" onPress={onClose} />}
             </View>
           ) : null}
           {children}

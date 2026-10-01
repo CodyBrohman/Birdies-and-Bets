@@ -139,3 +139,44 @@ export function highest(scores: { playerId: PlayerId; score: number }[]): { play
   const max = Math.max(...scores.map((s) => s.score));
   return scores.filter((s) => s.score === max);
 }
+
+/** Score chips offered on a hole: two under par through five over, never below 1. */
+export function scoreOptions(par: number): number[] {
+  const out: number[] = [];
+  for (let s = par - 2; s <= par + 5; s++) if (s >= 1) out.push(s);
+  return out;
+}
+
+// ---------- Play order (shotgun starts) ----------
+
+/** Holes in the order they are played: rotated so the start hole comes first. Unknown start → unchanged. */
+export function playOrder(holes: Hole[], startHole?: number): Hole[] {
+  if (startHole == null) return holes;
+  const idx = holes.findIndex((h) => h.number === startHole);
+  if (idx <= 0) return holes;
+  return [...holes.slice(idx), ...holes.slice(0, idx)];
+}
+
+/** 1-based position of a hole in the play order; 0 when it is not in play. */
+export function holePosition(order: Hole[], holeNumber: number): number {
+  return order.findIndex((h) => h.number === holeNumber) + 1;
+}
+
+/** The hole played after this one, or null at the end of the round (or when not in play). */
+export function nextHoleNumber(order: Hole[], holeNumber: number): number | null {
+  const pos = holePosition(order, holeNumber);
+  if (pos === 0 || pos >= order.length) return null;
+  return order[pos]!.number;
+}
+
+/** The hole played before this one, or null at the start of the round (or when not in play). */
+export function prevHoleNumber(order: Hole[], holeNumber: number): number | null {
+  const pos = holePosition(order, holeNumber);
+  if (pos <= 1) return null;
+  return order[pos - 2]!.number;
+}
+
+/** Number of holes in play that have at least one score. */
+export function holesPlayed(results: HoleResult[], order: Hole[]): number {
+  return order.filter((h) => results.some((r) => r.holeNumber === h.number && Object.keys(r.scores).length > 0)).length;
+}

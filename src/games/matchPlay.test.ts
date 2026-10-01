@@ -52,3 +52,43 @@ describe('Match Play', () => {
     expect(run.settlement).toBeNull();
   });
 });
+
+describe('Match Play 2 v 2', () => {
+  const teams = (config = {}) => active('match-play', { format: 'teams', teams: ['cody', 'dan'], stake: 5, ...config }, 'gross');
+
+  it('everyone plays in teams; singles still picks two', () => {
+    expect(matchPlay.participantCountFor!({ format: 'teams' })).toBeUndefined();
+    expect(matchPlay.participantCountFor!({ format: 'singles' })).toBe(2);
+    expect(matchPlay.participantCountFor!({})).toBe(2);
+  });
+
+  it('scores best ball per side through six', () => {
+    // A best: 3 3 4 5 5 3 · B best: 6 6 5 5 5 4 → a a a half half a
+    const run = runGame(makeRound(), teams(), matchPlay);
+    expect(run.standings.headline).toBe('Cody & Dan 4 up thru 6');
+    expect(run.standings.subline).toBe('Cody & Dan vs Marcus & Priya · hole 7 next');
+    expect(run.standings.progression!.slice(0, 6).map((c) => c.tone)).toEqual(['a', 'a', 'a', 'half', 'half', 'a']);
+  });
+
+  it('a side with no score loses the hole; a partner pick-up is ignored', () => {
+    const results = resultsFrom({ cody: [null, null], dan: [4, null], marcus: [4, 4], priya: [null, null] });
+    const run = runGame(makeRound({ results }), teams(), matchPlay);
+    expect(run.standings.progression!.slice(0, 2).map((c) => c.tone)).toEqual(['half', 'b']);
+  });
+
+  it('closes out and each loser pays the winner opposite', () => {
+    const results = resultsFrom({ cody: Array(12).fill(4), dan: Array(12).fill(4), marcus: Array(12).fill(5), priya: Array(12).fill(5) });
+    const run = runGame(makeRound({ results }), teams(), matchPlay);
+    expect(run.standings.headline).toBe('Cody & Dan won 10&8');
+    expect(run.settlement?.entries).toEqual([
+      { from: 'marcus', to: 'cody', amount: 5, reason: 'Match Play · Cody & Dan won 10&8 = 5' },
+      { from: 'priya', to: 'dan', amount: 5, reason: 'Match Play · Cody & Dan won 10&8 = 5' },
+    ]);
+  });
+
+  it('waits for the teams to be picked', () => {
+    const run = runGame(makeRound(), active('match-play', { format: 'teams', teams: ['cody'] }, 'gross'), matchPlay);
+    expect(run.standings.headline).toBe('Pick the teams');
+    expect(run.settlement).toBeNull();
+  });
+});
