@@ -1,6 +1,6 @@
 import '../../global.css';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Platform, View } from 'react-native';
+import { Platform, View, useWindowDimensions } from 'react-native';
 import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -102,11 +102,13 @@ export default function RootLayout() {
 
 /**
  * Dev-only: on web, render inside a 402×874 iPhone-sized frame so browser previews match the
- * mockup frame. On iOS this is a passthrough.
+ * mockup frame. On iOS and in phone-sized windows this is a passthrough.
  */
 function PhoneFrame({ children }: { children: ReactNode }) {
   const { c } = useTheme();
-  if (Platform.OS !== 'web') return <>{children}</>;
+  const { width } = useWindowDimensions();
+  // Native, or a phone-sized browser (real mobile web, screenshot capture): no frame.
+  if (Platform.OS !== 'web' || width < 500) return <>{children}</>;
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: c.scrim }}>
       <View

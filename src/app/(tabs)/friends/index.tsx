@@ -66,7 +66,7 @@ export default function FriendsScreen() {
         {live ? <RoundCard round={live} status="Playing now" when={`Hole ${live.currentHole} · in play`} primary={{ label: 'Open round', onPress: () => router.push('/round/play') }} /> : null}
         {!live && draftCourse && draftPlayers.some((p) => p.name.trim()) ? (
           <CircleCard
-            names={draftPlayers.filter((p) => p.name.trim()).map((p) => p.name)}
+            names={draftPlayers.filter((p) => p.name.trim() && (!me || p.profileId !== me.id)).map((p) => p.name)}
             status="Coming up"
             dot="gold"
             course={draftCourse.name}
