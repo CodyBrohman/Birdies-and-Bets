@@ -77,8 +77,8 @@
     "test:screens": "jest src/test/screens",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
-    "publish:preview": "eas update --branch preview --platform ios --environment preview --non-interactive --message",
-    "publish:production": "eas update --branch production --platform ios --environment production --non-interactive --message"
+    "publish:preview": "node scripts/publish.mjs preview",
+    "publish:production": "node scripts/publish.mjs production"
   },
   "private": true,
   "jest": {

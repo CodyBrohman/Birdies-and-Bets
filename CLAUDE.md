@@ -92,6 +92,9 @@ The 2026-10-01 redesign matches the owner's ten reference mockups. Tokens in `sr
 ## Commands
 `npm start` · `npm test` · `npm run test:screens` · `npm run typecheck`
 
+OTA updates: `npm run publish:preview -- "what changed"` (or `publish:production`). It publishes, then uploads the
+source maps to Sentry. Builds upload them by themselves (preview and production profiles).
+
 ## Builds
 - Expo Go: `npm start` (AsyncStorage backend, no MMKV).
 - Development build (MMKV, dev client): `npx eas build --profile development --platform ios` then `npx expo start --dev-client`.
