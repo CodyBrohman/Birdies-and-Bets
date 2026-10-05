@@ -17,9 +17,9 @@ import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono/500Me
 import { JetBrainsMono_700Bold } from '@expo-google-fonts/jetbrains-mono/700Bold';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
-import { hydrateThemePreference, migrate, storage, useCourseStore, useHistoryStore, usePreferences, useProfileStore, useRoundStore } from '@/store';
+import { hydrateThemePreference, migrate, storage, useAuthStore, useCourseStore, useHistoryStore, usePreferences, useProfileStore, useRoundStore } from '@/store';
 import { Button, Text } from '@/components/ui';
-import { captureError, initTelemetry, withCrashReporting } from '@/services';
+import { captureError, initAuth, initTelemetry, withCrashReporting } from '@/services';
 
 void SplashScreen.preventAutoHideAsync();
 // Before the first render so early crashes are caught; nothing is sent until preferences load and allow it.
@@ -74,7 +74,17 @@ function RootLayout() {
     };
   }, [hydrateRound, hydrateCourses, hydrateHistory, hydratePreferences, hydrateProfiles]);
 
-  const ready = (fontsLoaded || !!fontError) && migrated && roundHydrated && courseHydrated && historyHydrated && profilesHydrated;
+  const hydrated = migrated && roundHydrated && courseHydrated && historyHydrated && profilesHydrated;
+  const authStatus = useAuthStore((s) => s.status);
+  const finishingSignIn = useAuthStore((s) => s.finishing);
+  // Accounts start once local data is loaded, so the first sync sees everything already on this phone.
+  useEffect(() => {
+    if (hydrated) void initAuth();
+  }, [hydrated]);
+
+  const ready = (fontsLoaded || !!fontError) && hydrated && authStatus !== 'loading';
+  // 'disabled' = a local-only build with no backend keys: everything open, as before accounts.
+  const signedIn = (authStatus === 'signed-in' || authStatus === 'disabled') && !finishingSignIn;
 
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync();
@@ -94,11 +104,17 @@ function RootLayout() {
             contentStyle: { backgroundColor: c.surface },
           }}
         >
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
-          <Stack.Screen name="new-round" />
-          <Stack.Screen name="round" options={{ gestureEnabled: false }} />
-          <Stack.Screen name="settings" />
+          <Stack.Protected guard={signedIn}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
+            <Stack.Screen name="new-round" />
+            <Stack.Screen name="round" options={{ gestureEnabled: false }} />
+            <Stack.Screen name="settings" />
+          </Stack.Protected>
+          <Stack.Protected guard={!signedIn}>
+            <Stack.Screen name="sign-in" options={{ gestureEnabled: false }} />
+          </Stack.Protected>
+          {/* A shared card opens with or without an account. */}
           <Stack.Screen name="card" />
         </Stack>
       </PhoneFrame>

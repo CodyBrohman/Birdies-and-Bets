@@ -2,19 +2,22 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { ComponentType } from 'react';
 import { renderRouter } from 'expo-router/testing-library';
-import { DEFAULT_PREFERENCES, DEFAULT_SETTINGS, useHistoryStore, usePreferences, useProfileStore, useRoundStore, type Preferences } from '@/store';
+import { DEFAULT_PREFERENCES, DEFAULT_SETTINGS, useAuthStore, useHistoryStore, usePreferences, useProfileStore, useRoundStore, useSyncStatus, type Preferences } from '@/store';
 import { cedarRidge, cody, marcus } from '@/lib/__fixtures__/cedarRidge';
 import type { ActiveGame, GrossScore, Player, Round } from '@/types';
 
 export { cedarRidge, cody, marcus };
 
-/** A clean slate: no round, no draft, default preferences (loaded and onboarded, analytics answered). */
+/** A clean slate: no round, no draft, default preferences (loaded and onboarded, analytics answered), no account. */
 export async function resetStores(): Promise<void> {
   await AsyncStorage.clear();
   useProfileStore.setState({ profiles: [], groups: [] });
   useHistoryStore.setState({ entries: [] });
   useRoundStore.setState({ round: null, undo: [], draft: { course: null, teeBoxId: null, players: [], settings: { ...DEFAULT_SETTINGS } } });
   usePreferences.setState({ ...DEFAULT_PREFERENCES, onboarded: true, analytics: false, meProfileId: undefined, hydrated: true });
+  // Local-only by default (as with no backend keys); account tests sign in explicitly.
+  useAuthStore.setState({ status: 'disabled', finishing: false, userId: undefined, email: undefined, method: undefined });
+  useSyncStatus.setState({ phase: 'idle', pending: 0, lastSyncedAt: undefined, error: undefined });
 }
 
 export function seedPrefs(patch: Partial<Preferences>): void {

@@ -18,6 +18,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // Shared scorecard links (www.birdiesandbets.com/card#…) open in the app; the site serves the matching
     // .well-known/apple-app-site-association. Changing this needs a new native build.
     associatedDomains: ['applinks:www.birdiesandbets.com'],
+    // Accounts: Sign in with Apple (required once an app offers sign-in). Needs a native build.
+    usesAppleSignIn: true,
     infoPlist: {
       UIRequiresFullScreen: true,
       ITSAppUsesNonExemptEncryption: false,
@@ -25,8 +27,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // AsyncStorage/MMKV touch UserDefaults and file timestamps; declare the approved reasons.
     privacyManifests: {
       NSPrivacyTracking: false,
-      // Anonymous crash reports (Sentry, on by default) and opt-in usage counts (Aptabase). Neither is linked to the user or used for tracking.
+      // Account data (linked, app functionality): name, email, user id, user content. Anonymous crash reports (Sentry,
+      // on by default) and opt-in usage counts (Aptabase), not linked. Nothing is used for tracking.
       NSPrivacyCollectedDataTypes: [
+        { NSPrivacyCollectedDataType: 'NSPrivacyCollectedDataTypeName', NSPrivacyCollectedDataTypeLinked: true, NSPrivacyCollectedDataTypeTracking: false, NSPrivacyCollectedDataTypePurposes: ['NSPrivacyCollectedDataTypePurposeAppFunctionality'] },
+        { NSPrivacyCollectedDataType: 'NSPrivacyCollectedDataTypeEmailAddress', NSPrivacyCollectedDataTypeLinked: true, NSPrivacyCollectedDataTypeTracking: false, NSPrivacyCollectedDataTypePurposes: ['NSPrivacyCollectedDataTypePurposeAppFunctionality'] },
+        { NSPrivacyCollectedDataType: 'NSPrivacyCollectedDataTypeUserID', NSPrivacyCollectedDataTypeLinked: true, NSPrivacyCollectedDataTypeTracking: false, NSPrivacyCollectedDataTypePurposes: ['NSPrivacyCollectedDataTypePurposeAppFunctionality'] },
+        { NSPrivacyCollectedDataType: 'NSPrivacyCollectedDataTypeOtherUserContent', NSPrivacyCollectedDataTypeLinked: true, NSPrivacyCollectedDataTypeTracking: false, NSPrivacyCollectedDataTypePurposes: ['NSPrivacyCollectedDataTypePurposeAppFunctionality'] },
         { NSPrivacyCollectedDataType: 'NSPrivacyCollectedDataTypeCrashData', NSPrivacyCollectedDataTypeLinked: false, NSPrivacyCollectedDataTypeTracking: false, NSPrivacyCollectedDataTypePurposes: ['NSPrivacyCollectedDataTypePurposeAppFunctionality'] },
         { NSPrivacyCollectedDataType: 'NSPrivacyCollectedDataTypeProductInteraction', NSPrivacyCollectedDataTypeLinked: false, NSPrivacyCollectedDataTypeTracking: false, NSPrivacyCollectedDataTypePurposes: ['NSPrivacyCollectedDataTypePurposeAnalytics'] },
       ],

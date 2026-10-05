@@ -10,12 +10,12 @@ import { Button, Card, Screen, SectionLabel, Sheet, Text, Toggle } from '@/compo
 import { SetupHeader } from '@/components/SetupHeader';
 import { AllowanceField, FieldRow, StakeLabelField } from '@/components/round/SettingsFields';
 import { useTheme } from '@/theme';
-import { clearAllData, exportBackup, importBackup, SCHEMA_VERSION, storageBackend, usePreferences, useRoundStore } from '@/store';
+import { clearAllData, exportBackup, importBackup, SCHEMA_VERSION, storageBackend, useAuthStore, useMe, usePreferences, useRoundStore, useSyncStatus } from '@/store';
 import { describeBackup, parseBackup, type BackupFile } from '@/lib/backup';
 import { formatShortDate } from '@/lib/format';
-import { PRIVACY_POLICY_URL, track } from '@/services';
+import { deleteAccount, PRIVACY_POLICY_URL, signOut, track } from '@/services';
 
-type Busy = 'export' | 'import' | 'clear' | null;
+type Busy = 'export' | 'import' | 'clear' | 'signout' | 'delete' | null;
 
 /** Feel, new-round defaults, data (back up / restore / clear), privacy choices and what build this is. Opened from Profile. */
 export default function SettingsScreen() {
@@ -33,6 +33,22 @@ export default function SettingsScreen() {
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState<BackupFile | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const auth = useAuthStore();
+  const sync = useSyncStatus();
+  const { me } = useMe();
+
+  const leave = async (kind: 'signout' | 'delete') => {
+    setMessage(null);
+    setBusy(kind);
+    try {
+      await (kind === 'delete' ? deleteAccount() : signOut());
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : 'That did not work. Check your connection and try again.');
+      setBusy(null);
+    }
+  };
 
   const backUp = async () => {
     setMessage(null);
@@ -116,7 +132,26 @@ export default function SettingsScreen() {
     <Screen>
       <SetupHeader title="Settings" fallback="/profile" />
       <ScrollView contentContainerStyle={{ gap: space[3], paddingBottom: space[6] }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <SectionLabel>Feel</SectionLabel>
+        {auth.status === 'signed-in' ? (
+          <>
+            <SectionLabel>Account</SectionLabel>
+            <Card padding="roomy" style={{ gap: space[3] }}>
+              <View style={{ gap: 2 }}>
+                <Text step="bodyStrong">{me?.name ?? 'Signed in'}</Text>
+                <Text step="label" tone="secondary">
+                  {auth.method === 'apple' ? 'Signed in with Apple' : auth.email ? `Signed in as ${auth.email}` : 'Signed in by email'}
+                </Text>
+                <Text step="caption" tone="tertiary" tabular={false} accessibilityLiveRegion="polite">
+                  {syncLine(sync)}
+                </Text>
+              </View>
+              <Button label={busy === 'signout' ? 'Signing out…' : 'Sign out'} variant="secondary" disabled={busy != null} onPress={() => setConfirmSignOut(true)} />
+              <Button label="Delete account" variant="secondary" destructive disabled={busy != null} onPress={() => setConfirmDelete(true)} />
+            </Card>
+          </>
+        ) : null}
+
+        <SectionLabel style={{ marginTop: auth.status === 'signed-in' ? space[3] : 0 }}>Feel</SectionLabel>
         <Card padding="roomy">
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space[4] }}>
             <View style={{ flex: 1, gap: 2 }}>
@@ -150,7 +185,7 @@ export default function SettingsScreen() {
         <Card padding="roomy" variant="outlined">
           <Text step="bodyStrong">Clear all data</Text>
           <Text step="label" tone="secondary" style={{ marginTop: 2, marginBottom: space[3] }}>
-            Rounds, courses and players. Settings stay.
+            {auth.status === 'signed-in' ? 'Rounds, courses and players, here and in your account. Settings stay.' : 'Rounds, courses and players. Settings stay.'}
           </Text>
           <Button label="Clear all data" variant="secondary" destructive disabled={busy != null} onPress={() => setConfirmClear(true)} />
         </Card>
@@ -187,10 +222,26 @@ export default function SettingsScreen() {
         </View>
       </Sheet>
 
+      <Sheet visible={confirmSignOut} onClose={() => setConfirmSignOut(false)} title="Sign out?" subtitle="Your data stays in your account">
+        <View style={{ gap: space[2] }}>
+          <Text tone="secondary">{"Anything not yet synced is sent first. Then this phone's rounds, courses and players are removed; sign back in to get them again."}</Text>
+          <Button label={busy === 'signout' ? 'Signing out…' : 'Sign out'} disabled={busy != null} onPress={() => void leave('signout')} />
+          <Button label="Stay signed in" variant="secondary" onPress={() => setConfirmSignOut(false)} />
+        </View>
+      </Sheet>
+
+      <Sheet visible={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete your account?" subtitle="This cannot be undone">
+        <View style={{ gap: space[2] }}>
+          <Text tone="secondary">Your account and everything saved with it (rounds, history, courses, players and settings) are deleted from our servers and from this phone.</Text>
+          <Button label={busy === 'delete' ? 'Deleting…' : 'Delete my account'} destructive disabled={busy != null} onPress={() => void leave('delete')} />
+          <Button label="Keep my account" variant="secondary" onPress={() => setConfirmDelete(false)} />
+        </View>
+      </Sheet>
+
       <Sheet visible={confirmClear} onClose={() => setConfirmClear(false)} title="Clear all data?" subtitle="This cannot be undone">
         <View style={{ gap: space[2] }}>
           <Text tone="secondary">
-            Every round, course and player on this phone will be deleted.{inProgress ? ' The round in progress will be lost.' : ''} Preferences stay.
+            {auth.status === 'signed-in' ? 'Every round, course and player will be deleted from your account and from every phone you are signed in on.' : 'Every round, course and player on this phone will be deleted.'}{inProgress ? ' The round in progress will be lost.' : ''} Preferences stay.
           </Text>
           <Button label={busy === 'clear' ? 'Clearing…' : 'Delete everything'} disabled={busy != null} onPress={() => void clear()} />
           <Button label="Keep my data" variant="secondary" onPress={() => setConfirmClear(false)} />
@@ -198,6 +249,16 @@ export default function SettingsScreen() {
       </Sheet>
     </Screen>
   );
+}
+
+/** "Synced just now" / "Offline · 3 changes waiting" for the Account card. */
+function syncLine(s: { phase: string; pending: number; lastSyncedAt?: string }): string {
+  if (s.phase === 'syncing') return 'Syncing…';
+  if (s.phase === 'offline') return s.pending ? `Offline · ${s.pending} ${s.pending === 1 ? 'change' : 'changes'} waiting` : 'Offline';
+  if (s.phase === 'error') return s.pending ? `Couldn't sync · ${s.pending} waiting, will retry` : "Couldn't sync, will retry";
+  if (!s.lastSyncedAt) return 'Not synced yet';
+  const mins = Math.round((Date.now() - new Date(s.lastSyncedAt).getTime()) / 60000);
+  return mins < 1 ? 'Synced just now' : mins < 60 ? `Synced ${mins} min ago` : `Synced ${formatShortDate(s.lastSyncedAt)}`;
 }
 
 function ToggleRow({ title, detail, value, onChange }: { title: string; detail: string; value: boolean; onChange: (v: boolean) => void }) {

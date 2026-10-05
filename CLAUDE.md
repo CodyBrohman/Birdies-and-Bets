@@ -18,6 +18,8 @@ Expo SDK 57 · Expo Router · NativeWind 4 · Zustand · TypeScript strict.
 
 ## Hard rules
 - No money movement, no payment links, no "settle up" action. Settlement is display only.
+- Accounts are required once Supabase keys are set: Sign in with Apple, or an emailed code. Without keys the app runs
+  local-only (auth status `disabled`), which is what tests and the Maestro e2e build use.
 - Stakes are abstract "points" by default.
 - A round with zero games must work end to end.
 - Persist the round on every score entry. Offline-first.
@@ -53,6 +55,19 @@ The 2026-10-01 redesign matches the owner's ten reference mockups. Tokens in `sr
 - Events are a fixed typed list (`TelemetryEvents`) of counts and game ids. Never names, scores, course names or free text.
   A new event means updating the privacy policy (website repo) and `docs/store-listing.md` too.
 - Keys: `EXPO_PUBLIC_SENTRY_DSN` and `EXPO_PUBLIC_APTABASE_KEY` (see `.env.example`). Without them nothing is sent.
+
+## Backend (Supabase), phase 1: accounts and sync
+- The schema is `supabase/migrations/0001_init.sql` (re-runnable). Tables `profiles`, `rounds` (history and the round in
+  play, keyed by round id, `status`), `people`, `player_groups`, `courses`, `user_settings`. Each row holds the app's
+  own JSON in `data`, with `updated_at` (phone edit time, used for last-write-wins), `deleted_at` (tombstone) and
+  `synced_at` (server time, used for pulls). RLS: owner only. `delete_my_account()` RPC.
+- `services/sync.ts` watches the stores and diffs snapshots, so stores need no sync code. Changes queue in a persisted
+  outbox, which flushes when debounced, on foreground and when signal returns. Pulls write into the stores with echo
+  suppressed. A new phone pulls first, then uploads what the account lacks. The pure rules are in `lib/sync.ts`.
+- Adding a synced collection means a `TABLES` entry in `services/sync.ts` and a table in a new migration.
+- Auth: `services/auth.ts`, state in `store/authStore.ts`, `app/sign-in.tsx`. The root layout gates with
+  `Stack.Protected`. `finishing` keeps sign-in open through the name step.
+- Phase 2 (shared live rounds) and phase 3 (friends feed) are planned. See the plan notes in `Next items to do.txt`.
 
 ## Card links
 - Sharing a card sends the PNG plus `https://www.birdiesandbets.com/card#v1.<payload>`. The round lives in the fragment,
