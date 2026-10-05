@@ -1,0 +1,71 @@
+# Maestro smoke flow (.maestro/smoke.yaml) on an iOS simulator, on a GitHub-hosted Mac.
+# Free for this public repo. Start it from GitHub → Actions → "e2e iOS smoke" → Run workflow.
+# The app is built in Release, so the JS bundle is embedded and no Metro server is needed.
+name: e2e iOS smoke
+
+on:
+  workflow_dispatch:
+
+jobs:
+  maestro:
+    runs-on: macos-latest
+    timeout-minutes: 75
+    env:
+      SENTRY_DISABLE_AUTO_UPLOAD: 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - run: npm ci
+
+      - name: Generate the iOS project
+        run: npx expo prebuild --platform ios --clean
+
+      - name: Build for the simulator
+        run: |
+          WORKSPACE=$(ls -d ios/*.xcworkspace | head -n 1)
+          SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+          echo "Building $SCHEME"
+          xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO -quiet
+
+      - name: Boot a simulator and install the app
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for r,l in sorted(d.items(), reverse=True) if 'iOS' in r for x in l if x['name'].startswith('iPhone')))")
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          APP=$(ls -d build/Build/Products/Release-iphonesimulator/*.app | head -n 1)
+          xcrun simctl install "$UDID" "$APP"
+
+      - name: Install Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Run the smoke flow
+        run: maestro --device "$UDID" test .maestro/smoke.yaml --format junit --output maestro-report.xml
+
+      - name: Keep the report and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-results
+          path: |
+            maestro-report.xml
+            ~/.maestro/tests/
+          if-no-files-found: ignore

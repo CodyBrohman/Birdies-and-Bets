@@ -174,7 +174,7 @@ export default function BetScreen() {
             </View>
           ) : null}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3], marginTop: space[1] }}>
-            {course ? <Button label="Start this round" variant="hero" size="md" icon="arrow-forward" disabled={!!blocker} onPress={start} /> : <Button label="Pick a course" variant="hero" size="md" icon="arrow-forward" onPress={() => router.navigate('/courses')} />}
+            {course ? <Button label="Start this round" variant="hero" size="md" icon="arrow-forward" disabled={!!blocker} onPress={start} testID="start-round" /> : <Button label="Pick a course" variant="hero" size="md" icon="arrow-forward" onPress={() => router.navigate('/courses')} />}
             {course ? (
               <Pressable accessibilityRole="button" accessibilityLabel="Change course" onPress={() => router.navigate('/courses')} hitSlop={10} style={({ pressed }) => ({ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
                 <Ionicons name="sync-outline" size={22} color={c.onHero} />
@@ -214,7 +214,7 @@ export default function BetScreen() {
           Bring your crew
         </SectionLabel>
         {crew.length === 0 ? (
-          <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }} onPress={() => setAddOpen(true)} accessibilityLabel="Add your first friend">
+          <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }} onPress={() => setAddOpen(true)} accessibilityLabel="Add your first friend" testID="add-first-friend">
             <IconTile icon="person-add-outline" />
             <View style={{ flex: 1 }}>
               <Text step="title">Add the people you play with</Text>

@@ -143,7 +143,7 @@ export default function PlayScreen() {
     <Screen>
       {/* Top bar */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: space[2], paddingBottom: space[1] }}>
-        <IconButton icon="chevron-back" label="Home" variant="plain" onPress={() => router.navigate('/')} />
+        <IconButton icon="chevron-back" label="Home" variant="plain" onPress={() => router.navigate('/')} testID="round-home" />
         <View style={{ flex: 1, alignItems: 'center' }}>
           <LivePill label="Round in progress" live style={{ alignSelf: 'center', backgroundColor: 'transparent' }} />
         </View>
@@ -187,7 +187,7 @@ export default function PlayScreen() {
                 </Pressable>
               ) : null}
             </View>
-            <View accessible accessibilityLabel={`Hole ${holeNumber}`} style={{ width: 58, height: 58, borderRadius: radius.lg, backgroundColor: c.goldFill, alignItems: 'center', justifyContent: 'center' }}>
+            <View accessible accessibilityLabel={`Hole ${holeNumber}`} testID="current-hole" style={{ width: 58, height: 58, borderRadius: radius.lg, backgroundColor: c.goldFill, alignItems: 'center', justifyContent: 'center' }}>
               <Text step="total" style={{ color: c.textPrimary, fontSize: 22, lineHeight: 26 }}>
                 {String(holeNumber).padStart(2, '0')}
               </Text>
@@ -315,7 +315,7 @@ export default function PlayScreen() {
                   onAccessibilityAction={(e) => step(p.id, e.nativeEvent.actionName === 'increment' ? 1 : -1)}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: space[2] }}
                 >
-                  <StepButton icon="remove" label={`${p.name} one fewer`} disabled={saved != null && saved <= 1} onPress={() => step(p.id, -1)} />
+                  <StepButton icon="remove" label={`${p.name} one fewer`} disabled={saved != null && saved <= 1} onPress={() => step(p.id, -1)} testID={`stepper-minus-${i}`} />
                   <View style={{ minWidth: 40, alignItems: 'center' }}>
                     <Text step="total" style={{ fontSize: 20, lineHeight: 24, color: saved === undefined ? c.textTertiary : c.textPrimary }}>
                       {shown}
@@ -324,7 +324,7 @@ export default function PlayScreen() {
                       Strokes
                     </Text>
                   </View>
-                  <StepButton icon="add" label={`${p.name} one more`} accent disabled={saved != null && saved >= maxScore} onPress={() => step(p.id, 1)} />
+                  <StepButton icon="add" label={`${p.name} one more`} accent disabled={saved != null && saved >= maxScore} onPress={() => step(p.id, 1)} testID={`stepper-plus-${i}`} />
                 </View>
               </View>
             );
@@ -386,7 +386,7 @@ export default function PlayScreen() {
         {/* Previous / Next */}
         <View style={{ flexDirection: 'row', gap: space[3], marginTop: space[4] }}>
           <Button label="Previous" variant="secondary" icon="arrow-back" disabled={prev == null} onPress={() => prev != null && setCurrentHole(prev)} style={{ flex: 1 }} />
-          <Button label={next == null ? 'Finish round' : 'Next hole'} icon={next == null ? 'flag' : 'arrow-forward'} onPress={goNext} style={{ flex: 1.4 }} />
+          <Button label={next == null ? 'Finish round' : 'Next hole'} icon={next == null ? 'flag' : 'arrow-forward'} onPress={goNext} style={{ flex: 1.4 }} testID="next-hole" />
         </View>
       </ScrollView>
 
@@ -427,12 +427,13 @@ function whenLabel(round: Round): string {
 }
 
 /** The mockup's 40pt rounded-square − / + buttons (48pt touch target with hitSlop). */
-function StepButton({ icon, label, accent, disabled, onPress }: { icon: 'add' | 'remove'; label: string; accent?: boolean; disabled?: boolean; onPress: () => void }) {
+function StepButton({ icon, label, accent, disabled, onPress, testID }: { icon: 'add' | 'remove'; label: string; accent?: boolean; disabled?: boolean; onPress: () => void; testID?: string }) {
   const { c, radius } = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
+      testID={testID}
       disabled={disabled}
       onPress={onPress}
       hitSlop={4}

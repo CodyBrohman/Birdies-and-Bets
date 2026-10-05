@@ -54,8 +54,18 @@ The 2026-10-01 redesign matches the owner's ten reference mockups. Tokens in `sr
   A new event means updating the privacy policy (website repo) and `docs/store-listing.md` too.
 - Keys: `EXPO_PUBLIC_SENTRY_DSN` and `EXPO_PUBLIC_APTABASE_KEY` (see `.env.example`). Without them nothing is sent.
 
+## Tests
+- Logic tests sit next to their code (`*.test.ts`). Screen tests live in `src/test/screens/*.test.tsx`, never under
+  `src/app/`, because Expo Router would treat them as routes.
+- Screen tests render real screens with `renderScreens(routes, url)` from `src/test/screen.tsx` (Expo Router's
+  `renderRouter`). Seed state with `seedRound` / `seedPrefs` and call `resetStores` in `beforeEach`.
+- Query by role and accessibility label, as VoiceOver would. Use `testID` only for the Maestro flow (`.maestro/`).
+- Testing Library stays on v13: Expo Router's `renderRouter` calls the sync `render`, which v14 made async.
+- CI: `.github/workflows/ci.yml` runs typecheck and Jest on push and PR. The Maestro smoke flow runs on demand with
+  `.github/workflows/e2e-ios.yml` (GitHub macOS, free for this public repo). See `.maestro/README.md`.
+
 ## Commands
-`npm start` · `npm test` · `npm run typecheck`
+`npm start` · `npm test` · `npm run test:screens` · `npm run typecheck`
 
 ## Builds
 - Expo Go: `npm start` (AsyncStorage backend, no MMKV).

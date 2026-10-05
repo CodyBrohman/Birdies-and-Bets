@@ -1,0 +1,80 @@
+# Smoke test: a fresh install can start a round, score a hole and get back to it from Home.
+# Run in the cloud: npx eas workflow:run .eas/workflows/e2e-ios.yml   (see .maestro/README.md)
+appId: com.birdiesandbets.app
+name: Smoke - start a round, score a hole, come back
+---
+- launchApp:
+    clearState: true
+
+# First launch shows the intro; skipping it also answers "no" to usage analytics.
+- extendedWaitUntil:
+    visible:
+      id: onboarding-skip
+    timeout: 20000
+- tapOn:
+    id: onboarding-skip
+
+# Pick the bundled course (no network needed).
+- tapOn:
+    id: tab-courses
+- scrollUntilVisible:
+    element:
+      text: Cedar Ridge Golf Club
+- tapOn: Cedar Ridge Golf Club
+
+# Round builder: add one player, then start.
+- scrollUntilVisible:
+    element:
+      id: add-first-friend
+- tapOn:
+    id: add-first-friend
+- tapOn:
+    id: friend-name
+- inputText: Smoke
+- tapOn:
+    id: save-friend
+- scrollUntilVisible:
+    element:
+      id: start-round
+    direction: UP
+- tapOn:
+    id: start-round
+
+# Scorecard: the first + fills in par, the second adds a stroke; Next moves to hole 2.
+- extendedWaitUntil:
+    visible: Enter scores
+    timeout: 10000
+- assertVisible:
+    id: current-hole
+    text: Hole 1
+- scrollUntilVisible:
+    element:
+      id: stepper-plus-0
+- tapOn:
+    id: stepper-plus-0
+- tapOn:
+    id: stepper-plus-0
+- scrollUntilVisible:
+    element:
+      id: next-hole
+- tapOn:
+    id: next-hole
+- scrollUntilVisible:
+    element:
+      id: current-hole
+    direction: UP
+- assertVisible:
+    id: current-hole
+    text: Hole 2
+
+# Home shows the round in progress and takes you back to it.
+- tapOn:
+    id: round-home
+- extendedWaitUntil:
+    visible: Back to your round
+    timeout: 10000
+- assertVisible: Keep the good shots coming.
+- tapOn: Back to your round
+- assertVisible:
+    id: current-hole
+    text: Hole 2

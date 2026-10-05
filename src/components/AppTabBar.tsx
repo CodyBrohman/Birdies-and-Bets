@@ -33,6 +33,7 @@ export function TabBar({ tabs, active, onPress }: TabBarProps) {
             key={tab.name}
             accessibilityRole="tab"
             accessibilityLabel={tab.label}
+            testID={`tab-${tab.name}`}
             accessibilityState={{ selected: on }}
             onPress={() => {
               if (!on) haptic.selection();

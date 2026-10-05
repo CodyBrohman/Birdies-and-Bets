@@ -1,0 +1,29 @@
+# Maestro smoke test on an iOS simulator build, run by EAS (no Mac needed).
+#   npx eas workflow:run .eas/workflows/e2e-ios.yml
+# Needs a paid Expo plan (Maestro jobs are not on the free tier). Until then the same flow runs free on
+# GitHub Actions: .github/workflows/e2e-ios.yml.
+# Manual only: each run is a simulator build plus a Maestro job on your EAS plan.
+# To run it on every push to main, add:
+#   on:
+#     push:
+#       branches: ['main']
+name: e2e iOS smoke
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build_ios_simulator:
+    name: Build iOS simulator app
+    type: build
+    params:
+      platform: ios
+      profile: e2e-test
+
+  maestro_smoke:
+    name: Maestro smoke flow
+    needs: [build_ios_simulator]
+    type: maestro
+    params:
+      build_id: ${{ needs.build_ios_simulator.outputs.build_id }}
+      flow_path: ['.maestro/smoke.yaml']

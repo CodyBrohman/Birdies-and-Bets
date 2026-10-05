@@ -27,3 +27,9 @@ jest.mock('expo-file-system', () => {
   }
   return { File: MockFile, Paths: { cache: 'file:///cache' } };
 });
+
+// Screen tests (src/test/screens) render real screens: storage, safe areas, keep-awake and updates need stand-ins.
+jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
+jest.mock('react-native-safe-area-context', () => require('react-native-safe-area-context/jest/mock').default);
+jest.mock('expo-keep-awake', () => ({ useKeepAwake: jest.fn(), activateKeepAwakeAsync: jest.fn(), deactivateKeepAwake: jest.fn() }));
+jest.mock('expo-updates', () => ({ channel: 'test', updateId: null, isEmbeddedLaunch: true }));

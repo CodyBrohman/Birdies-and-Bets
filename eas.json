@@ -42,6 +42,17 @@
       "env": {
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
+    },
+    "e2e-test": {
+      "withoutCredentials": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
+      "channel": "e2e-test",
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
     }
   },
   "submit": {
