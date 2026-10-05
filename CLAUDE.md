@@ -54,6 +54,16 @@ The 2026-10-01 redesign matches the owner's ten reference mockups. Tokens in `sr
   A new event means updating the privacy policy (website repo) and `docs/store-listing.md` too.
 - Keys: `EXPO_PUBLIC_SENTRY_DSN` and `EXPO_PUBLIC_APTABASE_KEY` (see `.env.example`). Without them nothing is sent.
 
+## Card links
+- Sharing a card sends the PNG plus `https://www.birdiesandbets.com/card#v1.<payload>`. The round lives in the fragment,
+  so no server sees it. The format is `src/lib/cardLink.ts` (`CardData` v1).
+- The website decodes the same format in `../website/assets/js/card.js`. A format change means adding v2 and updating
+  both decoders. Never change v1 in place, because links already sent must keep working.
+- In the app, `src/app/+native-intent.tsx` rewrites `/card#…` to `/card?d=…` for `app/card.tsx`, which is read-only and
+  saves nothing. Universal links need `ios.associatedDomains` (a native build) plus the site's
+  `.well-known/apple-app-site-association`.
+- Rating prompt: `services/rating.ts`, asked once after the third finished round (the `reviewPrompted` preference).
+
 ## Tests
 - Logic tests sit next to their code (`*.test.ts`). Screen tests live in `src/test/screens/*.test.tsx`, never under
   `src/app/`, because Expo Router would treat them as routes.

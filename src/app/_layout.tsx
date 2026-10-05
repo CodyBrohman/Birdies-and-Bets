@@ -99,6 +99,7 @@ function RootLayout() {
           <Stack.Screen name="new-round" />
           <Stack.Screen name="round" options={{ gestureEnabled: false }} />
           <Stack.Screen name="settings" />
+          <Stack.Screen name="card" />
         </Stack>
       </PhoneFrame>
     </SafeAreaProvider>

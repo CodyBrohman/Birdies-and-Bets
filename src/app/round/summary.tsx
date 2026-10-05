@@ -11,7 +11,7 @@ import { formatToPar, joinMeta, plural } from '@/lib/format';
 import { holesPlayed, totals } from '@/lib/scoring';
 import { netSettlements } from '@/lib/settlement';
 import { summarizeRound } from '@/lib/history';
-import { trackRoundFinished } from '@/services';
+import { maybeAskForReview, trackRoundFinished } from '@/services';
 
 /**
  * Round summary. Final gross and net, strokes received, per-game results, and the settlement netted
@@ -49,6 +49,9 @@ export default function SummaryScreen() {
     trackRoundFinished(completed);
     discardRound();
     router.replace('/');
+    // After the third finished round, ask once for a rating, over Home rather than this closing screen.
+    const finished = useHistoryStore.getState().entries.length;
+    setTimeout(() => void maybeAskForReview(finished), 900);
   };
 
   return (

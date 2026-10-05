@@ -15,6 +15,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     bundleIdentifier: 'com.birdiesandbets.app',
     supportsTablet: false,
+    // Shared scorecard links (www.birdiesandbets.com/card#…) open in the app; the site serves the matching
+    // .well-known/apple-app-site-association. Changing this needs a new native build.
+    associatedDomains: ['applinks:www.birdiesandbets.com'],
     infoPlist: {
       UIRequiresFullScreen: true,
       ITSAppUsesNonExemptEncryption: false,

@@ -40,6 +40,12 @@ describe('privacy preferences', () => {
     expect([p.crashReports, p.analytics]).toEqual([false, false]);
   });
 
+  it('remembers the rating prompt only when it was asked', () => {
+    expect(sanitizePreferences({}).reviewPrompted).toBeUndefined();
+    expect(sanitizePreferences({ reviewPrompted: 'yes' }).reviewPrompted).toBeUndefined();
+    expect(sanitizePreferences({ reviewPrompted: true }).reviewPrompted).toBe(true);
+  });
+
   it('persists the answers', async () => {
     await usePreferences.getState().hydrate();
     usePreferences.getState().update({ crashReports: false, analytics: true });

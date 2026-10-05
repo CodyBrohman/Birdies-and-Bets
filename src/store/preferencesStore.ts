@@ -24,6 +24,8 @@ export interface Preferences {
   crashReports: boolean;
   /** Opt-in anonymous usage counts. Undefined = not asked yet; only `true` sends anything. */
   analytics?: boolean;
+  /** The App Store rating prompt has been asked for (after the third finished round). Never asked twice. */
+  reviewPrompted?: boolean;
 }
 
 /** The 14-club set the Profile bag picker offers, in bag order. */
@@ -64,6 +66,7 @@ export function sanitizePreferences(v: unknown): Preferences {
     onboarded: o.onboarded === true,
     crashReports: typeof o.crashReports === 'boolean' ? o.crashReports : DEFAULT_PREFERENCES.crashReports,
     ...(typeof o.analytics === 'boolean' ? { analytics: o.analytics } : {}),
+    ...(o.reviewPrompted === true ? { reviewPrompted: true } : {}),
     ...(typeof o.meProfileId === 'string' && o.meProfileId ? { meProfileId: o.meProfileId } : {}),
     ...(typeof o.homeArea === 'string' && o.homeArea.trim() ? { homeArea: o.homeArea.trim().slice(0, MAX_AREA) } : {}),
     ...(typeof o.photoUri === 'string' && o.photoUri ? { photoUri: o.photoUri } : {}),
@@ -81,12 +84,12 @@ interface PreferencesState extends Preferences {
 export const usePreferences = create<PreferencesState>()((set, get) => {
   const apply = (p: Preferences) => {
     // Spread merges, so absent optional fields must be written explicitly to clear them.
-    set({ ...p, meProfileId: p.meProfileId, homeArea: p.homeArea, photoUri: p.photoUri, bag: p.bag, analytics: p.analytics });
+    set({ ...p, meProfileId: p.meProfileId, homeArea: p.homeArea, photoUri: p.photoUri, bag: p.bag, analytics: p.analytics, reviewPrompted: p.reviewPrompted });
     useHapticsPreference.getState().setEnabled(p.haptics);
   };
   const current = (): Preferences => {
-    const { haptics, defaultStakeLabel, defaultAllowance, onboarded, meProfileId, homeArea, photoUri, bag, crashReports, analytics } = get();
-    return { haptics, defaultStakeLabel, defaultAllowance, onboarded, crashReports, ...(analytics !== undefined ? { analytics } : {}), ...(meProfileId ? { meProfileId } : {}), ...(homeArea ? { homeArea } : {}), ...(photoUri ? { photoUri } : {}), ...(bag ? { bag } : {}) };
+    const { haptics, defaultStakeLabel, defaultAllowance, onboarded, meProfileId, homeArea, photoUri, bag, crashReports, analytics, reviewPrompted } = get();
+    return { haptics, defaultStakeLabel, defaultAllowance, onboarded, crashReports, ...(analytics !== undefined ? { analytics } : {}), ...(reviewPrompted ? { reviewPrompted } : {}), ...(meProfileId ? { meProfileId } : {}), ...(homeArea ? { homeArea } : {}), ...(photoUri ? { photoUri } : {}), ...(bag ? { bag } : {}) };
   };
   return {
     ...DEFAULT_PREFERENCES,
