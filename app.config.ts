@@ -59,8 +59,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         backgroundColor: '#F5F4EC',
       },
     ],
-    // Source maps and debug symbols upload at build time when SENTRY_AUTH_TOKEN is set (SENTRY_DISABLE_AUTO_UPLOAD skips it).
-    ['@sentry/react-native', { organization: process.env.SENTRY_ORG, project: process.env.SENTRY_PROJECT }],
+    // Source maps and debug symbols upload at build time when SENTRY_AUTH_TOKEN is set (SENTRY_DISABLE_AUTO_UPLOAD skips
+    // it). Org and project come from SENTRY_ORG / SENTRY_PROJECT at upload time, not from here: anything env-dependent
+    // in this config changes the runtime fingerprint between this PC and EAS, and the build then fails.
+    '@sentry/react-native',
     ['expo-image-picker', { photosPermission: 'Birdies & Bets uses a photo you pick as your profile picture. It stays on this device.', cameraPermission: false, microphonePermission: false }],
   ],
   experiments: {
