@@ -33,3 +33,4 @@ jest.mock('@react-native-async-storage/async-storage', () => require('@react-nat
 jest.mock('react-native-safe-area-context', () => require('react-native-safe-area-context/jest/mock').default);
 jest.mock('expo-keep-awake', () => ({ useKeepAwake: jest.fn(), activateKeepAwakeAsync: jest.fn(), deactivateKeepAwake: jest.fn() }));
 jest.mock('expo-updates', () => ({ channel: 'test', updateId: null, isEmbeddedLaunch: true }));
+jest.mock('@react-native-community/netinfo', () => require('@react-native-community/netinfo/jest/netinfo-mock.js'));

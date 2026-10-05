@@ -3,6 +3,7 @@ export * from './courseStore';
 export * from './historyStore';
 export * from './themeStore';
 export * from './preferencesStore';
+export * from './authStore';
 export * from './profileStore';
 export * from './insights';
 export * from './backup';
