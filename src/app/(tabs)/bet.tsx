@@ -106,7 +106,7 @@ export default function BetScreen() {
     return m && !fitReason(m, players.length);
   });
 
-  const blocker = !course ? 'Pick a course to get started.' : players.length < MIN_PLAYERS ? 'Add at least two players.' : incomplete.length ? `Pick players for ${incomplete.map((g) => catalog.find((m) => m.id === g.gameId)?.name).join(', ')}.` : null;
+  const blocker = !course ? 'Pick a course to get started.' : players.length < MIN_PLAYERS ? 'Add yourself to the round.' : incomplete.length ? `Pick players for ${incomplete.map((g) => catalog.find((m) => m.id === g.gameId)?.name).join(', ')}.` : null;
 
   const start = () => {
     if (blocker) return;

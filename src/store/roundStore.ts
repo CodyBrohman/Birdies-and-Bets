@@ -7,7 +7,7 @@ import { storage, STORAGE_KEYS } from './storage';
 import { draftDefaults } from './preferencesStore';
 import { useProfileStore } from './profileStore';
 
-export const MIN_PLAYERS = 2;
+export const MIN_PLAYERS = 1;
 export const MAX_PLAYERS = 4;
 
 export interface Draft {

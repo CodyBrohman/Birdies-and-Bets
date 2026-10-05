@@ -77,11 +77,13 @@ describe('roundStore', () => {
     expect(useRoundStore.getState().round?.currentHole).toBe(7);
   });
 
-  it('needs two to four named players', () => {
+  it('starts with one to four named players (a solo round is fine)', () => {
     const s = useRoundStore.getState();
     s.setDraftCourse(cedarRidge, 'blue');
     s.setDraftPlayers([cody]);
-    expect(useRoundStore.getState().startRound([])).toBeNull();
+    expect(useRoundStore.getState().startRound([])?.players).toHaveLength(1);
+    useRoundStore.getState().discardRound();
+    s.setDraftCourse(cedarRidge, 'blue');
     s.setDraftPlayers([cody, marcus, { ...cody, id: 'a', name: 'A' }, { ...cody, id: 'b', name: 'B' }, { ...cody, id: 'c', name: 'C' }]);
     expect(useRoundStore.getState().startRound([])).toBeNull();
   });

@@ -1,11 +1,10 @@
 import { useEffect } from 'react';
-import { Tabs, useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useTheme } from '@/theme';
 import { useRoundStore } from '@/store';
-import { RoundTabBar } from '@/components/RoundTabBar';
 
-/** The round: three peers the user moves between constantly. Hole · Card · Games. Screen stays awake. */
+/** The round: one scrolling scorecard, with game standings and the summary pushed on top. Screen stays awake. */
 export default function RoundLayout() {
   const { c } = useTheme();
   const router = useRouter();
@@ -19,17 +18,11 @@ export default function RoundLayout() {
   if (!hasRound) return null;
 
   return (
-    <Tabs
-      tabBar={(props) => <RoundTabBar {...props} />}
-      screenOptions={{
-        headerShown: false,
-        sceneStyle: { backgroundColor: c.surface },
-      }}
-    >
-      <Tabs.Screen name="play" options={{ title: 'Hole' }} />
-      <Tabs.Screen name="card" options={{ title: 'Card' }} />
-      <Tabs.Screen name="standings" options={{ title: 'Games' }} />
-      <Tabs.Screen name="summary" options={{ href: null }} />
-    </Tabs>
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.surface } }}>
+      <Stack.Screen name="play" />
+      <Stack.Screen name="standings" />
+      <Stack.Screen name="summary" />
+      <Stack.Screen name="card" />
+    </Stack>
   );
 }

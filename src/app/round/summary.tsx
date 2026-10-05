@@ -51,7 +51,7 @@ export default function SummaryScreen() {
 
   return (
     <Screen>
-      <SetupHeader title="Round summary" subtitle={joinMeta([round.course.name, tee ? `${tee.name} tees` : null, `${played} of ${round.settings.holeCount} holes`])} onBack={() => router.navigate('/round/card')} />
+      <SetupHeader title="Round summary" subtitle={joinMeta([round.course.name, tee ? `${tee.name} tees` : null, `${played} of ${round.settings.holeCount} holes`])} onBack={() => router.navigate('/round/play')} />
       <ScrollView contentContainerStyle={{ gap: space[3], paddingBottom: space[4] }} showsVerticalScrollIndicator={false}>
         <View style={{ flexDirection: 'row', gap: space[2] }}>
           <StatTile label="Holes" value={String(played)} sub={`of ${round.settings.holeCount}`} />
@@ -83,7 +83,7 @@ export default function SummaryScreen() {
       <Footer>
         <Button label="Done" onPress={done} />
         <ShareCardButton round={round} holes={holes} handicaps={handicaps} results={results} />
-        <Button label="Back to the card" variant="secondary" onPress={() => router.navigate('/round/card')} />
+        <Button label="Back to the card" variant="secondary" onPress={() => router.navigate('/round/play')} />
       </Footer>
     </Screen>
   );

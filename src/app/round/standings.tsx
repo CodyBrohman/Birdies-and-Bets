@@ -1,6 +1,7 @@
-import { ScrollView, View } from 'react-native';
+import { ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Screen, Text } from '@/components/ui';
+import { Button, Screen } from '@/components/ui';
+import { SetupHeader } from '@/components/SetupHeader';
 import { EmptyState } from '@/components/EmptyState';
 import { StandingsCard } from '@/components/games';
 import { useTheme } from '@/theme';
@@ -19,13 +20,8 @@ export default function StandingsScreen() {
   const thru = holesPlayed(round.holeResults, order);
 
   return (
-    <Screen noBottomInset>
-      <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingTop: space[3], paddingBottom: space[3] }}>
-        <Text step="display">Standings</Text>
-        <Text step="label" tone="tertiary" tabular>
-          {thru ? `Thru ${thru}` : `Hole ${order[0]?.number ?? 1} next`}
-        </Text>
-      </View>
+    <Screen>
+      <SetupHeader title="Standings" meta={thru ? `Thru ${thru}` : `Hole ${order[0]?.number ?? 1} next`} fallback="/round/play" />
 
       {runs.length === 0 ? (
         <EmptyState fill icon="trophy-outline" title="Just a scorecard so far." action={{ label: 'Add a game', onPress: () => router.push('/new-round/games?mode=edit') }} />

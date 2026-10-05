@@ -7,7 +7,7 @@ import { BrandMark } from '@/components/BrandMark';
 import { HERO_PHOTO, coursePhoto } from '@/components/courseArt';
 import { useTheme } from '@/theme';
 import { useHistoryInsights, usePlayOrder, usePreferences, useRoundStore, useMe } from '@/store';
-import { holePosition } from '@/lib/scoring';
+import { holePosition, holesPlayed } from '@/lib/scoring';
 import { formatIndex, formatShortDate, formatToPar, joinMeta, plural } from '@/lib/format';
 import { findMe, formatNet, type RoundInsight } from '@/lib/stats';
 import { stakeUnit } from '@/lib/history';
@@ -16,7 +16,7 @@ import type { PlayerProfile } from '@/types';
 /** Home: greeting, the next (or live) round over a photo, handicap and circle tiles, friends and courses shortcuts. */
 export default function Home() {
   const router = useRouter();
-  const { c, f, space, layout } = useTheme();
+  const { c, f, space, radius, layout } = useTheme();
   const round = useRoundStore((s) => s.round);
   const draftCourse = useRoundStore((s) => s.draft.course);
   const hydrateError = useRoundStore((s) => s.hydrateError);
@@ -36,6 +36,7 @@ export default function Home() {
   const live = round && round.status === 'in-progress' ? round : null;
   const order = usePlayOrder(live);
   const position = live ? holePosition(order, live.currentHole) : 0;
+  const scored = live ? holesPlayed(live.holeResults, order) : 0;
 
   const first = me?.name.trim().split(/\s+/)[0];
   const hour = new Date().getHours();
@@ -44,10 +45,10 @@ export default function Home() {
   const hero = live
     ? {
         image: coursePhoto(live.course.id),
-        pill: `Live · hole ${position} of ${order.length}`,
-        title: `On the course at ${live.course.name}.`,
-        subtitle: joinMeta([plural(live.players.length, 'player'), live.games.length ? plural(live.games.length, 'game') : 'Just a scorecard']),
-        cta: { label: `Score hole ${live.currentHole}`, onPress: () => router.push('/round/play') },
+        pill: 'Round in progress',
+        title: 'Keep the good shots coming.',
+        subtitle: live.games.length ? 'Your round is underway. Keep your side games close.' : 'Your round is underway. Your card is waiting.',
+        cta: { label: 'Back to your round', onPress: () => router.push('/round/play') },
       }
     : draftCourse
       ? {
@@ -88,7 +89,7 @@ export default function Home() {
 
         <View style={{ gap: 6, marginBottom: space[2] }}>
           <Text step="eyebrow" tone="accent">
-            {live ? 'Your round is in play' : 'Your next round starts here'}
+            Your next round starts here
           </Text>
           <Text accessibilityRole="header" step="display">
             {first ? `Hey, ${first}.` : 'Hey there.'}
@@ -99,6 +100,29 @@ export default function Home() {
         </View>
 
         <HeroCard {...hero} />
+
+        {live ? (
+          <Card onPress={() => router.push('/round/play')} accessibilityLabel={`Current round at ${live.course.name}, hole ${position} of ${order.length}, ${scored} scored. Back to your round`} style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
+            <IconTile icon="flag-outline" />
+            <View style={{ flex: 1, gap: 2 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text step="eyebrow" tone="tertiary" style={{ fontSize: 10 }}>
+                  Current round
+                </Text>
+                <View style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: c.accent }} />
+              </View>
+              <Text step="title" numberOfLines={1}>
+                {live.course.name}
+              </Text>
+              <Text step="caption" tone="tertiary">
+                {joinMeta([`Hole ${position} of ${order.length}`, `${scored} scored`])}
+              </Text>
+            </View>
+            <View style={{ width: 36, height: 36, borderRadius: radius.md, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="arrow-up-outline" size={18} color={c.onAccent} style={{ transform: [{ rotate: '45deg' }] }} />
+            </View>
+          </Card>
+        ) : null}
 
         <View style={{ flexDirection: 'row', gap: layout.stack }}>
           <Card onPress={() => router.navigate('/profile')} accessibilityLabel={`Handicap ${formatIndex(me?.handicapIndex)}`} style={{ flex: 1, gap: space[2], minHeight: 128 }}>
