@@ -19,10 +19,15 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
 import { hydrateThemePreference, migrate, storage, useCourseStore, useHistoryStore, usePreferences, useProfileStore, useRoundStore } from '@/store';
 import { Button, Text } from '@/components/ui';
+import { captureError, initTelemetry, withCrashReporting } from '@/services';
 
 void SplashScreen.preventAutoHideAsync();
+// Before the first render so early crashes are caught; nothing is sent until preferences load and allow it.
+initTelemetry();
 
-export default function RootLayout() {
+export default withCrashReporting(RootLayout);
+
+function RootLayout() {
   const { c, scheme } = useTheme();
   const [fontsLoaded, fontError] = useFonts({
     PlayfairDisplay_900Black,
@@ -135,6 +140,7 @@ function PhoneFrame({ children }: { children: ReactNode }) {
  */
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   const { c } = useTheme();
+  useEffect(() => captureError(error), [error]);
   return (
     <View style={{ flex: 1, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 16 }}>
       <Text step="display" align="center">

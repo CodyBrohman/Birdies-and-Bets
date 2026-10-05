@@ -8,7 +8,7 @@ import { AreaSheet } from '@/components/AreaSheet';
 import { courseFacts, coursePhoto, courseTag } from '@/components/courseArt';
 import { useTheme } from '@/theme';
 import { useCourseStore, usePreferences, useRoundStore, type CourseSearchResult } from '@/store';
-import { courseSearchAvailable, fetchCourse, searchCourses } from '@/services';
+import { courseSearchAvailable, fetchCourse, searchCourses, track } from '@/services';
 import type { Course } from '@/types';
 import { joinMeta, plural } from '@/lib/format';
 
@@ -102,6 +102,7 @@ export default function CoursesScreen() {
     try {
       const course = await fetchCourse(r.providerId);
       await importCourse(course);
+      track('course_imported');
       setQuery('');
       choose(course);
     } catch (e) {

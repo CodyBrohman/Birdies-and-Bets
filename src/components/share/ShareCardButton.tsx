@@ -4,6 +4,7 @@ import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { Button, Text } from '@/components/ui';
 import { ShareCard, type ShareCardProps } from './ShareCard';
+import { track } from '@/services';
 
 export interface ShareCardButtonProps extends Omit<ShareCardProps, 'width'> {
   label?: string;
@@ -29,6 +30,7 @@ export function ShareCardButton({ label = 'Share scorecard', ...card }: ShareCar
         return;
       }
       await Sharing.shareAsync(uri, { mimeType: 'image/png', UTI: 'public.png', dialogTitle: 'Share scorecard' });
+      track('scorecard_shared');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not share the card.');
     } finally {

@@ -13,6 +13,7 @@ import type { ActiveGame, GameMode, Nine, PlayerProfile } from '@/types';
 import { holesInPlay } from '@/lib/handicap';
 import { formatIndex, joinMeta, plural } from '@/lib/format';
 import { TEE_SLOTS, dayLabel, formatSlot, parseTeeTime, teeDays, teeTimeValue } from '@/lib/teeTime';
+import { trackRoundDiscarded, trackRoundStarted } from '@/services';
 
 type GameFilter = 'all' | 'betting' | 'social';
 
@@ -116,6 +117,7 @@ export default function BetScreen() {
     }
     const r = startRound(fitting);
     if (r) {
+      trackRoundStarted(r);
       setGames([]);
       router.push('/round/play');
     }
@@ -367,10 +369,12 @@ export default function BetScreen() {
           <Button
             label="Discard and start"
             onPress={() => {
+              if (live) trackRoundDiscarded(live);
               discardRound();
               setConfirmReplace(false);
               const r = startRound(fitting);
               if (r) {
+                trackRoundStarted(r);
                 setGames([]);
                 router.push('/round/play');
               }

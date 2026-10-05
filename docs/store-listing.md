@@ -81,11 +81,16 @@ Capture from a device or simulator in light mode for 1–4, dark mode for 5–6.
 
 ## App Privacy questionnaire
 
-- Data collected: **None.** No accounts, no analytics, no crash reporting, no third-party SDKs that collect data.
-  The app makes two kinds of network request, neither of which carries user data: an EAS Update check on
-  launch (app version and platform only) and course search (the typed search text). Both are described in the
-  privacy policy. Under Apple's definitions this is still "Data Not Collected".
-- Tracking: No.
+Answer "Yes, we collect data from this app", then declare exactly two types. Both match the privacy manifest in
+`app.config.ts` and the policy at https://www.birdiesandbets.com/privacy.html.
+
+- **Diagnostics → Crash Data** (Sentry). Used for: App Functionality. Linked to the user: **No.** Used for tracking: **No.**
+  On by default, can be turned off in Settings → Privacy.
+- **Usage Data → Product Interaction** (Aptabase). Used for: Analytics. Linked to the user: **No.** Used for tracking: **No.**
+  Opt-in only.
+- Nothing else: no contact info, identifiers, location, user content or purchases. Scores and names never leave the phone.
+- The EAS Update check and course search still carry no user data (see the policy).
+- Tracking: No. The app shows no App Tracking Transparency prompt because it does not track.
 
 ## Age rating questionnaire
 
@@ -108,7 +113,7 @@ Paste into the review notes field:
 >
 > No account is required and no personal data is collected; everything is stored locally on the device. The app's only network use is an update check on launch and, if the user types in the course search box, a course-name lookup.
 >
-> To try it: Start Round → Cedar Ridge Golf Club is preselected → Blue tees → Continue → enter two names (add an index such as 8.2 to see the handicap) → Choose games → tap Skins → Tee off. Tap a score chip for each player; the hole advances by itself. Open the Card and Games tabs, then finish with the arrow to see the summary.
+> To try it: Start Round → Cedar Ridge Golf Club is preselected → Blue tees → Continue → enter two names (add an index such as 8.2 to see the handicap) → Choose games → tap Skins → Tee off. Tap + for each player (the first tap fills in par), then Next hole. The front and back nine fill in below, and the games pill on the dark card opens the standings. Finish round on the last hole shows the summary.
 
 ## Before submitting
 
@@ -117,4 +122,7 @@ Paste into the review notes field:
 - [ ] `eas submit --platform ios`
 - [ ] TestFlight round with real golfers on a real course
 - [ ] Privacy and support URLs live and reachable
+- [ ] The live privacy policy describes crash reports and usage analytics (effective 5 October 2026) before any build that sends them
+- [ ] App Store Connect → App Privacy answers updated to Crash Data + Product Interaction (above)
+- [ ] Sentry project: "Prevent Storing of IP Addresses" on, data scrubbing on, retention 90 days or less
 - [ ] Screenshots uploaded in the order above

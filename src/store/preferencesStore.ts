@@ -20,6 +20,10 @@ export interface Preferences {
   photoUri?: string;
   /** Clubs in the bag, by id from CLUBS. Undefined = never edited (the default set). */
   bag?: string[];
+  /** Send anonymous crash reports. On by default; Settings turns it off. */
+  crashReports: boolean;
+  /** Opt-in anonymous usage counts. Undefined = not asked yet; only `true` sends anything. */
+  analytics?: boolean;
 }
 
 /** The 14-club set the Profile bag picker offers, in bag order. */
@@ -44,7 +48,7 @@ export const DEFAULT_BAG: string[] = ['driver', '3w', '6i', '7i', '8i', '9i', 'p
 
 const MAX_AREA = 40;
 
-export const DEFAULT_PREFERENCES: Preferences = { haptics: true, defaultStakeLabel: 'points', defaultAllowance: DEFAULT_ALLOWANCE, onboarded: false };
+export const DEFAULT_PREFERENCES: Preferences = { haptics: true, defaultStakeLabel: 'points', defaultAllowance: DEFAULT_ALLOWANCE, onboarded: false, crashReports: true };
 
 const MAX_STAKE_LABEL = 8;
 
@@ -58,6 +62,8 @@ export function sanitizePreferences(v: unknown): Preferences {
     defaultStakeLabel: label || DEFAULT_PREFERENCES.defaultStakeLabel,
     defaultAllowance: allowance,
     onboarded: o.onboarded === true,
+    crashReports: typeof o.crashReports === 'boolean' ? o.crashReports : DEFAULT_PREFERENCES.crashReports,
+    ...(typeof o.analytics === 'boolean' ? { analytics: o.analytics } : {}),
     ...(typeof o.meProfileId === 'string' && o.meProfileId ? { meProfileId: o.meProfileId } : {}),
     ...(typeof o.homeArea === 'string' && o.homeArea.trim() ? { homeArea: o.homeArea.trim().slice(0, MAX_AREA) } : {}),
     ...(typeof o.photoUri === 'string' && o.photoUri ? { photoUri: o.photoUri } : {}),
@@ -75,12 +81,12 @@ interface PreferencesState extends Preferences {
 export const usePreferences = create<PreferencesState>()((set, get) => {
   const apply = (p: Preferences) => {
     // Spread merges, so absent optional fields must be written explicitly to clear them.
-    set({ ...p, meProfileId: p.meProfileId, homeArea: p.homeArea, photoUri: p.photoUri, bag: p.bag });
+    set({ ...p, meProfileId: p.meProfileId, homeArea: p.homeArea, photoUri: p.photoUri, bag: p.bag, analytics: p.analytics });
     useHapticsPreference.getState().setEnabled(p.haptics);
   };
   const current = (): Preferences => {
-    const { haptics, defaultStakeLabel, defaultAllowance, onboarded, meProfileId, homeArea, photoUri, bag } = get();
-    return { haptics, defaultStakeLabel, defaultAllowance, onboarded, ...(meProfileId ? { meProfileId } : {}), ...(homeArea ? { homeArea } : {}), ...(photoUri ? { photoUri } : {}), ...(bag ? { bag } : {}) };
+    const { haptics, defaultStakeLabel, defaultAllowance, onboarded, meProfileId, homeArea, photoUri, bag, crashReports, analytics } = get();
+    return { haptics, defaultStakeLabel, defaultAllowance, onboarded, crashReports, ...(analytics !== undefined ? { analytics } : {}), ...(meProfileId ? { meProfileId } : {}), ...(homeArea ? { homeArea } : {}), ...(photoUri ? { photoUri } : {}), ...(bag ? { bag } : {}) };
   };
   return {
     ...DEFAULT_PREFERENCES,

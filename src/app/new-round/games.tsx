@@ -12,6 +12,7 @@ import { useTheme } from '@/theme';
 import { fitReason, newActiveGame, participantCountOf, sidesLabel, useGameCatalog, useRoundStore } from '@/store';
 import type { ActiveGame, GameMode } from '@/types';
 import { isSymbolLabel } from '@/lib/format';
+import { trackRoundStarted } from '@/services';
 
 /**
  * Game select. Betting and just-for-fun, multiple selectable, always skippable. Basis and stake are
@@ -83,7 +84,10 @@ export default function GamesScreen() {
       return;
     }
     const r = startRound(games);
-    if (r) router.replace('/round/play');
+    if (r) {
+      trackRoundStarted(r);
+      router.replace('/round/play');
+    }
   };
 
   const configMode = configFor ? (catalog.find((g) => g.id === configFor) ?? null) : null;

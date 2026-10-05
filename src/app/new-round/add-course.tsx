@@ -10,6 +10,7 @@ import type { Course, Hole, HoleCount, TeeBox } from '@/types';
 import { newId } from '@/lib/id';
 import { validateCourse } from '@/lib/courseImport';
 import { checkStrokeIndexes, parseNumber, parWarning, strokeIndexesInHoleOrder, uniqueCourseName, validateTee, yardageProblem, yardageTotals } from '@/lib/courseEditor';
+import { track } from '@/services';
 
 interface HoleDraft {
   par: 3 | 4 | 5 | 6;
@@ -167,6 +168,7 @@ export default function AddCourseScreen() {
       return;
     }
     await addUserCourse(course);
+    track('course_created');
     void markRecent(course.id);
     setDraftSettings({ holeCount, nine: 'front', startHole: undefined });
     setDraftCourse(course, course.teeBoxes[0]!.id);

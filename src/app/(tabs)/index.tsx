@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Avatar, AvatarStack, Card, HeroCard, IconTile, Screen, SectionLabel, Text, Pressable } from '@/components/ui';
+import { Avatar, AvatarStack, Button, Card, HeroCard, IconTile, Screen, SectionLabel, Sheet, Text, Pressable } from '@/components/ui';
 import { BrandMark } from '@/components/BrandMark';
 import { HERO_PHOTO, coursePhoto } from '@/components/courseArt';
 import { useTheme } from '@/theme';
@@ -25,6 +25,8 @@ export default function Home() {
   const prefsHydrated = usePreferences((s) => s.hydrated);
   const homeArea = usePreferences((s) => s.homeArea);
   const photoUri = usePreferences((s) => s.photoUri);
+  const analyticsAsked = usePreferences((s) => s.analytics !== undefined);
+  const updatePreferences = usePreferences((s) => s.update);
   const { me, friends } = useMe();
   const meRef = useMemo(() => (me ? { id: me.id, name: me.name } : undefined), [me]);
 
@@ -197,6 +199,15 @@ export default function Home() {
           </>
         ) : null}
       </ScrollView>
+
+      {/* Once, for people who finished the intro before it asked: the anonymous-usage question. */}
+      <Sheet visible={prefsHydrated && onboarded && !analyticsAsked} onClose={() => updatePreferences({ analytics: false })} title="Help make it better?" subtitle="Anonymous usage counts, your choice">
+        <View style={{ gap: space[2] }}>
+          <Text tone="secondary">Share counts like how many rounds get started. Never names, scores or courses. Crash reports are anonymous too. Change either one in Settings.</Text>
+          <Button label="Share anonymous usage" onPress={() => updatePreferences({ analytics: true })} style={{ marginTop: space[2] }} />
+          <Button label="No thanks" variant="secondary" onPress={() => updatePreferences({ analytics: false })} />
+        </View>
+      </Sheet>
     </Screen>
   );
 }

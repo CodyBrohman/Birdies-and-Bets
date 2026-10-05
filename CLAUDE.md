@@ -45,6 +45,15 @@ The 2026-10-01 redesign matches the owner's ten reference mockups. Tokens in `sr
   Crew helpers are in `store/crew.ts`.
 - Min hit target 48pt (pills 40 + hitSlop). Ionicons outline. States live in `components/ui/interaction.ts`.
 
+## Telemetry
+- `src/services/telemetry.ts` is the only file that imports Sentry or Aptabase (an architecture test enforces it).
+  Screens call `track(...)`, the `trackRound*` helpers and `captureError`.
+- Crash reports (Sentry) are on by default behind the `crashReports` preference. Usage analytics (Aptabase) send only
+  when `analytics === true` (asked once in onboarding, or once on Home for older installs).
+- Events are a fixed typed list (`TelemetryEvents`) of counts and game ids. Never names, scores, course names or free text.
+  A new event means updating the privacy policy (website repo) and `docs/store-listing.md` too.
+- Keys: `EXPO_PUBLIC_SENTRY_DSN` and `EXPO_PUBLIC_APTABASE_KEY` (see `.env.example`). Without them nothing is sent.
+
 ## Commands
 `npm start` · `npm test` · `npm run typecheck`
 

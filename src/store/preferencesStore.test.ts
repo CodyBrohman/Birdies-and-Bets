@@ -31,6 +31,25 @@ describe('sanitizePreferences', () => {
   });
 });
 
+describe('privacy preferences', () => {
+  it('crash reports default on, analytics stays unasked until a real answer', () => {
+    expect(sanitizePreferences(null).crashReports).toBe(true);
+    expect(sanitizePreferences(null).analytics).toBeUndefined();
+    expect(sanitizePreferences({ crashReports: 'no', analytics: 'yes' })).toEqual(DEFAULT_PREFERENCES);
+    const p = sanitizePreferences({ crashReports: false, analytics: false });
+    expect([p.crashReports, p.analytics]).toEqual([false, false]);
+  });
+
+  it('persists the answers', async () => {
+    await usePreferences.getState().hydrate();
+    usePreferences.getState().update({ crashReports: false, analytics: true });
+    await flush();
+    const saved = JSON.parse((await AsyncStorage.getItem(STORAGE_KEYS.preferences)) ?? 'null');
+    expect([saved.crashReports, saved.analytics]).toEqual([false, true]);
+    usePreferences.getState().reset();
+  });
+});
+
 describe('preferencesStore', () => {
   it('clears an optional field when patched empty', async () => {
     await usePreferences.getState().hydrate();
@@ -55,7 +74,7 @@ describe('preferencesStore', () => {
     await usePreferences.getState().hydrate();
     usePreferences.getState().update({ defaultAllowance: 85, haptics: false });
     await flush();
-    expect(JSON.parse((await AsyncStorage.getItem(STORAGE_KEYS.preferences)) ?? 'null')).toEqual({ haptics: false, defaultStakeLabel: 'points', defaultAllowance: 85, onboarded: false });
+    expect(JSON.parse((await AsyncStorage.getItem(STORAGE_KEYS.preferences)) ?? 'null')).toEqual({ haptics: false, defaultStakeLabel: 'points', defaultAllowance: 85, onboarded: false, crashReports: true });
     expect(useHapticsPreference.getState().enabled).toBe(false);
   });
 

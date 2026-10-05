@@ -11,6 +11,7 @@ import { formatToPar, joinMeta, plural } from '@/lib/format';
 import { holesPlayed, totals } from '@/lib/scoring';
 import { netSettlements } from '@/lib/settlement';
 import { summarizeRound } from '@/lib/history';
+import { trackRoundFinished } from '@/services';
 
 /**
  * Round summary. Final gross and net, strokes received, per-game results, and the settlement netted
@@ -45,6 +46,7 @@ export default function SummaryScreen() {
     const completed = { ...round, status: 'complete' as const, updatedAt: completedAt };
     const summary = summarizeRound({ round: completed, holes, handicaps, standings: runs.map((r) => r.standings), gameNames: runs.map((r) => r.mode.name), netted, completedAt });
     addHistory({ summary, round: completed });
+    trackRoundFinished(completed);
     discardRound();
     router.replace('/');
   };

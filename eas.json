@@ -10,7 +10,10 @@
       "ios": {
         "simulator": false
       },
-      "channel": "development"
+      "channel": "development",
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
     },
     "development-simulator": {
       "developmentClient": true,
@@ -18,18 +21,27 @@
       "ios": {
         "simulator": true
       },
-      "channel": "development-simulator"
+      "channel": "development-simulator",
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
     },
     "preview": {
       "distribution": "internal",
       "ios": {
         "simulator": false
       },
-      "channel": "preview"
+      "channel": "preview",
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
     },
     "production": {
       "autoIncrement": true,
-      "channel": "production"
+      "channel": "production",
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
     }
   },
   "submit": {

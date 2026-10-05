@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Platform, ScrollView, View } from 'react-native';
+import { Linking, Platform, ScrollView, View } from 'react-native';
 import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
 import * as Sharing from 'expo-sharing';
@@ -13,10 +13,11 @@ import { useTheme } from '@/theme';
 import { clearAllData, exportBackup, importBackup, SCHEMA_VERSION, storageBackend, usePreferences, useRoundStore } from '@/store';
 import { describeBackup, parseBackup, type BackupFile } from '@/lib/backup';
 import { formatShortDate } from '@/lib/format';
+import { PRIVACY_POLICY_URL, track } from '@/services';
 
 type Busy = 'export' | 'import' | 'clear' | null;
 
-/** Feel, new-round defaults, data (back up / restore / clear) and what build this is. Opened from Profile. */
+/** Feel, new-round defaults, data (back up / restore / clear), privacy choices and what build this is. Opened from Profile. */
 export default function SettingsScreen() {
   const router = useRouter();
   const { space } = useTheme();
@@ -24,6 +25,8 @@ export default function SettingsScreen() {
   const haptics = usePreferences((s) => s.haptics);
   const defaultStakeLabel = usePreferences((s) => s.defaultStakeLabel);
   const defaultAllowance = usePreferences((s) => s.defaultAllowance);
+  const crashReports = usePreferences((s) => s.crashReports);
+  const analytics = usePreferences((s) => s.analytics === true);
   const updatePreferences = usePreferences((s) => s.update);
 
   const [busy, setBusy] = useState<Busy>(null);
@@ -43,12 +46,14 @@ export default function SettingsScreen() {
         a.href = URL.createObjectURL(blob);
         a.download = name;
         a.click();
+        track('backup_created');
         return;
       }
       const file = new File(Paths.cache, name);
       if (file.exists) file.delete();
       file.write(json);
       await Sharing.shareAsync(file.uri, { mimeType: 'application/json', UTI: 'public.json', dialogTitle: 'Save backup' });
+      track('backup_created');
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'Could not create the backup.');
     } finally {
@@ -82,6 +87,7 @@ export default function SettingsScreen() {
     setBusy('import');
     try {
       await importBackup(pending);
+      track('backup_restored');
       setPending(null);
       router.replace('/');
     } catch (e) {
@@ -154,6 +160,13 @@ export default function SettingsScreen() {
           </Text>
         ) : null}
 
+        <SectionLabel style={{ marginTop: space[3] }}>Privacy</SectionLabel>
+        <Card padding="roomy" style={{ gap: space[4] }}>
+          <ToggleRow title="Crash reports" detail="Anonymous error details help fix bugs. No names or scores." value={crashReports} onChange={(v) => updatePreferences({ crashReports: v })} />
+          <ToggleRow title="Usage analytics" detail="Anonymous counts, like rounds started. Off unless you turn it on." value={analytics} onChange={(v) => updatePreferences({ analytics: v })} />
+          <Button label="Read the privacy policy" variant="secondary" icon="open-outline" onPress={() => void Linking.openURL(PRIVACY_POLICY_URL)} />
+        </Card>
+
         <SectionLabel style={{ marginTop: space[3] }}>About</SectionLabel>
         <Card variant="outlined" padding="roomy">
           <Row label="Version" value={Constants.expoConfig?.version ?? '—'} />
@@ -184,6 +197,21 @@ export default function SettingsScreen() {
         </View>
       </Sheet>
     </Screen>
+  );
+}
+
+function ToggleRow({ title, detail, value, onChange }: { title: string; detail: string; value: boolean; onChange: (v: boolean) => void }) {
+  const { space } = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space[4] }}>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text step="bodyStrong">{title}</Text>
+        <Text step="label" tone="secondary">
+          {detail}
+        </Text>
+      </View>
+      <Toggle value={value} onChange={onChange} accessibilityLabel={title} />
+    </View>
   );
 }
 

@@ -15,13 +15,15 @@ interface Page {
   title: string;
   body: string;
   points: string[];
+  /** The analytics question: its own two buttons, answered before the last page. */
+  consent?: boolean;
 }
 
 const PAGES: Page[] = [
   {
     icon: 'golf-outline',
     title: 'Keep score.',
-    body: 'Tap a score. The hole advances. Everything is saved.',
+    body: 'Tap + and − for each player. Everything is saved.',
     points: ['Works offline, no account', 'Front nine, back nine or shotgun starts', 'Handicap strokes worked out per hole'],
   },
   {
@@ -36,9 +38,22 @@ const PAGES: Page[] = [
     body: 'One tally at the end, netted between players.',
     points: ['Points by default, or name the stake', 'Nothing is paid through the app', 'Share the card to the group chat'],
   },
+  {
+    icon: 'shield-checkmark-outline',
+    title: 'Help make it better.',
+    body: 'Share anonymous usage counts, like how many rounds get started. Your choice.',
+    points: ['Never names, scores or courses', 'Anonymous crash reports help fix bugs', 'Change either one in Settings'],
+    consent: true,
+  },
+  {
+    icon: 'flag-outline',
+    title: 'Ready to tee off?',
+    body: 'Pick a course, add your crew, pick a game or two.',
+    points: ['A round on your own works too', 'Your scores stay on this phone'],
+  },
 ];
 
-/** First launch: three swipes on what the app does, then straight into a round or back to Home. */
+/** First launch: what the app does, the anonymous-usage question, then straight into a round or back to Home. */
 export default function OnboardingScreen() {
   const router = useRouter();
   const { c, space, radius } = useTheme();
@@ -49,9 +64,12 @@ export default function OnboardingScreen() {
   const scroller = useRef<ScrollView>(null);
   const [page, setPage] = useState(0);
   const last = page === PAGES.length - 1;
+  const asking = !!PAGES[page]?.consent;
+  const analytics = usePreferences((s) => s.analytics);
 
+  // Leaving the tour without answering counts as "No thanks".
   const finish = (startRound: boolean) => {
-    update({ onboarded: true });
+    update({ onboarded: true, ...(analytics === undefined ? { analytics: false } : {}) });
     if (startRound) router.replace('/courses');
     else if (router.canGoBack()) router.back();
     else router.replace('/' as Href);
@@ -59,6 +77,10 @@ export default function OnboardingScreen() {
   const go = (i: number) => {
     scroller.current?.scrollTo({ x: i * width, animated: true });
     setPage(i);
+  };
+  const answer = (yes: boolean) => {
+    update({ analytics: yes });
+    go(page + 1);
   };
   const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => setPage(Math.round(e.nativeEvent.contentOffset.x / width));
 
@@ -109,6 +131,11 @@ export default function OnboardingScreen() {
           <>
             <Button label="Start a round" onPress={() => finish(true)} />
             <Button label="Maybe later" variant="secondary" onPress={() => finish(false)} />
+          </>
+        ) : asking ? (
+          <>
+            <Button label="Share anonymous usage" onPress={() => answer(true)} />
+            <Button label="No thanks" variant="secondary" onPress={() => answer(false)} />
           </>
         ) : (
           <Button label="Next" onPress={() => go(page + 1)} />

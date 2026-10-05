@@ -75,4 +75,10 @@ describe('architecture', () => {
     const fetchers = walk(SRC).filter((f) => !/[\\/]services[\\/]/.test(f) && /\bfetch\(/.test(readFileSync(f, 'utf8')));
     expect(fetchers.map((f) => relative(SRC, f))).toEqual([]);
   });
+
+  it('only services/telemetry touches the crash and analytics SDKs', () => {
+    const sdk = /from '@(sentry|aptabase)\//;
+    const users = walk(SRC).filter((f) => !/[\\/]services[\\/]telemetry(\.test)?\.ts$/.test(f) && sdk.test(readFileSync(f, 'utf8')));
+    expect(users.map((f) => relative(SRC, f))).toEqual([]);
+  });
 });

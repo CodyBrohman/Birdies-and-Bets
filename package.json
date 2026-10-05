@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@aptabase/react-native": "^0.6.0",
     "@expo-google-fonts/inter": "^0.4.2",
     "@expo-google-fonts/jetbrains-mono": "^0.4.1",
     "@expo-google-fonts/manrope": "^0.4.2",
@@ -10,6 +11,7 @@
     "@expo/vector-icons": "^15.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/bottom-tabs": "^7.19.2",
+    "@sentry/react-native": "~7.11.0",
     "expo": "~57.0.22",
     "expo-asset": "~57.0.18",
     "expo-constants": "~57.0.18",
