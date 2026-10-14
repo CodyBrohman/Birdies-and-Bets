@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, Platform } from 'react-native';
 import { Pressable } from './Pressable';
 import { useReduceMotion, useTheme } from '@/theme';
@@ -17,7 +17,7 @@ const KNOB = 26;
 /** 64×38 pill; accent when on, upcoming-tick grey when off; ground-colour knob. Respects Reduce Motion. */
 export function Toggle({ value, onChange, accessibilityLabel, disabled }: ToggleProps) {
   const { c, motion, radius } = useTheme();
-  const x = useRef(new Animated.Value(value ? 1 : 0)).current;
+  const [x] = useState(() => new Animated.Value(value ? 1 : 0));
   const reduce = useReduceMotion();
 
   useEffect(() => {

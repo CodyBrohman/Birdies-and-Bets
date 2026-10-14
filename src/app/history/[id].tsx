@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Avatar, Button, Card, Footer, Screen, SectionLabel, Segmented, Sheet, StatTile, Text } from '@/components/ui';
 import { SetupHeader } from '@/components/SetupHeader';
 import { goBackOr } from '@/components/navigation';
@@ -17,7 +17,6 @@ import { netSettlements } from '@/lib/settlement';
 
 /** A finished round, read-only: card, totals, game results and settlement. Delete lives here too. */
 export default function HistoryDetailScreen() {
-  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { space } = useTheme();
   const entry = useHistoryEntry(id);

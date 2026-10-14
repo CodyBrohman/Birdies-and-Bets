@@ -34,3 +34,15 @@ jest.mock('react-native-safe-area-context', () => require('react-native-safe-are
 jest.mock('expo-keep-awake', () => ({ useKeepAwake: jest.fn(), activateKeepAwakeAsync: jest.fn(), deactivateKeepAwake: jest.fn() }));
 jest.mock('expo-updates', () => ({ channel: 'test', updateId: null, isEmbeddedLaunch: true }));
 jest.mock('@react-native-community/netinfo', () => require('@react-native-community/netinfo/jest/netinfo-mock.js'));
+// The real Sentry SDK starts a setInterval when imported, which keeps Jest workers alive; nothing is sent in tests anyway.
+jest.mock('@sentry/react-native', () => ({ init: jest.fn(), close: jest.fn(() => Promise.resolve()), captureException: jest.fn(), wrap: jest.fn((c: unknown) => c) }));
+jest.mock('@aptabase/react-native', () => ({ init: jest.fn(), trackEvent: jest.fn(), dispose: jest.fn() }));
+
+// Native-only controls: render accessible stand-ins so screen tests can query them by role, as VoiceOver would.
+jest.mock('expo-symbols', () => ({ SymbolView: ({ fallback }: { fallback?: unknown }) => fallback ?? null }));
+jest.mock('@react-native-segmented-control/segmented-control', () => ({ __esModule: true, default: require('./src/test/nativeControlMocks').MockSegmentedControl }));
+jest.mock('@react-native-community/datetimepicker', () => ({
+  __esModule: true,
+  default: require('./src/test/nativeControlMocks').MockDateTimePicker,
+  DateTimePickerAndroid: { open: jest.fn(), dismiss: jest.fn() },
+}));

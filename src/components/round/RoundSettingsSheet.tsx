@@ -1,5 +1,5 @@
 import { ScrollView, View } from 'react-native';
-import { Chip, Sheet, Text } from '@/components/ui';
+import { Chip, Sheet } from '@/components/ui';
 import { useTheme } from '@/theme';
 import type { Hole, RoundSettings } from '@/types';
 import { AllowanceField, FieldRow, StakeLabelField } from './SettingsFields';

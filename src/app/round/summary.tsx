@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Footer, Screen, SectionLabel, StatTile, Text } from '@/components/ui';
+import { Button, Footer, Screen, SectionLabel, StatTile } from '@/components/ui';
 import { SetupHeader } from '@/components/SetupHeader';
 import { GameResultsList, HoleNotesList, ScoreSummaryTable, SettlementList } from '@/components/round';
 import { ShareCardButton } from '@/components/share';

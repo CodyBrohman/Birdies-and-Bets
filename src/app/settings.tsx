@@ -8,7 +8,7 @@ import { File, Paths } from 'expo-file-system';
 import { useRouter } from 'expo-router';
 import { Button, Card, Screen, SectionLabel, Sheet, Text, Toggle } from '@/components/ui';
 import { SetupHeader } from '@/components/SetupHeader';
-import { AllowanceField, FieldRow, StakeLabelField } from '@/components/round/SettingsFields';
+import { AllowanceField, StakeLabelField } from '@/components/round/SettingsFields';
 import { useTheme } from '@/theme';
 import { clearAllData, exportBackup, importBackup, SCHEMA_VERSION, storageBackend, useAuthStore, useMe, usePreferences, useRoundStore, useSyncStatus } from '@/store';
 import { describeBackup, parseBackup, type BackupFile } from '@/lib/backup';

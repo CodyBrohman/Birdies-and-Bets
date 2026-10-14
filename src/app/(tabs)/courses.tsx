@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -35,7 +35,8 @@ export default function CoursesScreen() {
   const setDraftCourse = useRoundStore((s) => s.setDraftCourse);
   const homeArea = usePreferences((s) => s.homeArea);
 
-  // userCourses/recentIds in deps so the list refreshes after hydration or an add.
+  // userCourses/recentIds in deps so the list refreshes after hydration or an add (search reads the store).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const all = useMemo(() => search(query), [search, query, userCourses, recentIds]);
   const list = useMemo(() => {
     const ranked = [...all].sort((a, b) => rank(a) - rank(b));
@@ -48,46 +49,37 @@ export default function CoursesScreen() {
     }
   }, [all, filter, recentIds]);
 
-  // Remote search: debounced, cached, quiet when offline or not configured.
-  const [remote, setRemote] = useState<CourseSearchResult[]>([]);
-  const [remoteState, setRemoteState] = useState<'idle' | 'searching' | 'error'>('idle');
+  // Remote search: debounced, cached, quiet when offline or not configured. Results are kept per query, so a new
+  // query needs no reset: what to show (cached, fetched, searching or failed) is derived during render.
+  const [fetched, setFetched] = useState<{ q: string; results: CourseSearchResult[]; failed: boolean } | null>(null);
   const [importing, setImporting] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
+  const q = query.trim();
+  const remoteActive = courseSearchAvailable() && q.length >= 3;
+  const cached = remoteActive ? cachedSearch(q) : undefined;
+  const current = remoteActive && !cached && fetched?.q === q ? fetched : null;
+  const remote = cached ?? current?.results ?? [];
+  const remoteState: 'idle' | 'searching' | 'error' = !remoteActive || cached ? 'idle' : !current ? 'searching' : current.failed ? 'error' : 'idle';
+  const needsFetch = remoteActive && !cached;
   useEffect(() => {
-    abortRef.current?.abort();
-    const q = query.trim();
-    if (!courseSearchAvailable() || q.length < 3) {
-      setRemote([]);
-      setRemoteState('idle');
-      return;
-    }
-    const cached = cachedSearch(q);
-    if (cached) {
-      setRemote(cached);
-      setRemoteState('idle');
-      return;
-    }
+    if (!needsFetch) return;
     const controller = new AbortController();
-    abortRef.current = controller;
-    setRemoteState('searching');
     const timer = setTimeout(() => {
       searchCourses(q, controller.signal)
         .then((r) => {
           if (controller.signal.aborted) return;
           cacheSearch(q, r);
-          setRemote(r);
-          setRemoteState('idle');
+          setFetched({ q, results: r, failed: false });
         })
         .catch(() => {
-          if (!controller.signal.aborted) setRemoteState('error');
+          if (!controller.signal.aborted) setFetched({ q, results: [], failed: true });
         });
     }, 350);
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [query, cachedSearch, cacheSearch]);
+  }, [q, needsFetch, cacheSearch]);
 
   const choose = (course: Course) => {
     const tee = course.teeBoxes.find((t) => t.id === draft.teeBoxId) ?? course.teeBoxes[0];

@@ -1,4 +1,4 @@
-import { color, font, type, hit, type ColorScheme } from './tokens';
+import { color, type, hit, type ColorScheme } from './tokens';
 
 /** WCAG relative luminance and contrast ratio for #RRGGBB values. */
 function luminance(hex: string): number {

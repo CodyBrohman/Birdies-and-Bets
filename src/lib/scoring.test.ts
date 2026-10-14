@@ -1,5 +1,4 @@
 import { computeAllHandicaps } from './handicap';
-import { scoreOptions } from './scoring';
 import {
   backNine,
   frontNine,
@@ -16,6 +15,7 @@ import {
   prevHoleNumber,
   relationToPar,
   scoreOn,
+  scoreOptions,
   totals,
 } from './scoring';
 import { cedarRidge, foursome, throughSix } from './__fixtures__/cedarRidge';

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useReduceMotion, useTheme } from '@/theme';
 import { Text } from './Text';
@@ -15,7 +15,7 @@ export interface LivePillProps {
 export function LivePill({ label, live, tone = 'accent', style }: LivePillProps) {
   const { c, radius, space } = useTheme();
   const reduce = useReduceMotion();
-  const pulse = useRef(new Animated.Value(1)).current;
+  const [pulse] = useState(() => new Animated.Value(1));
   useEffect(() => {
     if (!live || reduce) {
       pulse.setValue(1);

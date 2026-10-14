@@ -2,7 +2,6 @@ import { createContext, useContext, type ReactNode } from 'react';
 import { color, type ColorScheme, elevation, type ElevationSet, type, font, space, layout, radius, hit, motion } from './tokens';
 import type { Scheme } from './preference';
 
-export type { Scheme } from './preference';
 
 export interface Theme {
   scheme: Scheme;

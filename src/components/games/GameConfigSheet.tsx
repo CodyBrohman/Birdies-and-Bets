@@ -28,7 +28,13 @@ function participantsFor(active: ActiveGame, players: Player[]): Player[] {
  */
 export function GameConfigSheet({ mode, active, players, stakeLabel, onChange, onClose }: GameConfigSheetProps) {
   const { space } = useTheme();
-  if (!mode || !active) return <Sheet visible={false} onClose={onClose} children={null} />;
+  if (!mode || !active) {
+    return (
+      <Sheet visible={false} onClose={onClose}>
+        {null}
+      </Sheet>
+    );
+  }
 
   const count = participantCountOf(mode, active);
   const set = (key: string, value: string | number | boolean | string[]) => {

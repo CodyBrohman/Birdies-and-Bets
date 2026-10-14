@@ -1,4 +1,4 @@
-import type { GameMode, GameState, HoleResult, ProgressionCell, Settlement, Standings } from './types';
+import type { GameMode, GameState, ProgressionCell, Settlement, Standings } from './types';
 import { cfg, initialOf, isLastHole, nameOf, nextAfter, progressionFor, scoresFor, stakeOf } from './types';
 import { lowest } from '../lib/scoring';
 import { formatStake, plural } from '../lib/format';

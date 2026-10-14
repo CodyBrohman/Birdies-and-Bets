@@ -1,5 +1,4 @@
-import type { GameMode, GameState, Settlement, Standings } from './types';
-import { nextAfter, paySide, positionOf, progressionFor, remainingAfter, sideName, sideOutcome, sidesOf, sidesReady, stakeOf, type SideOutcome } from './types';
+import { nextAfter, paySide, positionOf, progressionFor, remainingAfter, sideName, sideOutcome, sidesOf, sidesReady, stakeOf, type GameMode, type GameState, type Settlement, type SideOutcome, type Standings } from './types';
 import { formatMatchStatus } from '../lib/format';
 
 interface MatchState extends GameState {

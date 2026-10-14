@@ -1,8 +1,8 @@
 import type { GameMode, GameState, Settlement, Standings } from './types';
 import { cfg, positionOf, scoresFor, stakeOf, teamsOf } from './types';
+import { formatToPar } from '../lib/format';
 
 export { teamsOf };
-import { formatToPar } from '../lib/format';
 
 interface VegasState extends GameState {
   /** Positive = team A ahead, in points. */

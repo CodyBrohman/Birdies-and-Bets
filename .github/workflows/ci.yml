@@ -1,4 +1,4 @@
-# Typecheck and every Jest test (logic + screens) on each push to main and each pull request.
+# Typecheck, lint and every Jest test (logic + screens) on each push to main and each pull request.
 name: CI
 
 on:
@@ -18,6 +18,5 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run lint -- --no-cache
       - run: npm test -- --ci
-      # TODO: add `npm run lint` once the existing React Compiler errors are fixed
-      # (ui/Toggle.tsx, ui/LivePill.tsx, (tabs)/courses.tsx, games/GameConfigSheet.tsx).

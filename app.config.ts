@@ -64,6 +64,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // in this config changes the runtime fingerprint between this PC and EAS, and the build then fails.
     '@sentry/react-native',
     ['expo-image-picker', { photosPermission: 'Birdies & Bets uses a photo you pick as your profile picture. It stays on this device.', cameraPermission: false, microphonePermission: false }],
+    // Native date and tee-time pickers on the round builder.
+    '@react-native-community/datetimepicker',
   ],
   experiments: {
     typedRoutes: true,
