@@ -33,7 +33,8 @@ name: Smoke - start a round, score a hole, come back
     id: tab-play
 - tapOn:
     id: choose-course
-- tapOn: Sample course
+- tapOn:
+    id: course-cedar-ridge-golf-club
 - tapOn:
     id: add-player
 - tapOn:
