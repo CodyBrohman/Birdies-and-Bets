@@ -12,6 +12,8 @@ export function stackOptions(c: ColorScheme) {
     headerShadowVisible: false,
     headerLargeTitleShadowVisible: false,
     headerTintColor: c.accent,
+    // iOS always centres the title; the web preview's header would put it on the left.
+    headerTitleAlign: 'center',
     headerTitleStyle: { color: c.textPrimary },
     headerLargeTitleStyle: { color: c.textPrimary },
   } as const;

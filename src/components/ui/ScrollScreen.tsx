@@ -25,6 +25,18 @@ export interface ScrollScreenProps extends Omit<ScrollViewProps, 'children' | 'c
 }
 
 /**
+ * iOS keeps bar buttons in from the screen edge by itself; the web preview's header puts a custom button against the
+ * edge, so it gets the same inset there.
+ */
+function barInset(button: (() => ReactNode) | undefined, side: 'left' | 'right'): (() => ReactNode) | undefined {
+  if (!button || Platform.OS !== 'web') return button;
+  const inset = side === 'left' ? { marginLeft: 12 } : { marginRight: 8 };
+  return function InsetBarButton() {
+    return <View style={inset}>{button()}</View>;
+  };
+}
+
+/**
  * A screen in a stack: the native header (large title on tab roots) and one scroll view as the first child, so iOS
  * insets the content under the bars, collapses the large title on scroll and lifts content over the keyboard. On the
  * web preview the large title is drawn at the top of the content instead (the web header has no large title).
@@ -36,7 +48,7 @@ export function ScrollScreen({ title, largeTitle, headerRight, headerLeft, heade
   const webLarge = Platform.OS === 'web' && largeTitle;
   return (
     <View style={{ flex: 1, backgroundColor: c.surface }}>
-      <Stack.Screen options={{ headerShown: !webLarge, title, headerLargeTitle: !!largeTitle, headerRight, headerLeft, ...(headerTitle ? { headerTitle } : null) }} />
+      <Stack.Screen options={{ headerShown: !webLarge, title, headerLargeTitle: !!largeTitle, headerRight: barInset(headerRight, 'right'), headerLeft: barInset(headerLeft, 'left'), ...(headerTitle ? { headerTitle } : null) }} />
       <ScrollView
         ref={scrollRef}
         contentInsetAdjustmentBehavior="automatic"

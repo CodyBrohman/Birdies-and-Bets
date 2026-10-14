@@ -178,7 +178,7 @@ export function demoData(now: Date = new Date()): Record<string, unknown> {
     course: harbour,
     teeBoxId: blue,
     players: livePlayers,
-    games: [game('skins'), game('nassau', {}, [livePlayers[0]!.id, livePlayers[3]!.id]), game('wolf')],
+    games: [game('skins', { stake: 2 }), game('nassau', {}, [livePlayers[0]!.id, livePlayers[3]!.id]), game('wolf')],
     settings,
     holeResults: scoreHoles(harbour, livePlayers, overPar(0, [0, 1, 2, 3]), 17, { alone: [2, 10, 14] }, { 6: 'Alex holed a 20-footer for birdie', 14: 'Jordan lost a ball in the creek' }),
     currentHole: 17,
