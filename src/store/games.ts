@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import type { ActiveGame, GameMode, Player, Round } from '@/types';
-import { GAME_MODES, getGame, runGame, type GameRun, defaultConfig } from '@/games';
+import type { ActiveGame, GameMode, HolePrompt, Player, PlayerId, PlayerRoundState, Round } from '@/types';
+import { GAME_MODES, buildContext, getGame, runGame, type GameRun, defaultConfig } from '@/games';
 import { formatStake, joinMeta } from '@/lib/format';
 import { useHandicaps } from './selectors';
 
@@ -47,7 +47,7 @@ export function setupNeeded(mode: GameMode, active: ActiveGame, players: Player[
   return null;
 }
 
-/** A game as one line for the round form: "5 pts per skin · Net", "Alex vs Maya · 5 pts per bet · Net". */
+/** A game as one line for the round form: "5 pts per skin · Net", "Alex vs Maya · 5 pts per match · Net". */
 export function gameSummary(mode: GameMode, active: ActiveGame, players: Player[], stakeLabel: string): string {
   const needs = setupNeeded(mode, active, players);
   const stakeField = mode.configFields.find((f) => f.key === 'stake' && f.type === 'number');
@@ -56,6 +56,11 @@ export function gameSummary(mode: GameMode, active: ActiveGame, players: Player[
   const stakeText = stake ? `${formatStake(stake, stakeLabel)}${unit ? ` ${unit}` : ''}` : mode.category === 'social' ? 'Just for fun' : null;
   const sides = needs ? null : sidesLabel(mode, active, players);
   return joinMeta([needs, sides, stakeText, mode.supportsNet ? (active.basis === 'net' ? 'Net' : 'Gross') : null]);
+}
+
+/** What a game says about one hole's prompts (who the wolf is, who can't be picked); empty when it says nothing. */
+export function holePromptOf(round: Round, active: ActiveGame, mode: GameMode, holeNumber: number, handicaps?: Record<PlayerId, PlayerRoundState>): HolePrompt {
+  return mode.holePrompt ? mode.holePrompt(buildContext(round, active, mode, handicaps), holeNumber) : {};
 }
 
 /** Why a game can't be added for this group size, or null when it fits. */

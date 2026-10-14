@@ -134,6 +134,9 @@ to it on 2026-10-14 (TODO.md Phase 3); keep new screens to the same kit.
 - Testing Library stays on v13: Expo Router's `renderRouter` calls the sync `render`, which v14 made async.
 - CI: `.github/workflows/ci.yml` runs typecheck and Jest on push and PR. The Maestro smoke flow runs on demand with
   `.github/workflows/e2e-ios.yml` (GitHub macOS, free for this public repo). See `.maestro/README.md`.
+- App Store screenshots: `.github/workflows/screenshots-ios.yml` builds with `EXPO_PUBLIC_DEMO_DATA=1` (the root layout
+  then writes `src/store/demo.ts` into an empty install) and runs `.maestro/screenshots.yaml`. See
+  `scripts/screenshots.md`. Never set that flag in `eas.json`; keep the flow's test ids when changing those screens.
 
 ## Commands
 `npm start` · `npm test` · `npm run test:screens` · `npm run typecheck`

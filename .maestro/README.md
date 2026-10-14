@@ -29,3 +29,23 @@ If you rename a `testID` or change visible text the flow uses, update `smoke.yam
 - `onboarding-skip`, `tab-play`
 - `choose-course`, `add-player`, `friend-name`, `save-friend`, `sheet-close`, `start-round`
 - `stepper-plus-0`, `next-hole`, `current-hole`, `round-home`, `tab-home`, `resume-round`
+
+# App Store screenshots (.maestro/screenshots.yaml)
+
+Not a test: it drives a demo-data build (`EXPO_PUBLIC_DEMO_DATA=1`, see `src/store/demo.ts`) through six screens and
+saves a screenshot of each:
+1. Home
+2. the round in progress on hole 17
+3. Standings
+4. Results (after hole 18)
+5. New round
+6. a finished round's scorecard
+
+Run it with `scripts/screenshots-ios.sh`, or on GitHub with Actions → **App Store screenshots**. Both are described in
+`scripts/screenshots.md`.
+
+Its ids, besides the smoke flow's:
+- `resume-round`, `current-hole`, `open-standings`, `sheet-close`
+- `next-hole`, `everyone-par`, `save-round`
+- `tab-play`, `start-round`, `tab-home`
+- `round-<round id>` on round rows, `scorecard-in` on a round's page

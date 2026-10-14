@@ -34,6 +34,8 @@ function RootLayout() {
     (async () => {
       try {
         await migrate(storage);
+        // Screenshot builds only (scripts/screenshots.md): a fresh install opens on demo data.
+        if (process.env.EXPO_PUBLIC_DEMO_DATA === '1') await (await import('@/store/demo')).seedDemoData(storage);
       } catch {
         // Stores hydrate best-effort; an unreadable value is dropped there.
       }

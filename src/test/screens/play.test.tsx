@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor } from 'expo-router/testing-library';
 import PlayScreen from '@/app/round/play';
 import RoundLayout from '@/app/round/_layout';
 import { getGame } from '@/games/registry';
+import { priya } from '@/lib/__fixtures__/cedarRidge';
 import { newActiveGame, useProfileStore, useRoundStore } from '@/store';
 import { cody, lastActionSheet, lastAlert, marcus, pressAction, pressAlert, renderScreens, resetStores, seedPrefs, seedRound } from '../screen';
 
@@ -53,6 +54,16 @@ describe('Scorecard', () => {
     await waitFor(() => expect(scoreOn(1, marcus.id)).toBeUndefined());
     fireEvent.press(screen.getByRole('button', { name: `Undo: Cleared ${marcus.name} on hole 1` }));
     expect(scoreOn(1, marcus.id)).toBeNull();
+  });
+
+  it('the Wolf prompt names the wolf on this hole and never offers them as their own partner', () => {
+    seedRound({ players: [cody, marcus, priya], games: [newActiveGame(getGame('wolf')!)] });
+    renderScreens(routes, '/round/play');
+    expect(screen.getByText('Cody is the wolf')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('The wolf went: With a partner'));
+    expect(screen.getByLabelText('Partner: Marcus')).toBeTruthy();
+    expect(screen.getByLabelText('Partner: Priya')).toBeTruthy();
+    expect(screen.queryByLabelText('Partner: Cody')).toBeNull();
   });
 
   it('Everyone par fills only the players without a score', () => {

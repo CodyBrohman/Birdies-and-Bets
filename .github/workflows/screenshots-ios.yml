@@ -1,0 +1,74 @@
+# App Store screenshots on a GitHub-hosted Mac (free for this public repo). Start it from GitHub → Actions →
+# "App Store screenshots" → Run workflow, then download the "app-store-screenshots" artifact from the run.
+# A Release simulator build with demo data (EXPO_PUBLIC_DEMO_DATA=1) runs .maestro/screenshots.yaml on a 6.9" and a
+# 6.3" iPhone with the status bar at 9:41. See scripts/screenshots.md.
+name: App Store screenshots
+
+on:
+  workflow_dispatch:
+
+jobs:
+  screenshots:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    env:
+      SENTRY_DISABLE_AUTO_UPLOAD: 'true'
+      # Inlined into the JS bundle at build time: a fresh install opens on demo data (src/store/demo.ts).
+      EXPO_PUBLIC_DEMO_DATA: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - run: npm ci
+
+      - name: Generate the iOS project
+        run: npx expo prebuild --platform ios --clean
+
+      - name: Build for the simulator, with demo data
+        run: |
+          WORKSPACE=$(ls -d ios/*.xcworkspace | head -n 1)
+          SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+          xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO -quiet
+
+      - name: Install Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      # App Store Connect's iPhone sets (Screenshot specifications, 2026). Every other iPhone size is scaled from these.
+      - name: iPhone with Dynamic Island, large display (6.9-inch, 1320 × 2868)
+        run: bash scripts/screenshots-ios.sh dynamic-island-large "iPhone 17 Pro Max" "iPhone 16 Pro Max"
+
+      - name: iPhone with Dynamic Island, medium display (6.3-inch, 1206 × 2622)
+        run: bash scripts/screenshots-ios.sh dynamic-island-medium "iPhone 17 Pro" "iPhone 16 Pro"
+
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-store-screenshots
+          path: screenshots/
+          if-no-files-found: warn
+
+      - name: Keep Maestro's logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-logs
+          path: ~/.maestro/tests/
+          if-no-files-found: ignore

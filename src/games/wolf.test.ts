@@ -1,4 +1,4 @@
-import { runGame } from './engine';
+import { buildContext, runGame } from './engine';
 import { wolf, wolfFor } from './wolf';
 import { active, makeRound, resultsFrom } from './__fixtures__/round';
 import type { HoleResult } from '../types';
@@ -69,6 +69,19 @@ describe('Wolf', () => {
     // Off by default: the same holes score as before.
     const plain = Object.fromEntries(runGame(makeRound({ results }), active('wolf', {}, 'gross'), wolf).standings.lines.map((l) => [l.playerId, l.value]));
     expect(plain).toEqual({ cody: 3 + 1 + 1, marcus: 0, priya: 1 + 1, dan: 1 });
+  });
+
+  it('names the wolf on each hole for the prompt and leaves them out of the partners, in play order', () => {
+    // Order: cody, marcus, priya, dan.
+    const round = makeRound();
+    const ctx = buildContext(round, active('wolf'), wolf);
+    expect(wolf.holePrompt!(ctx, 1)).toEqual({ note: 'Cody is the wolf', exclude: ['cody'] });
+    expect(wolf.holePrompt!(ctx, 2)).toEqual({ note: 'Marcus is the wolf', exclude: ['marcus'] });
+    expect(wolf.holePrompt!(ctx, 5)).toEqual({ note: 'Cody is the wolf', exclude: ['cody'] });
+    // Shotgun start on 10: hole 10 is played first (Cody); hole 1 is the tenth hole played (Marcus).
+    const shotgun = buildContext({ ...round, settings: { ...round.settings, startHole: 10 } }, active('wolf'), wolf);
+    expect(wolf.holePrompt!(shotgun, 10).note).toBe('Cody is the wolf');
+    expect(wolf.holePrompt!(shotgun, 1).note).toBe('Marcus is the wolf');
   });
 
   it('applies the points multiplier', () => {

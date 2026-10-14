@@ -71,19 +71,20 @@ golf,scorecard,skins,nassau,match play,stableford,wolf,handicap,score card,point
 - Hosting: GitHub Pages on github.com/CodyBrohman/birdies-and-bets-site (the `../website/` folder, its own repo, root of `main`).
   The old `docs/privacy.html` and `docs/support.html` in this repo are redirect stubs to the new site; keep them until every submitted listing points at the new URLs.
 
-## Screenshots (6.9" and 6.5" required)
+## Screenshots
 
-Order matters for review: golf first, the points tally never first. Light mode (the app has no dark mode).
+Two sets, made by the "App Store screenshots" GitHub workflow from demo data (see `scripts/screenshots.md`):
+**iPhone with Dynamic Island (large display)**, 1320 × 2868, and **(medium display)**, 1206 × 2622. App Store Connect
+scales the other iPhone sizes from these. No alpha channel (an App Store Connect rule since July 2026). Light mode only;
+the app has no dark mode. Order matters for review: golf first, the points tally never first.
 
-1. The round in progress: hole 7, four players, the steppers and the hole chips.
-2. A round's page: the paper scorecard (circles, squares, stroke dots, OUT / IN / TOT), net view.
-3. Standings: "Maya leads with 3 skins" with the hole-by-hole strip.
-4. New round: course, tees, tee time, players with their course handicaps, games.
+1. The round in progress: hole 17, four players with their scores, the hole chips, the standings line, the Wolf prompt.
+2. A round's page: who won, Player · Gross · Net · Pts, and the paper scorecard in net (circles, squares, stroke dots,
+   OUT / IN / TOT).
+3. Standings: "Maya Chen leads with 5 skins" with the hole-by-hole strip.
+4. New round: course, tees, tee time, players with their handicaps, games.
 5. Results: who won, Player · Gross · Net · Pts.
-6. Home with the round in progress and recent rounds.
-7. (optional) The share image in Messages.
-
-See `scripts/screenshots.md` for how they are made.
+6. Home with the round in progress, the year in numbers and recent rounds.
 
 ## App Privacy questionnaire
 

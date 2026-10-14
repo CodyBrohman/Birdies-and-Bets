@@ -39,3 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Simulator builds and App Store screenshots (scripts/screenshots-ios.sh, the e2e and screenshot workflows)
+/build/
+/screenshots/

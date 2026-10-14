@@ -1,0 +1,88 @@
+# App Store screenshots. Needs a build made with EXPO_PUBLIC_DEMO_DATA=1: a fresh install then opens on demo data
+# (src/store/demo.ts) with a round in progress on hole 17. Run by scripts/screenshots-ios.sh, which sets the status bar
+# to 9:41 first; see scripts/screenshots.md. Files are named for the App Store order (01 goes first).
+appId: com.birdiesandbets.app
+name: App Store screenshots
+---
+- launchApp:
+    clearState: true
+
+# Home: the round in progress and the recent rounds.
+- extendedWaitUntil:
+    visible:
+      id: resume-round
+    timeout: 30000
+- waitForAnimationToEnd
+- takeScreenshot: 06-home
+
+# The round in progress, hole 17 scored.
+- tapOn:
+    id: resume-round
+- extendedWaitUntil:
+    visible:
+      id: current-hole
+    timeout: 10000
+- assertVisible:
+    id: current-hole
+    text: "Hole 17 of .*"
+- waitForAnimationToEnd
+- takeScreenshot: 01-round
+
+# Standings, from the trophy line.
+- tapOn:
+    id: open-standings
+- extendedWaitUntil:
+    visible:
+      id: sheet-close
+    timeout: 10000
+- waitForAnimationToEnd
+- takeScreenshot: 03-standings
+- tapOn:
+    id: sheet-close
+
+# Hole 18: everyone par, finish (skipping the wolf's pick), and Results.
+- tapOn:
+    id: next-hole
+- assertVisible:
+    id: current-hole
+    text: "Hole 18 of .*"
+- tapOn:
+    id: everyone-par
+- tapOn:
+    id: next-hole
+- tapOn:
+    text: Skip for now
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: save-round
+    timeout: 10000
+- waitForAnimationToEnd
+- takeScreenshot: 05-results
+
+# Save it; the Play tab then shows the next round being set up (the demo draft).
+- tapOn:
+    id: save-round
+- tapOn:
+    id: tab-play
+- extendedWaitUntil:
+    visible:
+      id: start-round
+    timeout: 10000
+- waitForAnimationToEnd
+- takeScreenshot: 04-new-round
+
+# A finished round's page, scrolled to the paper scorecard (net).
+- tapOn:
+    id: tab-home
+- scrollUntilVisible:
+    element:
+      id: round-r_demo_1
+- tapOn:
+    id: round-r_demo_1
+- scrollUntilVisible:
+    element:
+      id: scorecard-in
+    centerElement: true
+- waitForAnimationToEnd
+- takeScreenshot: 02-scorecard

@@ -7,7 +7,7 @@ import { HoleInputCard, missingInputs } from '@/components/games';
 import { HoleStrip, PlayerScore, type HoleProgress } from '@/components/round';
 import { goBackOr } from '@/components/navigation';
 import { haptic, PRESSED_OPACITY, useReduceMotion, useTheme } from '@/theme';
-import { useGameRuns, useHandicaps, useHoles, useMe, usePlayOrder, useRound, useRoundStore } from '@/store';
+import { holePromptOf, useGameRuns, useHandicaps, useHoles, useMe, usePlayOrder, useRound, useRoundStore } from '@/store';
 import type { GrossScore, Player, PlayerScores, ScoringBasis } from '@/types';
 import { backNine, frontNine, holePosition, nextHoleNumber, prevHoleNumber, scoreOptions, stepScore, totals, unscoredHoles } from '@/lib/scoring';
 import { formatToPar, joinMeta, shortNames } from '@/lib/format';
@@ -245,6 +245,7 @@ export default function PlayScreen() {
           accessibilityRole="button"
           accessibilityLabel={`Standings. ${standingsLine}`}
           onPress={() => router.push('/round/standings')}
+          testID="open-standings"
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: space[3], minHeight: 48, paddingVertical: space[2], paddingHorizontal: space[4], borderRadius: 12, backgroundColor: c.surfaceRaised, borderWidth: 1, borderColor: c.divider, opacity: pressed ? PRESSED_OPACITY : 1 })}
         >
           <Icon name="trophy" size="sm" color={c.goldText} />
@@ -286,6 +287,7 @@ export default function PlayScreen() {
             variant="secondary"
             haptic={false}
             onPress={fillPar}
+            testID="everyone-par"
           />
         ) : null}
 
@@ -301,7 +303,8 @@ export default function PlayScreen() {
         {inputGames.map((r) => {
           const activeGame = round.games.find((g) => g.gameId === r.gameId);
           const participants = activeGame?.playerIds ? round.players.filter((pl) => activeGame.playerIds!.includes(pl.id)) : round.players;
-          return <HoleInputCard key={r.gameId} mode={r.mode} participants={participants} answers={answersFor(r.gameId)} onAnswer={(k, v) => answer(r.gameId, k, v)} />;
+          const prompt = activeGame ? holePromptOf(round, activeGame, r.mode, holeNumber, handicaps) : undefined;
+          return <HoleInputCard key={r.gameId} mode={r.mode} participants={participants} prompt={prompt} answers={answersFor(r.gameId)} onAnswer={(k, v) => answer(r.gameId, k, v)} />;
         })}
       </Animated.View>
 

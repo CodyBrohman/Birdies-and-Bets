@@ -39,6 +39,16 @@ export const wolf: GameMode = {
     { key: 'partner', label: 'Partner', type: 'player', showIf: { key: 'mode', equals: 'With a partner' } },
   ],
 
+  holePrompt(ctx, holeNumber) {
+    const position = positionOf(ctx, holeNumber);
+    if (position === 0 || ctx.participants.length === 0) return {};
+    const wolfId = wolfFor(
+      ctx.participants.map((p) => p.id),
+      position,
+    );
+    return { note: `${nameOf(ctx, wolfId)} is the wolf`, exclude: [wolfId] };
+  },
+
   initState(): WolfState {
     return { points: {}, holes: [], thru: 0 };
   },

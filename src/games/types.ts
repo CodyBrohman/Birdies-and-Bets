@@ -5,7 +5,7 @@ import type { Player, PlayerId } from '../types/player';
 import { holeScores } from '../lib/scoring';
 import { formatStake } from '../lib/format';
 
-export type { GameMode, GameContext, GameState, Standings, StandingsLine, Settlement, SettlementEntry, ConfigField, HoleInputSpec, ProgressionCell } from '../types/game';
+export type { GameMode, GameContext, GameState, Standings, StandingsLine, Settlement, SettlementEntry, ConfigField, HoleInputSpec, HolePrompt, ProgressionCell } from '../types/game';
 export type { HoleResult } from '../types/round';
 
 /** Read a config value with its declared default as fallback. */

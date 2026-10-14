@@ -67,8 +67,8 @@ export function RoundReport({ round, holes, order, handicaps, results, netted, s
           }
         >
           <View style={{ gap: space[3] }}>
-            {front.length > 0 ? <NineCard label="Out" holes={front} players={round.players} results={round.holeResults} basis={basis} handicaps={handicaps} /> : null}
-            {back.length > 0 ? <NineCard label="In" holes={back} players={round.players} results={round.holeResults} basis={basis} handicaps={handicaps} totalOver={front.length > 0 ? holes : undefined} /> : null}
+            {front.length > 0 ? <NineCard label="Out" holes={front} players={round.players} results={round.holeResults} basis={basis} handicaps={handicaps} testID="scorecard-out" /> : null}
+            {back.length > 0 ? <NineCard label="In" holes={back} players={round.players} results={round.holeResults} basis={basis} handicaps={handicaps} totalOver={front.length > 0 ? holes : undefined} testID="scorecard-in" /> : null}
           </View>
         </Section>
       ) : null}

@@ -26,7 +26,8 @@ export function RoundRow({ insight, me, onPress, menu, first }: RoundRowProps) {
   // "Won" only for an outright winner of a round with games; otherwise who had the low score.
   const winner = summary.players.find((p) => p.id === winnerOf(summary));
   const anyStrokes = summary.players.some((p) => p.playingHandicap !== 0);
-  const outcome = winner ? (summary.gameNames.length ? `${winner.name} won` : `${winner.name} low ${anyStrokes ? 'net' : 'gross'}`) : null;
+  const low = `low ${anyStrokes ? 'net' : 'gross'}`;
+  const outcome = !winner ? null : winner.id === mine?.id ? (summary.gameNames.length ? 'You won' : `You had ${low}`) : summary.gameNames.length ? `${winner.name} won` : `${winner.name} ${low}`;
   const showsPoints = net != null && net !== 0;
   const second = showsPoints ? `${formatNet(net!)} ${stakeUnit(insight.stakeLabel)}` : featured ? formatToPar(featured.grossToPar) : '';
   const subtitle = joinMeta([formatShortDate(summary.completedAt), outcome, ...summary.gameNames]);
@@ -38,6 +39,7 @@ export function RoundRow({ insight, me, onPress, menu, first }: RoundRowProps) {
       onPress={onPress}
       menu={menu}
       first={first}
+      testID={`round-${summary.id}`}
       accessibilityLabel={joinMeta([summary.courseName, subtitle, featured ? `${mine ? 'you' : featured.name} ${featured.gross}, ${second}` : null])}
       trailing={
         featured ? (

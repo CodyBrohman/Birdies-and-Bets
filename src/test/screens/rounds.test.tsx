@@ -1,11 +1,11 @@
 import { fireEvent, screen, waitFor } from 'expo-router/testing-library';
 import Rounds from '@/app/(tabs)/(home,courses,friends)/history/index';
 import RoundPage from '@/app/(tabs)/(home,courses,friends)/history/[id]';
-import { useHistoryStore, useRoundStore } from '@/store';
+import { useHistoryStore, useProfileStore, useRoundStore } from '@/store';
 import { computeAllHandicaps, holesInPlay } from '@/lib/handicap';
 import { netSettlements } from '@/lib/settlement';
 import { summarizeRound } from '@/lib/history';
-import { cedarRidge, lastActionSheet, lastAlert, pressAction, pressAlert, renderScreens, resetStores, seedRound } from '../screen';
+import { cedarRidge, lastActionSheet, lastAlert, pressAction, pressAlert, renderScreens, resetStores, seedPrefs, seedRound } from '../screen';
 
 const Empty = () => null;
 const routes = { index: Empty, play: Empty, history: Rounds, 'history/[id]': RoundPage };
@@ -44,6 +44,15 @@ describe('Rounds', () => {
     await waitFor(() => expect(lastAlert()?.title).toBe('Delete this round?'));
     pressAlert('Delete round');
     await waitFor(() => expect(useHistoryStore.getState().entries).toHaveLength(0));
+  });
+
+  it('says You when the phone’s owner won', () => {
+    useProfileStore.setState({ profiles: [{ id: 'pr_cody', name: 'Cody', indexHistory: [], createdAt: '2026-01-01T00:00:00.000Z' }] });
+    seedPrefs({ meProfileId: 'pr_cody' });
+    finishRound('2026-10-04T18:00:00.000Z');
+    renderScreens(routes, '/history');
+    expect(screen.getByText(/You had low net/)).toBeTruthy();
+    expect(screen.queryByText(/Cody low net/)).toBeNull();
   });
 
   it('with none, says so and offers New round', () => {

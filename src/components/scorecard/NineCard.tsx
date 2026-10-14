@@ -23,6 +23,8 @@ export interface NineCardProps {
   /** "You" for the phone owner's row. */
   isMe?: (player: Player) => boolean;
   onPressHole?: (holeNumber: number) => void;
+  /** For the Maestro screenshot flow. */
+  testID?: string;
 }
 
 const LABEL_COL = 38;
@@ -34,7 +36,7 @@ const MIN_COL = 24;
  * circles and squares, stroke dots, and OUT / IN (and TOT) at the end. The current hole's column is tinted; tapping a
  * column opens that hole. Each column is one VoiceOver element.
  */
-export function NineCard({ label, holes, players, results, basis, handicaps, currentHole, totalOver, isMe, onPressHole }: NineCardProps) {
+export function NineCard({ label, holes, players, results, basis, handicaps, currentHole, totalOver, isMe, onPressHole, testID }: NineCardProps) {
   const { c, w, space } = useTheme();
   const [width, setWidth] = useState(0);
   const columns = holes.length + 1 + (totalOver ? 1 : 0);
@@ -144,6 +146,7 @@ export function NineCard({ label, holes, players, results, basis, handicaps, cur
 
   return (
     <View
+      testID={testID}
       onLayout={(e) => setWidth(e.nativeEvent.layout.width - space[3] * 2)}
       style={{ backgroundColor: c.surfaceRaised, borderRadius: 12, borderWidth: 1, borderColor: c.divider, paddingVertical: space[2], paddingHorizontal: space[3] }}
     >

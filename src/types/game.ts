@@ -54,6 +54,14 @@ export type HoleInputSpec =
   /** Optional acknowledgement; never blocks confirming the hole. */
   | { key: string; label: string; type: 'confirm'; showIf?: ShowIf };
 
+/** What a game knows about one hole's prompts: who they are about ("Cody is the wolf"), and who can't be picked. */
+export interface HolePrompt {
+  /** A line above the prompts. */
+  note?: string;
+  /** Players left out of this hole's player choices (the wolf can't be their own partner). */
+  exclude?: PlayerId[];
+}
+
 // ---------- Runtime ----------
 
 export interface GameContext {
@@ -143,6 +151,8 @@ export interface GameMode {
 
   configFields: ConfigField[];
   holeInputs?: HoleInputSpec[];
+  /** Hole-specific context for the prompts (who the wolf is on this hole). */
+  holePrompt?(ctx: GameContext, holeNumber: number): HolePrompt;
 
   initState(ctx: GameContext): GameState;
   onHoleComplete(state: GameState, hole: HoleResult, ctx: GameContext): GameState;
