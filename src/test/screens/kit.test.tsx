@@ -35,7 +35,7 @@ describe('ListSection and ListItem', () => {
     expect(screen.getByRole('button', { name: 'Holes, Front 9' }).props.accessibilityState).toMatchObject({ selected: true });
   });
 
-  it('a long press opens the native action sheet; VoiceOver gets the same actions', () => {
+  it('a long press opens the native action sheet; VoiceOver gets the same actions', async () => {
     const edit = jest.fn();
     const del = jest.fn();
     render(
@@ -46,13 +46,11 @@ describe('ListSection and ListItem', () => {
     const row = screen.getByRole('button', { name: 'Cedar Ridge' });
     fireEvent(row, 'longPress');
     expect(lastActionSheet()).toEqual({ title: 'Cedar Ridge', options: ['Edit', 'Delete', 'Cancel'] });
-    pressAction('Delete');
-    return Promise.resolve().then(() => {
-      expect(del).toHaveBeenCalledTimes(1);
-      expect(row.props.accessibilityActions.map((a: { name: string }) => a.name)).toEqual(['Edit', 'Delete']);
-      fireEvent(row, 'accessibilityAction', { nativeEvent: { actionName: 'Edit' } });
-      expect(edit).toHaveBeenCalledTimes(1);
-    });
+    await pressAction('Delete');
+    expect(del).toHaveBeenCalledTimes(1);
+    expect(row.props.accessibilityActions.map((a: { name: string }) => a.name)).toEqual(['Edit', 'Delete']);
+    fireEvent(row, 'accessibilityAction', { nativeEvent: { actionName: 'Edit' } });
+    expect(edit).toHaveBeenCalledTimes(1);
   });
 
   it('a destructive row is coral, and a switch row is its own control', () => {

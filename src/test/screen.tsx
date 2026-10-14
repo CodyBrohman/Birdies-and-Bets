@@ -2,6 +2,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { ComponentType } from 'react';
 import { ActionSheetIOS, Alert, type AlertButton } from 'react-native';
+import { act } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
 import { DEFAULT_PREFERENCES, DEFAULT_SETTINGS, useAuthStore, useHistoryStore, usePreferences, useProfileStore, useRoundStore, useSyncStatus, type Preferences } from '@/store';
 import { cedarRidge, cody, marcus } from '@/lib/__fixtures__/cedarRidge';
@@ -44,13 +45,15 @@ export function lastActionSheet(): { title?: string; options: string[] } | undef
   return call ? { title: (call[0] as SheetOptions).title, options: (call[0] as SheetOptions).options } : undefined;
 }
 
-/** Choose an option on the most recent action sheet. */
-export function pressAction(label: string): void {
+/** Choose an option on the most recent action sheet, and let what it does settle (await it). */
+export async function pressAction(label: string): Promise<void> {
   const call = sheetSpy.mock.calls.at(-1);
   if (!call) throw new Error('No action sheet was shown');
   const index = (call[0] as SheetOptions).options.indexOf(label);
   if (index < 0) throw new Error(`No "${label}" in the action sheet (${(call[0] as SheetOptions).options.join(', ')})`);
-  (call[1] as (i: number) => void)(index);
+  await act(async () => {
+    (call[1] as (i: number) => void)(index);
+  });
 }
 
 /** Press a button on the most recent native alert, as the person would. */

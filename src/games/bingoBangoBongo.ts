@@ -1,5 +1,6 @@
 import type { GameMode, GameState, Settlement, Standings } from './types';
 import { positionOf, stakeOf } from './types';
+import { leaderLine, plural } from '../lib/format';
 
 interface BbbState extends GameState {
   points: Record<string, number>;
@@ -54,7 +55,7 @@ export const bingoBangoBongo: GameMode = {
   getStandings(prev, ctx): Standings {
     const state = prev as BbbState;
     const rows = ctx.participants.map((p) => ({ p, pts: state.points[p.id] ?? 0 })).sort((a, b) => b.pts - a.pts);
-    const headline = state.thru ? rows.map((r) => `${r.p.name} ${r.pts}`).join(' · ') : 'Nothing scored yet';
+    const headline = (state.thru && leaderLine(rows.map((r) => ({ name: r.p.name, value: r.pts })), (n) => plural(n, 'point'), { final: state.thru >= ctx.holeCount })) || 'Nothing scored yet';
     const subline = state.incomplete.length
       ? `Points thru ${state.thru} · hole${state.incomplete.length > 1 ? 's' : ''} ${state.incomplete.join(', ')} missing answers`
       : state.thru

@@ -1,7 +1,7 @@
 import type { GameMode, GameState, ProgressionCell, Settlement, Standings } from './types';
 import { cfg, initialOf, isLastHole, nameOf, nextAfter, progressionFor, scoresFor, stakeOf } from './types';
 import { lowest } from '../lib/scoring';
-import { formatStake, plural } from '../lib/format';
+import { formatStake, leaderLine, plural } from '../lib/format';
 
 interface HoleOutcome {
   holeNumber: number;
@@ -101,23 +101,18 @@ export const skins: GameMode = {
     const state = prev as SkinsState;
     const thru = state.outcomes.length ? state.outcomes[state.outcomes.length - 1]!.holeNumber : 0;
     const totals = { ...state.totals };
-    // Show a pending (unvalidated) skin as provisional in the ledger so the headline moves.
-    const ranked = ctx.participants
-      .map((p) => ({ p, n: totals[p.id] ?? 0 }))
-      .filter((x) => x.n > 0)
-      .sort((a, b) => b.n - a.n);
-    const parts = ranked.map((x) => `${x.p.name} ${plural(x.n, 'skin')}`);
-    const carrying = state.pot - 1;
-    if (carrying > 0) parts.push(`${carrying} carrying`);
-    if (state.pending) parts.push(`${nameOf(ctx, state.pending.playerId)} ${plural(state.pending.skins, 'skin')} pending`);
-    const headline = parts.length ? parts.join(' · ') : thru ? 'No skins yet' : 'Nothing won yet';
-
     const next = nextAfter(ctx, thru);
+    const carrying = state.pot - 1;
+    // One sentence about the leader; carries and a skin waiting on validation go in the subline.
+    const leader = leaderLine(ctx.participants.map((p) => ({ name: p.name, value: totals[p.id] ?? 0 })), (n) => plural(n, 'skin'), { final: thru > 0 && next == null, positiveOnly: true });
+    const headline = leader ?? (!thru ? 'Nothing won yet' : carrying > 0 ? `${plural(carrying, 'skin')} carrying` : 'No skins won yet');
+
     const stake = stakeOf(ctx);
+    const pending = state.pending ? `${nameOf(ctx, state.pending.playerId)} has ${plural(state.pending.skins, 'skin')} pending · ` : '';
     const subline =
       next != null
-        ? `Hole ${next} is worth ${plural(state.pot, 'skin')}${stake ? ` · ${formatStake(state.pot * stake, ctx.settings.stakeLabel)} from each player` : ''}`
-        : 'Round complete';
+        ? `${pending}Hole ${next} is worth ${plural(state.pot, 'skin')}${stake ? ` · ${formatStake(state.pot * stake, ctx.settings.stakeLabel)} from each player` : ''}`
+        : `${pending}Round complete`;
 
     const byHole = new Map(state.outcomes.map((o) => [o.holeNumber, o]));
     const progression: ProgressionCell[] = progressionFor(ctx, (n) => {

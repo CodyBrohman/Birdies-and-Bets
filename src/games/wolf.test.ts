@@ -43,7 +43,8 @@ describe('Wolf', () => {
     const run = runGame(round, active('wolf', {}, 'gross'), wolf);
     const pts = Object.fromEntries(run.standings.lines.map((l) => [l.playerId, l.value]));
     expect(pts).toEqual({ cody: 2, marcus: 4, priya: 0, dan: 2 });
-    expect(run.standings.headline).toBe('Marcus 4 · Cody 2 · Dan 2 · Priya 0');
+    expect(run.standings.headline).toBe('Marcus leads with 4 points');
+    expect(run.standings.lines.map((l) => [l.playerId, l.value])).toEqual([['marcus', 4], ['cody', 2], ['dan', 2], ['priya', 0]]);
     expect(run.standings.subline).toBe('Cody is the wolf on 5');
     expect(run.settlement).toBeNull();
   });

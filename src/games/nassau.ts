@@ -128,9 +128,17 @@ export const nassau: GameMode = {
       const name = leader(bet);
       if (bet.closed) return name ? `${name} won ${bet.label.toLowerCase()}` : `${bet.label} halved`;
       if (bet.played === 0) return `${bet.label} not started`;
-      return bet.lead === 0 ? `${bet.label} AS` : `${name} ${Math.abs(bet.lead)} up ${bet.label.toLowerCase()}`;
+      return bet.lead === 0 ? `${bet.label} all square` : `${name} ${Math.abs(bet.lead)} up ${bet.label.toLowerCase()}`;
     };
-    const headline = !ready ? (sides.teams ? 'Pick the teams' : 'Pick two players') : state.results.length ? main.map(short).join(' · ') : 'All square';
+    // Bets in play, said once each; when one side holds the same lead in every open bet, say it once
+    // ("Maya 1 up front and overall").
+    const started = main.filter((b) => b.played > 0 || b.closed);
+    const open = started.filter((b) => !b.closed);
+    const sameLead = open.length > 1 && open[0]!.lead !== 0 && open.every((b) => b.lead === open[0]!.lead);
+    const parts = sameLead
+      ? [...started.filter((b) => b.closed).map(short), `${leader(open[0]!)} ${Math.abs(open[0]!.lead)} up ${open.map((b) => b.label.toLowerCase()).join(' and ')}`]
+      : started.map(short);
+    const headline = !ready ? (sides.teams ? 'Pick the teams' : 'Pick two players') : parts.join(' · ') || 'All square';
     const presses = state.bets.filter((x) => x.press);
     const byHole = new Map(state.results.map((r) => [r.holeNumber, r.outcome]));
     const progression = progressionFor(ctx, (n) => {

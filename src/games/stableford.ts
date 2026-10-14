@@ -1,6 +1,7 @@
 import type { GameMode, GameState, Standings } from './types';
 import { cfg, pickedUp, positionOf, scoresFor } from './types';
 import { relationToPar, type Relation } from '../lib/scoring';
+import { leaderLine, plural } from '../lib/format';
 
 interface StablefordState extends GameState {
   points: Record<string, number>;
@@ -87,7 +88,7 @@ export const stableford: GameMode = {
     const scoring = cfg<string>(ctx, 'scoring', 'standard');
     const label = scoring === 'modified' ? 'Modified Stableford' : scoring === 'custom' ? 'Custom points' : 'Points';
     const rows = ctx.participants.map((p) => ({ p, pts: state.points[p.id] ?? 0 })).sort((a, b) => b.pts - a.pts);
-    const headline = state.thru ? rows.map((r) => `${r.p.name} ${r.pts}`).join(' · ') : 'Nothing scored yet';
+    const headline = (state.thru && leaderLine(rows.map((r) => ({ name: r.p.name, value: r.pts })), (n) => plural(n, 'point'), { final: state.thru >= ctx.holeCount })) || 'Nothing scored yet';
     return {
       gameId: 'stableford',
       basis: ctx.active.basis,

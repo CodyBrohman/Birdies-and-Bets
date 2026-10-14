@@ -1,6 +1,6 @@
 import type { GameMode, GameState, HoleResult, Settlement, Standings } from './types';
 import { cfg, nameOf, nextAfter, positionOf, scoresFor, stakeOf } from './types';
-import { formatStake } from '../lib/format';
+import { formatStake, leaderLine, plural } from '../lib/format';
 
 interface WolfState extends GameState {
   points: Record<string, number>;
@@ -92,7 +92,7 @@ export const wolf: GameMode = {
     const ids = ctx.participants.map((p) => p.id);
     const rows = ctx.participants.map((p) => ({ p, pts: state.points[p.id] ?? 0 })).sort((a, b) => b.pts - a.pts);
     const pending = state.holes.filter((h) => h.result === 'pending').length;
-    const headline = state.thru ? rows.map((r) => `${r.p.name} ${r.pts}`).join(' · ') : 'Nothing scored yet';
+    const headline = (state.thru && leaderLine(rows.map((r) => ({ name: r.p.name, value: r.pts })), (n) => plural(n, 'point'), { final: nextAfter(ctx, state.thru) == null })) || 'Nothing scored yet';
     const next = nextAfter(ctx, state.thru);
     const nextWolf = next != null ? `${nameOf(ctx, wolfFor(ids, positionOf(ctx, next)))} is the wolf on ${next}` : 'Round complete';
     const subline = pending ? `${nextWolf} · ${pending} hole${pending > 1 ? 's' : ''} waiting on who the wolf took` : nextWolf;

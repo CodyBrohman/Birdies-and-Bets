@@ -1,6 +1,6 @@
 import { View } from 'react-native';
-import { Avatar, Badge, Card, Text } from '@/components/ui';
-import { useTheme } from '@/theme';
+import { Text } from '@/components/ui';
+import { seatColors, useTheme } from '@/theme';
 import type { ActiveGame, GameMode, Player, ProgressionCell, Standings } from '@/types';
 import { describeProgression, describeStandingsLine, formatStake, withoutName } from '@/lib/format';
 
@@ -21,46 +21,52 @@ function splitLine(text: string): { left: string; right: string | null } {
   return { left: text.slice(0, idx), right: text.slice(idx + 3) };
 }
 
+/** "Net" or "Gross", in a small capsule: the basis decides how a game reads the scores. */
+export function BasisTag({ basis }: { basis: 'net' | 'gross' }) {
+  const { c, w } = useTheme();
+  const net = basis === 'net';
+  return (
+    <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: net ? c.accentTint : c.goldTint }}>
+      <Text step="footnote" style={{ color: net ? c.accentTintText : c.goldTintText, fontWeight: w.semibold }}>
+        {net ? 'Net' : 'Gross'}
+      </Text>
+    </View>
+  );
+}
+
 /**
- * One active game, in its own vocabulary: category dot, name, stake, basis badge, callout, then rows.
- * VoiceOver reads the header, the callout (with the hole-by-hole story for head-to-head games) and each row on its own.
+ * One game in the standings: its name, stake and basis; a sentence on who leads and what the next hole is worth; the
+ * hole-by-hole strip (two rows of nine); then a row per player. VoiceOver reads the header, the sentence with the
+ * hole-by-hole story, and each row.
  */
 export function StandingsCard({ mode, active, standings, stakeLabel, players, detailed = true }: StandingsCardProps) {
-  const { c, radius, space } = useTheme();
-  const betting = mode.category === 'betting';
+  const { c, w, space } = useTheme();
   const stake = typeof active.config.stake === 'number' ? active.config.stake : 0;
   const stakeField = mode.configFields.find((f) => f.key === 'stake');
-  const stakeText = stake ? `${formatStake(stake, stakeLabel)}${stakeField && stakeField.type === 'number' && stakeField.unit ? ` ${stakeField.unit}` : ''}` : betting ? 'no stake' : '';
+  const stakeText = stake ? `${formatStake(stake, stakeLabel)}${stakeField && stakeField.type === 'number' && stakeField.unit ? ` ${stakeField.unit}` : ''}` : 'Just for fun';
   const leaderValue = Math.max(...standings.lines.map((l) => (typeof l.value === 'number' ? l.value : -Infinity)));
 
   const nameOf = (id: string | undefined) => (id ? players.find((p) => p.id === id)?.name : undefined);
   const story = standings.progression ? describeProgression(standings.progression, nameOf(standings.lines[0]?.playerId) ?? 'side A', nameOf(standings.lines[1]?.playerId) ?? 'side B') : null;
-  const calloutLabel = [standings.headline, standings.subline, story].filter(Boolean).join('. ');
 
   return (
-    <Card padding="roomy">
+    <View style={{ backgroundColor: c.surfaceRaised, borderRadius: 12, borderWidth: 1, borderColor: c.divider, padding: space[4], gap: space[3] }}>
       <View accessible accessibilityRole="header" accessibilityLabel={[mode.name, stakeText, mode.supportsNet ? standings.basis : null].filter(Boolean).join(', ')} style={{ flexDirection: 'row', alignItems: 'center', gap: space[2] }}>
-        <View style={{ width: 12, height: 12, borderRadius: 999, backgroundColor: betting ? c.accent : c.gold }} />
-        <Text step="headline" numberOfLines={2} style={{ flexShrink: 1 }}>
-          {mode.name}
-        </Text>
-        {stakeText ? (
-          <Text step="body" tone="secondary" style={{ flex: 1 }} numberOfLines={2}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text step="rowTitle" numberOfLines={1}>
+            {mode.name}
+          </Text>
+          <Text step="footnote" tone="secondary" numberOfLines={1}>
             {stakeText}
           </Text>
-        ) : (
-          <View style={{ flex: 1 }} />
-        )}
-        {mode.supportsNet ? <Badge label={standings.basis} tone={standings.basis === 'net' ? 'net' : 'gross'} /> : null}
+        </View>
+        {mode.supportsNet ? <BasisTag basis={standings.basis} /> : null}
       </View>
 
-      <View accessible accessibilityLabel={calloutLabel} style={{ marginTop: space[4], padding: space[4], borderRadius: radius.lg, backgroundColor: betting ? c.accentTint : c.goldTint }}>
-        {/* The headline says who leads; the subline adds what is at stake next. Both show. */}
-        <Text step="bodyStrong" style={{ color: betting ? c.accentTintText : c.goldTintText }}>
-          {standings.headline}
-        </Text>
+      <View accessible accessibilityLabel={[standings.headline, standings.subline, story].filter(Boolean).join('. ')} style={{ gap: 2 }}>
+        <Text step="title3">{standings.headline}</Text>
         {standings.subline ? (
-          <Text step="body" style={{ color: betting ? c.accentTintText : c.goldTintText, marginTop: 2 }}>
+          <Text step="subhead" tone="secondary">
             {standings.subline}
           </Text>
         ) : null}
@@ -69,10 +75,10 @@ export function StandingsCard({ mode, active, standings, stakeLabel, players, de
       {standings.progression ? <Progression cells={standings.progression} /> : null}
 
       {detailed && standings.lines.length > 0 ? (
-        <View style={{ marginTop: space[3], borderTopWidth: 1, borderTopColor: c.dividerSoft }}>
+        <View style={{ borderTopWidth: 1, borderTopColor: c.divider }}>
           {standings.lines.map((l, i) => {
             const player = l.playerId ? players.find((p) => p.id === l.playerId) : undefined;
-            const playerIndex = l.playerId ? players.findIndex((p) => p.id === l.playerId) : -1;
+            const seat = l.playerId ? players.findIndex((p) => p.id === l.playerId) : -1;
             const { left, right } = splitLine(l.text);
             // Plain text, not a pattern: a name like "Bob (Jr" must not break the row.
             const label = player ? withoutName(left, player.name) : left;
@@ -82,19 +88,15 @@ export function StandingsCard({ mode, active, standings, stakeLabel, players, de
                 key={l.playerId ?? i}
                 accessible
                 accessibilityLabel={describeStandingsLine(l.text, player?.name, leading)}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: space[3], minHeight: 56, paddingVertical: space[2], borderBottomWidth: i === standings.lines.length - 1 ? 0 : 1, borderBottomColor: c.dividerSoft }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: space[2], minHeight: 44, paddingVertical: space[2], borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.divider }}
               >
-                {player ? <Avatar name={player.name} seat={playerIndex} size={40} /> : null}
-                <Text step="body" style={{ flex: 1 }} numberOfLines={3}>
+                {player ? <View style={{ width: 10, height: 10, borderRadius: 999, backgroundColor: seatColors[Math.max(0, seat) % seatColors.length]!.fill }} /> : null}
+                <Text step="rowBody" style={{ flex: 1 }} numberOfLines={2}>
                   {player ? player.name : left}
+                  {player && label && label !== player.name && right ? <Text step="subhead" tone="secondary">{`  ${label}`}</Text> : null}
                 </Text>
-                {player && label && label !== player.name && right ? (
-                  <Text step="body" tone="secondary" numberOfLines={2} style={{ flexShrink: 1 }}>
-                    {label}
-                  </Text>
-                ) : null}
                 {right ? (
-                  <Text step="total" tone={leading ? 'accent' : 'primary'} numberOfLines={1}>
+                  <Text step="rowBody" tabular style={{ fontWeight: leading ? w.semibold : w.regular }} numberOfLines={1}>
                     {right}
                   </Text>
                 ) : null}
@@ -103,55 +105,57 @@ export function StandingsCard({ mode, active, standings, stakeLabel, players, de
           })}
         </View>
       ) : null}
-    </Card>
+    </View>
   );
 }
 
 /**
- * Generic per-hole strip. Head-to-head tones draw a bar up (a) or down (b) or a centred tick (half);
- * chip tones draw a small labelled square (win = filled, carry = tinted). Hidden from VoiceOver: the callout tells the story.
+ * The hole-by-hole strip, nine to a row so every cell stays at least 32pt. Head-to-head games draw a bar up (first
+ * side) or down (second side), a dash for a halved hole; skins draw the winner's initial (filled) or ↷ for a carry.
+ * Hidden from VoiceOver: the sentence above tells the story.
  */
 function Progression({ cells }: { cells: ProgressionCell[] }) {
-  const { c, radius, space } = useTheme();
-  const barStyle = cells.some((x) => x.tone === 'a' || x.tone === 'b' || x.tone === 'half');
+  const { c, space } = useTheme();
+  const bars = cells.some((x) => x.tone === 'a' || x.tone === 'b' || x.tone === 'half');
+  const rows: ProgressionCell[][] = [];
+  for (let i = 0; i < cells.length; i += 9) rows.push(cells.slice(i, i + 9));
   return (
-    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ flexDirection: 'row', gap: 2, marginTop: space[3] }}>
-      {cells.map((cell) => (
-        <View key={cell.holeNumber} style={{ flex: 1, alignItems: 'center', gap: 2 }}>
-          {barStyle ? (
-            <View style={{ height: 30, width: '100%', justifyContent: 'center', alignItems: 'center' }}>
-              {cell.tone === 'a' ? (
-                <View style={{ position: 'absolute', top: 0, width: 3, height: 14, borderRadius: 2, backgroundColor: c.accent }} />
-              ) : cell.tone === 'b' ? (
-                <View style={{ position: 'absolute', bottom: 0, width: 3, height: 14, borderRadius: 2, backgroundColor: c.gold }} />
-              ) : cell.tone === 'half' ? (
-                <View style={{ width: 3, height: 4, borderRadius: 2, backgroundColor: c.dividerSoft }} />
-              ) : null}
+    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ gap: space[2] }}>
+      {rows.map((row, r) => (
+        <View key={r} style={{ flexDirection: 'row', gap: 3 }}>
+          {row.map((cell) => (
+            <View key={cell.holeNumber} style={{ flex: 1, minWidth: 32, alignItems: 'center', gap: 2 }}>
+              <Text step="caption2" tone="tertiary" tabular maxFontSizeMultiplier={1.2}>
+                {cell.holeNumber}
+              </Text>
+              {bars ? (
+                <View style={{ height: 28, width: '100%', alignItems: 'center', justifyContent: 'center', borderRadius: 6, backgroundColor: c.surface }}>
+                  {cell.tone === 'a' ? <View style={{ position: 'absolute', top: 3, width: 4, height: 11, borderRadius: 2, backgroundColor: c.accent }} /> : null}
+                  {cell.tone === 'b' ? <View style={{ position: 'absolute', bottom: 3, width: 4, height: 11, borderRadius: 2, backgroundColor: c.gold }} /> : null}
+                  {cell.tone === 'half' ? <View style={{ width: 10, height: 2, borderRadius: 1, backgroundColor: c.tickUpcoming }} /> : null}
+                </View>
+              ) : (
+                <View
+                  style={{
+                    height: 28,
+                    width: '100%',
+                    borderRadius: 6,
+                    backgroundColor: cell.tone === 'win' ? c.inverse : cell.tone === 'carry' ? c.accentTint : c.surface,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {cell.label ? (
+                    <Text step="caption1" maxFontSizeMultiplier={1.2} style={{ color: cell.tone === 'win' ? c.onInverse : c.accentTintText }} numberOfLines={1}>
+                      {cell.label}
+                    </Text>
+                  ) : null}
+                </View>
+              )}
             </View>
-          ) : (
-            <View
-              style={{
-                width: '100%',
-                aspectRatio: 1,
-                maxWidth: 22,
-                borderRadius: radius.xs,
-                backgroundColor: cell.tone === 'win' ? c.inverse : cell.tone === 'carry' ? c.accentTint : c.surface,
-                borderWidth: cell.tone === 'none' ? 1 : 0,
-                borderColor: c.dividerSoft,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              {cell.label ? (
-                <Text step="caption" maxFontSizeMultiplier={1.2} style={{ fontSize: 13, lineHeight: 14, color: cell.tone === 'win' ? c.onInverse : c.accentTintText }} numberOfLines={1}>
-                  {cell.label}
-                </Text>
-              ) : null}
-            </View>
-          )}
-          <Text step="caption" tone="tertiary" maxFontSizeMultiplier={1.2} style={{ lineHeight: 14 }}>
-            {cell.holeNumber}
-          </Text>
+          ))}
+          {/* Keep a short last row on the same grid. */}
+          {row.length < 9 && rows.length > 1 ? Array.from({ length: 9 - row.length }, (_, k) => <View key={`pad-${k}`} style={{ flex: 1, minWidth: 32 }} />) : null}
         </View>
       ))}
     </View>

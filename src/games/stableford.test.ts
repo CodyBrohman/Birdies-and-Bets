@@ -8,7 +8,8 @@ describe('Stableford', () => {
     const run = runGame(makeRound(), active('stableford'), stableford);
     const pts = Object.fromEntries(run.standings.lines.map((l) => [l.playerId, l.value]));
     expect(pts).toEqual({ cody: 13, dan: 11, marcus: 10, priya: 6 });
-    expect(run.standings.headline).toBe('Cody 13 · Dan 11 · Marcus 10 · Priya 6');
+    expect(run.standings.headline).toBe('Cody leads with 13 points');
+    expect(run.standings.lines.map((l) => l.value)).toEqual([13, 11, 10, 6]);
     expect(run.settlement).toBeNull();
   });
 

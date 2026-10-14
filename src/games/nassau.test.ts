@@ -21,7 +21,7 @@ describe('Nassau', () => {
 
   it('shows live status mid-round', () => {
     const run = runGame(makeRound({ players: [cody, marcus], results: resultsFrom({ cody: [4, 4, 5], marcus: [5, 5, 5] }) }), cvm(), nassau);
-    expect(run.standings.headline).toBe('Cody 2 up front · Back not started · Cody 2 up overall');
+    expect(run.standings.headline).toBe('Cody 2 up front and overall');
     expect(run.settlement?.entries).toEqual([]);
   });
 

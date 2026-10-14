@@ -64,6 +64,8 @@ describe('formatShortDate', () => {
 describe('formatStake', () => {
   it('puts symbols in front and words behind', () => {
     expect(formatStake(5, 'points')).toBe('5 pts');
+    expect(formatStake(1, 'points')).toBe('1 pt');
+    expect(formatStake('−1', 'points')).toBe('−1 pt');
     expect(formatStake(5, '$')).toBe('$5');
     expect(formatStake('+12', '$')).toBe('+$12');
     expect(formatStake('−3', '€')).toBe('−€3');

@@ -43,13 +43,13 @@ describe('Scorecard', () => {
     const marcus = players[1]!;
     fireEvent.press(screen.getByRole('button', { name: new RegExp(`^${marcus.name}.*Options$`) }));
     await waitFor(() => expect(lastActionSheet()?.options).toEqual(['Picked up', 'Cancel']));
-    pressAction('Picked up');
+    await pressAction('Picked up');
     await waitFor(() => expect(scoreOn(1, marcus.id)).toBeNull());
     expect(screen.getByText(`${marcus.name} picked up on hole 1`)).toBeTruthy();
 
     fireEvent.press(screen.getByRole('button', { name: new RegExp(`^${marcus.name}.*Options$`) }));
     await waitFor(() => expect(lastActionSheet()?.options).toEqual(['Picked up', 'Clear score', 'Cancel']));
-    pressAction('Clear score');
+    await pressAction('Clear score');
     await waitFor(() => expect(scoreOn(1, marcus.id)).toBeUndefined());
     fireEvent.press(screen.getByRole('button', { name: `Undo: Cleared ${marcus.name} on hole 1` }));
     expect(scoreOn(1, marcus.id)).toBeNull();
@@ -71,7 +71,7 @@ describe('Scorecard', () => {
     const r = renderScreens(routes, '/round/play');
     fireEvent.press(screen.getByRole('button', { name: 'Round options' }));
     await waitFor(() => expect(lastActionSheet()?.options).toEqual(['Add hole note', 'Add a game', 'End round', 'Cancel']));
-    pressAction('End round');
+    await pressAction('End round');
     await waitFor(() => expect(lastAlert()?.title).toBe('End this round?'));
     pressAlert('Discard round');
     await waitFor(() => expect(lastAlert()?.title).toBe('Discard this round?'));
@@ -85,7 +85,7 @@ describe('Scorecard', () => {
     const r = renderScreens(routes, '/round/play');
     fireEvent.press(screen.getByRole('button', { name: 'Round options' }));
     await waitFor(() => expect(lastActionSheet()).toBeDefined());
-    pressAction('Add hole note');
+    await pressAction('Add hole note');
     await waitFor(() => expect(r.getPathname()).toBe('/round/note'));
   });
 

@@ -93,6 +93,21 @@ export function initials(name: string): string {
 }
 
 /**
+ * A game's headline as one sentence about the leader: "Maya leads with 3 skins", "Maya won with 3 skins" once the game
+ * is over, "Maya and Sam tied with 2 skins", "3 players tied with 2 skins". Null when nobody leads yet (no rows, or,
+ * with `positiveOnly`, nobody above zero), so the game can say something better.
+ */
+export function leaderLine(rows: { name: string; value: number }[], unit: (n: number) => string, opts: { final?: boolean; positiveOnly?: boolean } = {}): string | null {
+  if (rows.length === 0) return null;
+  const top = Math.max(...rows.map((r) => r.value));
+  if (opts.positiveOnly && top <= 0) return null;
+  const leaders = rows.filter((r) => r.value === top);
+  if (leaders.length === 1) return `${leaders[0]!.name} ${opts.final ? 'won' : 'leads'} with ${unit(top)}`;
+  const who = leaders.length === 2 ? `${leaders[0]!.name} and ${leaders[1]!.name}` : `${leaders.length} players`;
+  return `${who} tied with ${unit(top)}`;
+}
+
+/**
  * Short names for a card where space is tight: first names, with the last initial added for anyone who shares a first
  * name ("Alex M.", "Alex P."). Same order as given.
  */
@@ -130,7 +145,7 @@ export function formatStake(amount: number | string, stakeLabel: string): string
   const raw = String(amount);
   const sign = raw.startsWith('+') || raw.startsWith('−') || raw.startsWith('-') ? raw[0]! : '';
   const digits = sign ? raw.slice(1) : raw;
-  if (stakeLabel === 'points') return `${raw} pts`;
+  if (stakeLabel === 'points') return `${raw} ${digits === '1' ? 'pt' : 'pts'}`;
   if (isSymbolLabel(stakeLabel)) return `${sign}${stakeLabel.trim()}${digits}`;
   return `${raw} ${stakeLabel}`;
 }

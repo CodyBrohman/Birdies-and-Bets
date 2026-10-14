@@ -11,7 +11,8 @@ describe('Bingo Bango Bongo', () => {
       gameInputs: { 'bingo-bango-bongo': i === 0 ? { bingo: 'Cody', bango: 'Cody', bongo: 'Dan' } : { bingo: 'Marcus', bango: 'Dan', bongo: 'Dan' } },
     }));
     const run = runGame(makeRound({ players: [cody, marcus, dan], results }), active('bingo-bango-bongo', { stake: 2 }, 'gross'), bingoBangoBongo);
-    expect(run.standings.headline).toBe('Dan 3 · Cody 2 · Marcus 1');
+    expect(run.standings.headline).toBe('Dan leads with 3 points');
+    expect(run.standings.lines.map((l) => [l.playerId, l.value])).toEqual([['dan', 3], ['cody', 2], ['marcus', 1]]);
     expect(run.standings.subline).toBe('Points thru 2 · 3 a hole');
     expect(run.settlement?.entries).toEqual([
       { from: 'marcus', to: 'cody', amount: 2, reason: 'Bingo Bango Bongo · Cody 1 pts up on Marcus × 2' },

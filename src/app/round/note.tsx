@@ -23,7 +23,7 @@ export default function HoleNoteSheet() {
   };
 
   return (
-    <SheetScreen title={`Hole ${holeNumber} note`} onCancel={close} action={{ label: 'Save', onPress: () => save(text), disabled: text.trim() === saved.trim() }}>
+    <SheetScreen title={`Hole ${holeNumber} note`} onClose={close} action={{ label: 'Save', onPress: () => save(text), disabled: text.trim() === saved.trim() }}>
       <View style={{ backgroundColor: c.surfaceRaised, borderRadius: 12, borderWidth: 1, borderColor: c.divider, padding: space[3] }}>
         <TextInput
           accessibilityLabel={`Note for hole ${holeNumber}`}
