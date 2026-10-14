@@ -1,4 +1,6 @@
-import { Image } from 'react-native';
+import { Image, View } from 'react-native';
+import { Text } from '@/components/ui';
+import { useTheme } from '@/theme';
 
 const logo = require('../../assets/logo-mark.png');
 
@@ -15,5 +17,27 @@ export function BrandMark({ size = 40 }: { size?: number }) {
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
     />
+  );
+}
+
+/**
+ * The wordmark lockup: the chip beside "Birdies & Bets" in the system font. 'md' heads Home; 'lg' stacks the chip
+ * over the name for the sign-in screen. VoiceOver reads it once, as a header.
+ */
+export function Wordmark({ size = 'md' }: { size?: 'md' | 'lg' }) {
+  const { space } = useTheme();
+  const large = size === 'lg';
+  return (
+    <View
+      accessible
+      accessibilityRole="header"
+      accessibilityLabel="Birdies and Bets"
+      style={{ flexDirection: large ? 'column' : 'row', alignItems: 'center', gap: large ? space[3] : space[2] }}
+    >
+      <BrandMark size={large ? 88 : 34} />
+      <Text step={large ? 'title1' : 'title3'} numberOfLines={1}>
+        Birdies & Bets
+      </Text>
+    </View>
   );
 }

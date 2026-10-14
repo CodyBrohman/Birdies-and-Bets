@@ -55,7 +55,7 @@ export function Sheet({ visible, onClose, title, subtitle, actionLabel, children
                   </Text>
                 ) : null}
               </View>
-              {actionLabel ? <Button label={actionLabel} variant="tinted" size="md" onPress={onClose} /> : <IconButton icon="close" label="Close" onPress={onClose} />}
+              {actionLabel ? <Button label={actionLabel} variant="secondary" size="md" onPress={onClose} /> : <IconButton icon="close" label="Close" onPress={onClose} />}
             </View>
           ) : null}
           {children}

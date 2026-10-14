@@ -43,7 +43,7 @@ function FriendForm({ onAdded, onDone }: { onAdded?: (profile: PlayerProfile) =>
         <TextField style={{ flex: 1 }} placeholder="Name" value={name} maxLength={MAX_PROFILE_NAME} autoCapitalize="words" autoFocus onChangeText={setName} accessibilityLabel="Friend's name" returnKeyType="done" onSubmitEditing={save} testID="friend-name" />
         <IndexField value={index} onChange={setIndex} label="Handicap index" style={{ height: 50 }} />
       </View>
-      <Button label="Save friend" icon="arrow-forward" disabled={!name.trim()} onPress={save} testID="save-friend" />
+      <Button label="Save friend" disabled={!name.trim()} onPress={save} testID="save-friend" />
     </View>
   );
 }

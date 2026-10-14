@@ -94,7 +94,7 @@ export default function OnboardingScreen() {
           <BrandMark size={28} />
           <Text step="bodyStrong">Birdies & Bets</Text>
         </View>
-        {!last ? <Button label="Skip" variant="tinted" size="md" haptic={false} onPress={() => finish(false)} testID="onboarding-skip" /> : null}
+        {!last ? <Button label="Skip" variant="secondary" size="md" haptic={false} onPress={() => finish(false)} testID="onboarding-skip" /> : null}
       </View>
 
       <ScrollView ref={scroller} onLayout={(e) => setWidth(e.nativeEvent.layout.width)} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={onScrollEnd} style={{ flex: 1 }} contentContainerStyle={{ alignItems: 'stretch' }}>

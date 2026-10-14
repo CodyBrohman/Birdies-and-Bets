@@ -249,11 +249,11 @@ export default function CoursesScreen() {
 
       <Sheet visible={!!optionsFor} onClose={() => setOptionsFor(null)} title={optionsFor?.name} subtitle={optionsFor ? courseFacts(optionsFor).join(' · ') : undefined}>
         <View style={{ gap: space[2] }}>
-          {optionsFor ? <Button label="Play this course" icon="arrow-forward" onPress={() => (setOptionsFor(null), choose(optionsFor))} /> : null}
+          {optionsFor ? <Button label="Play this course" onPress={() => (setOptionsFor(null), choose(optionsFor))} /> : null}
           {optionsFor?.userEntered ? (
-            <Button label="Edit course" variant="secondary" icon="create-outline" onPress={() => (setOptionsFor(null), router.push({ pathname: '/new-round/add-course', params: { id: optionsFor.id } }))} />
+            <Button label="Edit course" variant="secondary" onPress={() => (setOptionsFor(null), router.push({ pathname: '/new-round/add-course', params: { id: optionsFor.id } }))} />
           ) : null}
-          {optionsFor ? <Button label="Duplicate and edit" variant="secondary" icon="copy-outline" onPress={() => (setOptionsFor(null), router.push({ pathname: '/new-round/add-course', params: { id: optionsFor.id, duplicate: '1' } }))} /> : null}
+          {optionsFor ? <Button label="Duplicate and edit" variant="secondary" onPress={() => (setOptionsFor(null), router.push({ pathname: '/new-round/add-course', params: { id: optionsFor.id, duplicate: '1' } }))} /> : null}
         </View>
       </Sheet>
     </Screen>

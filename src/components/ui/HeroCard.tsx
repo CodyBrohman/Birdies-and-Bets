@@ -50,7 +50,7 @@ export function HeroCard({ image, pill, title, subtitle, cta, height = 270, chil
           </Text>
         ) : null}
         {children}
-        {cta ? <Button label={cta.label} variant="hero" icon="arrow-forward" onPress={cta.onPress} style={{ marginTop: space[3] }} /> : null}
+        {cta ? <Button label={cta.label} variant="hero" onPress={cta.onPress} style={{ marginTop: space[3] }} /> : null}
       </View>
     </View>
   );
@@ -172,7 +172,7 @@ export function StickyBar({ eyebrow, title, actionLabel, onPress, style }: Stick
           {title}
         </Text>
       </View>
-      <Button label={actionLabel} variant="hero" size="md" icon="arrow-forward" onPress={onPress} />
+      <Button label={actionLabel} variant="hero" size="md" onPress={onPress} />
     </View>
   );
 }

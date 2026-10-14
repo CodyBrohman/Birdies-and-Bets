@@ -277,8 +277,10 @@ export const hit = {
   chip: 48,
   scoreEntry: 62,
   scoreEntryHeight: 76,
-  primaryButton: 56,
-  secondaryButton: 48,
+  /** The main action on a screen. */
+  primaryButton: 50,
+  /** Every other button: the iOS minimum. */
+  secondaryButton: 44,
   /** Filter pills: 40pt visual with hitSlop to 48. */
   pill: 40,
   /** Icon glyph sizes: inline beside text, and inside buttons. */

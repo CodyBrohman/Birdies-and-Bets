@@ -36,7 +36,7 @@ export function EmptyState({ icon, title, body, action, secondary, fill, style }
         </Text>
       ) : null}
       {action ? <Button label={action.label} onPress={action.onPress} style={{ alignSelf: 'stretch', marginTop: space[2] }} /> : null}
-      {secondary ? <Button label={secondary.label} variant="tinted" size="md" onPress={secondary.onPress} /> : null}
+      {secondary ? <Button label={secondary.label} variant="secondary" size="md" onPress={secondary.onPress} /> : null}
     </View>
   );
 }

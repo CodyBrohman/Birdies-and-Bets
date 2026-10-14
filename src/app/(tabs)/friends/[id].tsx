@@ -39,7 +39,7 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={{ gap: space[3], paddingBottom: space[6] }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Card padding="roomy">
           <View style={{ flexDirection: 'row', gap: space[3], alignItems: 'center' }}>
-            <Avatar name={profile.name} index={0} size={44} />
+            <Avatar name={profile.name} size={44} />
             <TextField
               style={{ flex: 1, minWidth: 0, height: 52 }}
               defaultValue={profile.name}

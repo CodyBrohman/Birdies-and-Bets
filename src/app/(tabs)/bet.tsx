@@ -183,7 +183,7 @@ export default function BetScreen() {
             </View>
           ) : null}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3], marginTop: space[1] }}>
-            {course ? <Button label="Start this round" variant="hero" size="md" icon="arrow-forward" disabled={!!blocker} onPress={start} testID="start-round" /> : <Button label="Pick a course" variant="hero" size="md" icon="arrow-forward" onPress={() => router.navigate('/courses')} />}
+            {course ? <Button label="Start this round" variant="hero" size="md" disabled={!!blocker} onPress={start} testID="start-round" /> : <Button label="Pick a course" variant="hero" size="md" onPress={() => router.navigate('/courses')} />}
             {course ? (
               <Pressable accessibilityRole="button" accessibilityLabel="Change course" onPress={() => router.navigate('/courses')} hitSlop={10} style={({ pressed }) => ({ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
                 <Ionicons name="sync-outline" size={22} color={c.onHero} />
@@ -243,7 +243,7 @@ export default function BetScreen() {
           return (
             <Card key={p.id} padding="none" style={{ paddingHorizontal: space[4] }}>
               <ListRow
-                leading={<Avatar name={p.name} index={i} size={40} />}
+                leading={<Avatar name={p.name} seat={i} size={40} />}
                 title={p.name}
                 titleAccessory={p.id === me?.id ? <Badge label="You" tone="accent" /> : undefined}
                 meta={p.handicapIndex != null ? `HCP ${formatIndex(p.handicapIndex)}` : 'Scratch'}
@@ -342,7 +342,7 @@ export default function BetScreen() {
           </Text>
         </Card>
 
-        {course ? <Button label={live ? 'Start a new round' : 'Start this round'} icon="arrow-forward" disabled={!!blocker} onPress={start} style={{ marginTop: space[2] }} /> : null}
+        {course ? <Button label={live ? 'Start a new round' : 'Start this round'} disabled={!!blocker} onPress={start} style={{ marginTop: space[2] }} /> : null}
       </ScrollView>
 
       <AddFriendSheet

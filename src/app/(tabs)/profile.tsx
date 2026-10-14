@@ -69,7 +69,7 @@ export default function ProfileScreen() {
         <Card variant="hero" padding="roomy" style={{ gap: space[4] }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[4] }}>
             <Pressable accessibilityRole="button" accessibilityLabel="Change profile photo" onPress={() => void pickPhoto()}>
-              <Avatar name={me?.name ?? '?'} index={0} size={84} photoUri={photoUri} />
+              <Avatar name={me?.name ?? '?'} size={84} photoUri={photoUri} />
               <View style={{ position: 'absolute', right: -2, bottom: -2, width: 28, height: 28, borderRadius: 999, backgroundColor: c.goldFill, borderWidth: 2, borderColor: c.hero, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="camera-outline" size={14} color={c.textPrimary} />
               </View>

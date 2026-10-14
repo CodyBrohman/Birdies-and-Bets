@@ -1,7 +1,8 @@
 // The 2026-10-14 kit, checked the way VoiceOver and a thumb meet it.
+import { StyleSheet } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { Icon, ListItem, ListSection, SegmentedControl, Switch } from '@/components/ui';
-import { color } from '@/theme';
+import { Avatar, Button, Icon, ListItem, ListSection, SegmentedControl, Switch } from '@/components/ui';
+import { color, seatColors } from '@/theme';
 import { lastActionSheet, pressAction, resetStores } from '../screen';
 
 beforeEach(resetStores);
@@ -66,6 +67,40 @@ describe('ListSection and ListItem', () => {
     expect(onChange).toHaveBeenCalledWith(false);
     const del = screen.getByText('Delete account');
     expect(del.props.style).toEqual(expect.arrayContaining([expect.objectContaining({ color: color.light.destructive })]));
+  });
+});
+
+describe('Button', () => {
+  it('is coral when destructive, on any variant, and says when it is busy', () => {
+    render(
+      <>
+        <Button label="Delete round" destructive onPress={() => undefined} />
+        <Button label="Sign out" variant="plain" destructive onPress={() => undefined} />
+        <Button label="Save round" loading onPress={() => undefined} />
+      </>,
+    );
+    const flat = (label: string) => StyleSheet.flatten(screen.getByRole('button', { name: label }).props.style);
+    expect(flat('Delete round').backgroundColor).toBe(color.light.destructive);
+    expect(screen.getByText('Sign out').props.style).toEqual(expect.arrayContaining([expect.objectContaining({ color: color.light.destructive })]));
+    expect(screen.getByRole('button', { name: 'Save round' }).props.accessibilityState).toMatchObject({ busy: true });
+    expect(flat('Delete round').minHeight).toBeGreaterThanOrEqual(50);
+  });
+});
+
+describe('Avatar', () => {
+  it('takes the seat colour in a round and one quiet tint elsewhere', () => {
+    const { toJSON } = render(
+      <>
+        <Avatar name="Marcus Lee" seat={1} />
+        <Avatar name="Marcus Lee" />
+      </>,
+    );
+    const [inRound, outside] = toJSON() as unknown as { props: { style: unknown } }[];
+    expect(StyleSheet.flatten(inRound!.props.style as never).backgroundColor).toBe(seatColors[1]!.tint);
+    expect(StyleSheet.flatten(outside!.props.style as never).backgroundColor).toBe(color.light.accentTint);
+    // Decorative: the name always sits beside it, so VoiceOver skips the initials.
+    expect(screen.queryAllByText('ML')).toHaveLength(0);
+    expect(screen.getAllByText('ML', { includeHiddenElements: true })).toHaveLength(2);
   });
 });
 

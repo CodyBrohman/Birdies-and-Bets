@@ -102,7 +102,7 @@ export default function HistoryDetailScreen() {
             <Card padding="roomy">
               {summary.players.map((p, i) => (
                 <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', gap: space[3], paddingVertical: space[2] }}>
-                  <Avatar name={p.name} index={i} size={40} />
+                  <Avatar name={p.name} seat={i} size={40} />
                   <Text step="bodyStrong" style={{ flex: 1 }}>
                     {p.name}
                   </Text>

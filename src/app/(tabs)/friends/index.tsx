@@ -129,7 +129,7 @@ export default function FriendsScreen() {
                 <ListRow
                   key={p.id}
                   divider={i > 0}
-                  leading={<Avatar name={p.name} index={i} size={40} />}
+                  leading={<Avatar name={p.name} size={40} />}
                   title={p.name}
                   meta={joinMeta([p.handicapIndex != null ? `HCP ${formatIndex(p.handicapIndex)}` : 'Scratch', lastPlayed(p.lastPlayedAt)])}
                   onPress={() => router.push({ pathname: '/friends/[id]', params: { id: p.id } })}
@@ -159,8 +159,8 @@ export default function FriendsScreen() {
                     action={
                       <Button
                         label="Play"
-                        size="sm"
-                        variant="tinted"
+                        size="md"
+                        variant="secondary"
                         onPress={async () => {
                           if (draftIsDirty() && !(await confirmReplaceDraft())) return;
                           groupAsCrew(g.memberIds);
@@ -182,7 +182,7 @@ export default function FriendsScreen() {
               Choose a course and invite your crew.
             </Text>
           </View>
-          <Button label="Plan a round" size="md" icon="arrow-forward" onPress={() => router.navigate('/bet')} />
+          <Button label="Plan a round" size="md" onPress={() => router.navigate('/bet')} />
         </Card>
       </ScrollView>
 
@@ -230,7 +230,7 @@ export default function FriendsScreen() {
     return (
       <Card style={{ gap: space[3] }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
-          <Avatar name={names[0] ?? '?'} index={0} size={44} />
+          <Avatar name={names[0] ?? '?'} size={44} />
           <View style={{ flex: 1, gap: 2 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
               <Text step="title" numberOfLines={1} style={{ flexShrink: 1 }}>
@@ -250,7 +250,7 @@ export default function FriendsScreen() {
           </View>
         </View>
         <View style={{ flexDirection: 'row', gap: space[2] }}>
-          <Button label={primary.label} variant="tinted" icon="golf-outline" onPress={primary.onPress} style={{ flex: 1 }} />
+          <Button label={primary.label} variant="secondary" onPress={primary.onPress} style={{ flex: 1 }} />
           {secondary ? <Button label={secondary.label} variant="secondary" onPress={secondary.onPress} /> : null}
         </View>
       </Card>

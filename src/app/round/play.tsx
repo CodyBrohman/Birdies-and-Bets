@@ -315,7 +315,7 @@ export default function PlayScreen() {
             const shown = saved === undefined ? '–' : saved === null ? 'PU' : String(saved);
             return (
               <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
-                <Avatar name={p.name} index={i} size={40} />
+                <Avatar name={p.name} seat={i} size={40} />
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text step="bodyStrong" numberOfLines={1}>
                     {p.name}
@@ -360,7 +360,7 @@ export default function PlayScreen() {
           {/* Shortcuts: fill par, undo */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[2], paddingTop: space[3], borderTopWidth: 1, borderColor: c.divider }}>
             {unscored.length > 0 ? (
-              <Button label={unscored.length === round.players.length ? `Everyone par ${hole.par}` : `Rest par ${hole.par}`} variant="tinted" size="sm" haptic onPress={fillPar} style={{ flex: 1 }} />
+              <Button label={unscored.length === round.players.length ? `Everyone par ${hole.par}` : `Rest par ${hole.par}`} variant="secondary" size="md" haptic onPress={fillPar} style={{ flex: 1 }} />
             ) : (
               <View style={{ flex: 1 }} />
             )}
@@ -407,8 +407,8 @@ export default function PlayScreen() {
 
         {/* Previous / Next */}
         <View style={{ flexDirection: 'row', gap: space[3], marginTop: space[4] }}>
-          <Button label="Previous" variant="secondary" icon="arrow-back" disabled={prev == null} onPress={() => prev != null && setCurrentHole(prev)} style={{ flex: 1 }} />
-          <Button label={next == null ? 'Finish round' : 'Next hole'} icon={next == null ? 'flag' : 'arrow-forward'} onPress={() => void goNext()} style={{ flex: 1.4 }} testID="next-hole" />
+          <Button label="Previous" variant="secondary" disabled={prev == null} onPress={() => prev != null && setCurrentHole(prev)} style={{ flex: 1 }} />
+          <Button label={next == null ? 'Finish round' : 'Next hole'} onPress={() => void goNext()} style={{ flex: 1.4 }} testID="next-hole" />
         </View>
       </ScrollView>
 

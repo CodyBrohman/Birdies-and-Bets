@@ -84,7 +84,7 @@ export function StandingsCard({ mode, active, standings, stakeLabel, players, de
                 accessibilityLabel={describeStandingsLine(l.text, player?.name, leading)}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: space[3], minHeight: 56, paddingVertical: space[2], borderBottomWidth: i === standings.lines.length - 1 ? 0 : 1, borderBottomColor: c.dividerSoft }}
               >
-                {player ? <Avatar name={player.name} index={playerIndex} size={40} /> : null}
+                {player ? <Avatar name={player.name} seat={playerIndex} size={40} /> : null}
                 <Text step="body" style={{ flex: 1 }} numberOfLines={3}>
                   {player ? player.name : left}
                 </Text>

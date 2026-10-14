@@ -137,6 +137,7 @@ describe('design tokens', () => {
     expect(hit.min).toBeGreaterThanOrEqual(44);
     expect(hit.iconButton).toBeGreaterThanOrEqual(44);
     expect(hit.scoreEntry).toBeGreaterThanOrEqual(56);
-    expect(hit.primaryButton).toBeGreaterThanOrEqual(56);
+    expect(hit.primaryButton).toBeGreaterThanOrEqual(50);
+    expect(hit.secondaryButton).toBeGreaterThanOrEqual(44);
   });
 });

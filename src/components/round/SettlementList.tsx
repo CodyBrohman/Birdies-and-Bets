@@ -41,7 +41,7 @@ export function SettlementList({ netted, players, stakeLabel }: SettlementListPr
               {({ pressed }) => (
                 <View style={{ backgroundColor: c.accentTint, borderRadius: expanded ? radius.xl : radius.pill, paddingHorizontal: space[4], paddingVertical: space[3], opacity: pressed ? 0.85 : 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
-                    <Avatar name={nameOf(pair.from)} index={indexOf(pair.from)} size={44} />
+                    <Avatar name={nameOf(pair.from)} seat={indexOf(pair.from)} size={44} />
                     <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: space[2], flexWrap: 'wrap' }}>
                       <Text step="bodyStrong" tone="accentTintText" numberOfLines={1}>
                         {nameOf(pair.from)}

@@ -48,7 +48,7 @@ export function ScoreSummaryTable({ players, holes, results, handicaps }: ScoreS
             : 'Scratch';
         return (
           <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', gap: space[2], paddingVertical: space[3], borderBottomWidth: i === players.length - 1 ? 0 : 1, borderBottomColor: c.dividerSoft }}>
-            <Avatar name={p.name} index={i} size={40} />
+            <Avatar name={p.name} seat={i} size={40} />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text step="bodyStrong" numberOfLines={1}>
                 {p.name}

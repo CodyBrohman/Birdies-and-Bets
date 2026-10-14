@@ -78,7 +78,7 @@ export default function Home() {
           </Text>
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel="Your profile" onPress={() => router.navigate('/profile')} hitSlop={6}>
-          <Avatar name={me?.name ?? '?'} index={0} size={44} photoUri={photoUri} />
+          <Avatar name={me?.name ?? '?'} size={44} photoUri={photoUri} />
         </Pressable>
       </View>
 
@@ -162,7 +162,7 @@ export default function Home() {
           {friends.length ? (
             <View style={{ flexDirection: 'row', gap: 6 }}>
               {friends.slice(0, 3).map((p, i) => (
-                <Avatar key={p.id} name={p.name} index={i} size={40} />
+                <Avatar key={p.id} name={p.name} size={40} />
               ))}
             </View>
           ) : (

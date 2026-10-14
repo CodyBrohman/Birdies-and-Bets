@@ -174,7 +174,7 @@ export default function SettingsScreen() {
                   <Text step="caption" tone="negative" tabular={false}>
                     {`${plural(sync.rejected, 'item')} couldn't sync.`}
                   </Text>
-                  <Button label="Retry" variant="secondary" size="sm" onPress={() => void retryRejected()} />
+                  <Button label="Retry" variant="secondary" size="md" onPress={() => void retryRejected()} />
                 </View>
               ) : null}
               <Button label={busy === 'signout' ? 'Signing out…' : 'Sign out'} variant="secondary" disabled={busy != null} onPress={() => void askSignOut()} />
@@ -246,7 +246,7 @@ export default function SettingsScreen() {
         <Card padding="roomy" style={{ gap: space[4] }}>
           <ToggleRow title="Crash reports" detail="Anonymous error details help fix bugs. No names or scores." value={crashReports} onChange={(v) => updatePreferences({ crashReports: v })} />
           <ToggleRow title="Usage analytics" detail="Anonymous counts, like rounds started. Off unless you turn it on." value={analytics} onChange={(v) => updatePreferences({ analytics: v })} />
-          <Button label="Read the privacy policy" variant="secondary" icon="open-outline" onPress={() => void Linking.openURL(PRIVACY_POLICY_URL)} />
+          <Button label="Read the privacy policy" variant="secondary" onPress={() => void Linking.openURL(PRIVACY_POLICY_URL)} />
         </Card>
 
         <SectionLabel style={{ marginTop: space[3] }}>About</SectionLabel>
