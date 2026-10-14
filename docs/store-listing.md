@@ -1,6 +1,7 @@
 # App Store listing — Birdies & Bets
 
-Golf leads in the listing; the games lead in the product. See build spec §3.3.
+Golf leads in the listing; the games come second, and the word "points" carries the money question. Rewritten
+2026-10-14 for the v1 app: optional accounts, light only, −/+ steppers, the native tab bar, points-only wording.
 
 ## Names
 
@@ -14,48 +15,53 @@ Golf leads in the listing; the games lead in the product. See build spec §3.3.
 
 ## Promotional text (170)
 
-The golf scorecard that also runs your group's games. Skins, Nassau, match play, Stableford, Wolf and more, scored live from hole 1.
+A golf scorecard that also keeps your group's games. Skins, Nassau, match play, Stableford, Wolf and more, scored as you play, as a points tally.
 
 ## Description
 
-Birdies & Bets is a golf scorecard for a group of two to four, with the games you already play layered on top.
+Birdies & Bets is a golf scorecard for one to four players, with the games your group already plays kept alongside it.
 
-Tap a score chip, one hole at a time, and the hole advances itself. See a real scorecard with front nine, back nine, birdies and bogeys marked, and the handicap strokes shown on every hole. Then pick the games your group plays and watch the standings update after every hole: 2 up through 7, three skins carrying, who's in the hot seat.
+SCORE AS YOU PLAY
+• One hole at a time: tap the number for par, − for a birdie, + for a bogey, then keep tapping
+• Four players fit on one screen, with "Everyone par" for the easy holes
+• The card fills in like a paper scorecard: circles for birdies, squares for bogeys, dots for handicap strokes
+• Every tap is saved at once, even with no signal; close the app and pick up where you left off
+• Front nine, back nine, or a shotgun start from any hole
 
-AFTER THE ROUND
-• Every finished round is kept: the full card, the game results and who owes whom
-• Share the scorecard as an image to the group chat
-• Back up everything to a file and restore it on a new phone
-
-GAME FORMATS
+THE GAMES
 • Skins, with carryover and optional validation
-• Nassau: front, back and overall, with automatic presses
-• Match Play, played off the low handicap
+• Nassau: front, back and overall, with optional presses
+• Match Play, singles or two against two
 • Stroke Play, gross or net
-• Stableford with configurable points
-• Wolf, with rotating wolf and lone-wolf doubles
-• Vegas team play
+• Stableford: standard, modified or your own points
+• Wolf, with an optional double for a lone wolf
+• Vegas for two teams of two
 • Bingo Bango Bongo
 • Hot Seat, with punishments your group writes
 
+Standings update after every hole in plain words: "Maya leads with 3 skins", "Jay 2 up thru 7". At the end, Results shows who won, the gross and net scores, every game, and a points tally between the players.
+
 HANDICAPS DONE PROPERLY
-Enter each player's index and the app computes the course handicap for the tee you're playing, shows exactly which holes get a stroke, and lets each game score gross or net. Plus handicaps and allowances are handled. Play the front nine, the back nine, or a shotgun start from any hole.
+Enter each player's handicap index and the app works out the course handicap for the tees you play, shows which holes get a stroke, and lets each game play gross or net. Plus handicaps and allowances are handled.
 
-BUILT FOR THE COURSE
-• Search thousands of courses and download the scorecard, or add one by hand in a minute
-• Works fully offline once a course is loaded
-• Every score is saved instantly; close the app and resume where you were
-• Screen stays awake during the round
-• Cream in the sun, full dark mode for the evening nine
+AFTER THE ROUND
+• Every round is kept: the full card, the games and the notes
+• Share the result to the group chat as an image, with a link to the full card
+• See your record with each friend, and your best at each course
 
-WHAT IT DOESN'T DO
-Birdies & Bets keeps a tally of points between players and nothing more. It has no real-money gambling, no deposits, no withdrawals, no payments, and no links to payment services. Settling up is between friends, in the parking lot, as it always was.
+COURSES
+• A sample course is built in, so you can try it with no signal
+• Search a course directory and download the scorecard, or add a course by hand in a few minutes
 
-No account. No sign-in. Nothing you enter leaves your phone unless you share or back it up.
+ACCOUNTS ARE OPTIONAL
+Use it with no account: everything stays on your iPhone. Sign in with Apple or an emailed code to keep your rounds in sync across phones and safe when you change phones. Back up to a file any time.
+
+POINTS, NOT MONEY
+Birdies & Bets keeps a tally of points between players and nothing more. There is no real-money gambling, no deposits or withdrawals, no payments, no prizes, and no links to payment services.
 
 ## Keywords (100)
 
-golf,scorecard,skins,nassau,match play,stableford,wolf,handicap,score,card,vegas,bingo bango bongo
+golf,scorecard,skins,nassau,match play,stableford,wolf,handicap,score card,points,vegas,golf games
 
 ## URLs
 
@@ -67,66 +73,69 @@ golf,scorecard,skins,nassau,match play,stableford,wolf,handicap,score,card,vegas
 
 ## Screenshots (6.9" and 6.5" required)
 
-Order matters for review. Golf first, settlement never first.
+Order matters for review: golf first, the points tally never first. Light mode (the app has no dark mode).
 
-1. Card tab, net view, six holes played, birdie and bogey markers visible.
-2. Hole screen, hole 7, four players with stroke badges and score chips.
-3. Games tab with Skins, Match Play and Hot Seat cards.
-4. Players screen showing computed course handicaps, including a plus handicap.
-5. Round summary with game results and the settle-up rows.
-6. Home with a round in progress and recent rounds.
-7. (optional) The shared scorecard image in the share sheet.
+1. The round in progress: hole 7, four players, the steppers and the hole chips.
+2. A round's page: the paper scorecard (circles, squares, stroke dots, OUT / IN / TOT), net view.
+3. Standings: "Maya leads with 3 skins" with the hole-by-hole strip.
+4. New round: course, tees, tee time, players with their course handicaps, games.
+5. Results: who won, Player · Gross · Net · Pts.
+6. Home with the round in progress and recent rounds.
+7. (optional) The share image in Messages.
 
-Capture from a device or simulator in light mode for 1–4, dark mode for 5–6. See `scripts/screenshots.md`.
+See `scripts/screenshots.md` for how they are made.
 
 ## App Privacy questionnaire
 
 Answer "Yes, we collect data from this app", then declare the types below. They match the privacy manifest in
-`app.config.ts` and the policy at https://www.birdiesandbets.com/privacy.html.
+`app.config.ts` and the policy at https://www.birdiesandbets.com/privacy.html. An account is optional, but the questions
+ask what the app can collect, so the account data is declared.
 
-Account data (Supabase). All of these are **linked to the user**, used for **App Functionality** only, and **not used for
-tracking**:
-- **Contact Info → Name**: the display name, and the name Apple shares if the user allows it.
+Account data (Supabase, only when someone signs in). All of these are **linked to the user**, used for **App
+Functionality** only, and **not used for tracking**:
+- **Contact Info → Name**: the display name, and the name Apple shares if the person allows it.
 - **Contact Info → Email Address**: for email sign-in, or Apple's relay address.
 - **Identifiers → User ID**: the account id.
-- **User Content → Other User Content**: rounds, scores, the player names and indexes the user enters, courses and settings.
+- **User Content → Other User Content**: rounds, scores, the player names and indexes the person enters, courses and settings.
 
 Anonymous data, **not linked**:
 
 - **Diagnostics → Crash Data** (Sentry). Used for: App Functionality. Linked to the user: **No.** Used for tracking: **No.**
-  On by default, can be turned off in Settings → Privacy.
+  On by default; Settings → Privacy turns it off.
 - **Usage Data → Product Interaction** (Aptabase). Used for: Analytics. Linked to the user: **No.** Used for tracking: **No.**
-  Opt-in only.
+  Opt-in only, and the question is only asked when the analytics key is set in the build.
 - Nothing else: no location, purchases, health, contacts, photos (the profile photo stays on the phone) or browsing.
-- Account deletion is in the app (Settings → Account → Delete account), as App Review requires.
-- The EAS Update check and course search still carry no user data (see the policy).
+- Account deletion is in the app (Settings → Account → Delete account), as App Review requires; it also revokes Sign in
+  with Apple.
+- The EAS Update check and the course search carry no user data (see the policy).
 - Tracking: No. The app shows no App Tracking Transparency prompt because it does not track.
 
-## Age rating questionnaire
+## Age rating questionnaire (Apple's 2025 tiers: 4+, 9+, 13+, 16+, 18+)
 
-Answer honestly. The relevant items:
+Apple works the rating out from the answers. Everything is **None / No** (violence, sexual content, profanity, drugs,
+alcohol, horror, medical, contests, unrestricted web access, user-generated content shared with others, messaging,
+advertising) except possibly **Simulated Gambling**, which is the owner's decision:
 
-- Simulated gambling: **Infrequent/Mild.** The app tracks points wagered between friends in golf side games. It does not simulate casino games, and there is no real-money gambling.
-- Contests: None.
-- Unrestricted web access: No.
-- Everything else (violence, sexual content, profanity, drugs, horror): None.
+- **Option A (recommended): Simulated Gambling: Infrequent.** The side games are named after golf bets and keep a
+  points tally between friends, so declaring it avoids a back-and-forth in review. Result: **13+**, and **R18+ in
+  Australia** (Australia rates any simulated gambling R18+).
+- **Option B: Simulated Gambling: None.** Defensible: there is no casino-style game, no chance, no odds, no prizes and no
+  money, only a scorecard and a points tally. Result: 4+. Risk: App Review may disagree because of the name and the
+  game names, which costs a rejection and a resubmit.
 
-Expected result: 12+ (from the simulated gambling answer). Accept it.
+Real gambling: **No** in either case.
 
 ## App Review notes
 
 Paste into the review notes field:
 
-> Birdies & Bets is a golf scorecard. Players enter their stroke counts per hole and the app keeps a traditional scorecard with handicaps. It also tracks the common golf side games (skins, Nassau, match play, Stableford, Wolf, Vegas, Bingo Bango Bongo, Hot Seat) as a tally of points between the players in the group.
+> Birdies & Bets is a golf scorecard. Players enter their strokes per hole and the app keeps a traditional scorecard with handicaps. It also keeps the common golf side games (skins, Nassau, match play, Stableford, Wolf, Vegas, Bingo Bango Bongo, Hot Seat) as a tally of points between the players in a group.
 >
-> The app does not offer or facilitate real-money gambling. It has no payment processing, no in-app purchases, no deposits or withdrawals, no wallet, and no links to payment or money-transfer services. Stakes are abstract "points" that the users themselves agree on. The settlement screen displays a tally and provides no action to pay.
+> Points only (guideline 5.3): the app does not offer or facilitate real-money gambling. There is no payment processing, no in-app purchase, no deposits or withdrawals, no wallet, no prizes, and no links to payment or money-transfer services. The points are abstract; the results screen shows a tally and has no action to pay. The screens that set up and show points say "Points are a tally between players. Nothing is paid in the app."
 >
-> No account is required and no personal data is collected; everything is stored locally on the device. The app's only network use is an update check on launch and, if the user types in the course search box, a course-name lookup.
+> Sign-in is optional (guideline 5.1.1(v)): on first launch tap "Continue without an account" and everything works on the phone. Signing in with Apple or an emailed code adds sync between phones. Account deletion is in Settings → Account → Delete account.
 >
-> Sign in: tap "Continue with email", enter the demo address below and the code from the Supabase dashboard (or use
-> the fixed demo code if you set one up). Demo account: _fill in before submitting_.
->
-> To try it: Start Round → Cedar Ridge Golf Club is preselected → Blue tees → Continue → enter two names (add an index such as 8.2 to see the handicap) → Choose games → tap Skins → Tee off. Tap + for each player (the first tap fills in par), then Next hole. The front and back nine fill in below, and the games pill on the dark card opens the standings. Finish round on the last hole shows the summary.
+> To try it: skip the intro → Play tab → Course → Sample course → Add players → type a name (add an index such as 8.2 to see handicap strokes) → Add player → Done → Add a game → Skins → Start round. Tap the number for par, or − and +, for each player, then Next hole. The trophy line opens the standings; Next on the last hole (or ⋯ → End round → Finish round) shows the results.
 
 ## Before submitting
 
@@ -134,8 +143,8 @@ Paste into the review notes field:
 - [ ] `eas build --profile production --platform ios`
 - [ ] `eas submit --platform ios`
 - [ ] TestFlight round with real golfers on a real course
-- [ ] Privacy and support URLs live and reachable
-- [ ] The live privacy policy describes crash reports and usage analytics (effective 5 October 2026) before any build that sends them
-- [ ] App Store Connect → App Privacy answers updated to Crash Data + Product Interaction (above)
+- [ ] Privacy and support URLs live and reachable, and the policy describes optional accounts (see the website repo)
+- [ ] App Store Connect → App Privacy answers as above
+- [ ] Age rating answered (Option A or B above)
 - [ ] Sentry project: "Prevent Storing of IP Addresses" on, data scrubbing on, retention 90 days or less
 - [ ] Screenshots uploaded in the order above
