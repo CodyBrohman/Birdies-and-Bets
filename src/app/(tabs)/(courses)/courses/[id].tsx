@@ -71,10 +71,8 @@ export default function CoursePage() {
       headerRight={() => <HeaderButton label="Course options" icon="more" onPress={() => void menu()} />}
       footer={<Button label="Play this course" onPress={play} testID="play-course" />}
     >
-      <View style={{ gap: space[1] }}>
-        <Text accessibilityRole="header" step="title2">
-          {course.name}
-        </Text>
+      {/* The name is the navigation title; the page opens with the facts under it, as a round's page does. */}
+      <View style={{ gap: space[1], marginBottom: -space[3] }}>
         <Text step="subhead" tone="secondary">
           {courseSummary(course)}
         </Text>
