@@ -1,115 +1,148 @@
 # Birdies & Bets: design system (MASTER)
 
-This file is the source of truth for how the app looks. Code reads `src/theme/tokens.ts`, and this file explains the choices behind it. Page-specific overrides would live in `pages/` (there are none yet).
+This file is the source of truth for how the app looks and reads. Code reads `src/theme/tokens.ts`; this file explains
+the rules behind it.
 
-**2026-10-01 redesign.** The app now matches the ten reference mockups the owner supplied: cream ground, warm white cards, deep forest ink, pine buttons, dark forest hero cards and a gold HCP badge, with Inter everywhere and light mode only. It keeps the logo: the chip mark (`assets/logo.png`) inside the app, on the website and on socials; the rounded-square version (`assets/app-logo.png`) is the app icon. This replaces the 2026-09-28 green-black/Playfair brand and its dark mode.
+**2026-10-14: evolve, de-template, go native.** The owner kept the cream/forest/pine palette and the chip logo, and asked
+for an app that looks made by people rather than generated. The 2026-10-01 mockup patterns are retired: the eyebrow +
+"Verb your noun." + tagline header, photo hero cards, icon tiles, arrow buttons, and Inter. Screens are being rebuilt
+one at a time (TODO.md Phase 3); until a screen is rebuilt it may still show the old patterns, and the legacy type steps
+exist only for those screens.
+
+## The ten rules
+1. **No eyebrow or tagline headers.** Tabs get a native large title that matches the tab name; pushed screens get a
+   standard native title. No full stops in titles or buttons.
+2. **Copy carries facts.** No greetings, compliments, time-of-day lines or adjectives about the golfer. An empty state
+   says what will appear there and offers one action.
+3. **No stock or generated photos.** A course is identified by its data (name, place, par, tees, your best). The contour
+   lines (`ContourField`) appear only on sign-in and the share image.
+4. **One dark surface:** the round-in-progress card. Everything else is cream ground with white grouped cells.
+5. **Lists before cards:** iOS inset-grouped sections. Cards only for the live round, result callouts and the scorecard.
+6. **Icons are SF Symbols** at two sizes, used only where they help scanning. No icon tiles. A chevron means "drill in";
+   ↗ only for an external link; no arrows inside buttons.
+7. **Colour carries meaning, never alone:** pine = primary action, under par, points up; gold = over par; coral =
+   destructive or error; seat colours = which player, in a round. Always pair colour with a sign, shape or label.
+8. **Uppercase only in scorecard table headers** (HOLE · PAR · SI · OUT · IN · TOT).
+9. **One primary button per screen, at the bottom** where the thumb reaches.
+10. **Native controls first:** Switch, segmented control, date and time pickers, Alert and ActionSheet, context menus,
+    swipe actions, form sheets.
 
 ## Voice
-Warm and quiet: a country-club scorecard, not a sportsbook. Each tab opens the same way: a green uppercase eyebrow, a big bold title ending in a full stop ("Find your fairway."), and one grey line under it. Photos carry the mood; cards stay plain.
+The friend who keeps the card: plain, short and specific. Golf words are welcome (thru, up, net, skins, press). No
+exclamation marks, puns, greetings or compliments. Titles are nouns; buttons are verb + noun ("Start round", "Save
+round", "Add player").
+
+**Glossary: one term per thing.**
+
+| Thing | Term |
+|---|---|
+| A round being played | **Round in progress** |
+| The round builder | **New round** (tab label: Play) |
+| The hole-by-hole card | **Scorecard** |
+| Game state | **Standings** during the round, **Results** after |
+| The tally | **Points** |
+| Game types | **Points game** / **Just for fun** |
+| People | **Player** (in a round), **Friend** (saved), **Group** |
+| Course data | **Course**, **Tees** |
+| Handicap | **Handicap index (HCP)**, **Course handicap (CH)** |
+| Halves | **Front 9 / Back 9** |
+| Not holed out | **Picked up (PU)** |
+| Scores to par | **E** for even; a true minus sign "−" |
+
+- UI copy never says "settle up", "owes", "pays", "wager" or "bet" (the app's name is the exception).
+- Say "Saved on this iPhone" only in local mode, and "Synced to your account" only when signed in.
 
 ## Colour (light only)
-Semantic rule: **pine = primary, selected, good, under par. Gold = attention, over par, the HCP badge. Coral = errors only.** Bogeys are gold, never red.
 
 | Token | Value | Use |
 |---|---|---|
-| surface | #F5F4EC cream | ground and tab bar |
-| surfaceRaised | #FFFEFA | cards (with a 1pt `divider` #E6E6DC hairline) |
-| surfaceRaised2 | #ECEEE5 | recessed tiles inside cards |
-| textPrimary / Secondary / Tertiary | #17372D / #5E665F / #666E66 | forest ink; all ≥ 4.5:1 on cream and card |
-| accent / accentSoft / onAccent | #245C45 / #1D4D3A / #FFFFFF | buttons, selected pills, markers |
-| accentText | #245C45 | eyebrows, links ("See friends") |
-| accentTint / accentTintText | #DCE8D6 / #1F4F3B | tinted cards, icon tiles, note bar, "FOR FUN" |
-| hero / heroRaised / onHero / onHeroSoft | #17372D / #245C45 / #FFF / 72% white | dark round card, profile card, sticky bar |
-| goldFill | #E7BD5A | HCP badge, the selected-course check, "coming up" dot (forest text on it) |
-| gold / goldText / goldTint | #A87A12 / #8A6514 / #F5E7C4 | over-par markers, "WAGER" badge |
-| neutralChip / Text | #E8EBE2 / #3E4A43 | time chips, stepper buttons, the "+" on Friends, tinted buttons |
-| star | #A8662B | rating star |
-| negative | #B3412B | validation, destructive |
-| avatarA–D | sage #DCE8D6, sand #F0DDB3, slate #DCE1EA, rose #EFD9D6 | two initials in forest |
+| surface | #F5F4EC cream | the ground |
+| surfaceRaised | #FFFEFA | grouped cells, cards (1pt `divider` #E6E6DC hairline) |
+| surfaceRaised2 | #ECEEE5 | recessed wells (the stepper) |
+| textPrimary | #17372D forest | text |
+| textSecondary | #4F5751 | second level, about 6.8:1 on cream |
+| textTertiary | #666E66 | the lightest text, about 4.8:1 on cream |
+| accent / accentSoft / onAccent | #245C45 / #1D4D3A / #FFFFFF | primary buttons, selected controls, under-par marks |
+| accentTint / accentTintText | #DCE8D6 / #1F4F3B | result callouts, quiet avatars |
+| gold / goldText / goldTint | #A87A12 / #8A6514 / #F5E7C4 | over-par marks |
+| destructive / negative | #B3412B coral | Delete buttons (white on coral), errors |
+| hero / onHero / onHeroSoft | #17372D / #FFFFFF / 78% white | the round-in-progress card only |
+| tickUpcoming | #B7BCAE | off-switch track, upcoming ticks |
+| seat colours (`seatColors`) | slate #3E5C7A · plum #7A4A72 · teal #1F6A73 · clay #8A4A2E | players by seat in a round: scorecard column, standings, share image. Each has a tint and an on-tint text colour. |
 
-`color.dark` is an alias of `color.light`, so scheme-keyed code still compiles. `src/theme/tokens.test.ts` checks contrast for every pairing the kit produces, including white on hero and forest on goldFill.
+Outside a round, avatars use one quiet tint (accentTint with forest initials): colour means a seat, nothing else.
+`tokens.test.ts` checks every text and non-text pairing, blended rgba on the dark card, and the seat colours.
 
 ## Typography
-- **Inter** only, measured from the mockups. Steps (pt/line):
-  - display 32/36 Bold −0.9 (screen titles)
-  - headline 21/26 Bold (section titles)
-  - title 16/21 Bold (card and row titles)
-  - button 16/22 Bold
-  - score 26/30
-  - body 15/21 (subtitles)
-  - label 14/19 SemiBold (pills, links)
-  - caption 13/17 Medium (meta)
-  - eyebrow 11/14 Bold, uppercase, +1.4 tracking
-  - overline 11/14 Bold, uppercase, +0.8 (badges)
-  - tab 11/14
-  - displayXl 40/44 (the hole title)
-- The floor is 11pt, used only for eyebrows, badges and tab labels. Each step has a Dynamic Type cap.
-- Playfair and JetBrains Mono stay registered for the share card only.
+The iOS system font (SF Pro) everywhere, from `Text step=…`. Weights come from the step; tabular figures on every
+number step. Dynamic Type scales each step up to its cap; rows grow with it (no fixed heights around text).
+
+| Step | Size/line | Weight | Use |
+|---|---|---|---|
+| largeTitle | 34/41 | bold | native large titles (the header draws it) |
+| title1 | 28/34 | bold | the hole number on the live round |
+| title2 | 22/28 | bold | |
+| title3 | 20/25 | semibold | section headers in a screen |
+| rowTitle | 17/22 | semibold | row titles, player names (iOS "headline") |
+| rowBody | 17/22 | regular | body text (iOS "body") |
+| callout | 16/21 | regular | |
+| subhead | 15/20 | regular | row subtitles |
+| footnote | 13/18 | regular | section footers, captions |
+| caption1 / caption2 | 12/16 · 11/13 | regular | small print; 11pt is the floor |
+| tableHeader | 12/16 | semibold, uppercase, +0.5 | scorecard headers only |
+| scoreXL / scoreLg / scoreMd | 34 · 28 · 22 | semibold, tabular | the score being entered; stat numbers |
+| cellMd | 17/22 | medium, tabular | scorecard cells |
+
+Legacy steps (display, headline, title, body 15, eyebrow…) remain only for screens not yet rebuilt and are removed
+once none use them. Never set a numeric `fontSize` in a screen.
 
 ## Shape, space, motion
-- **Radius:**
-  - 20 for cards
-  - 22 for hero and photo cards
-  - 16 for large buttons, 12 for smaller ones
-  - 14 for icon tiles and inner tiles
-  - 10 for time chips and stepper buttons
-  - pill for filter pills and avatars
-  - 24 for the sheet top
-- **Space:** gutter 20. `layout` gives card padding 16, 14 between cards and 28 before a new section.
-- **Elevation:** cards have a hairline plus `0 1px 2px rgba(23,55,45,.04)`. Pressed or hovered cards lift to `0 4px 14px …/.08`. The sticky bar floats with a soft dark shadow.
-- **Touch targets:** 48pt minimum. Pills are 40pt with hitSlop, primary buttons 56pt.
-- **States** (`components/ui/interaction.ts`):
-  - pressed: a deeper fill, or 0.85–0.92 opacity
-  - hover (web): a tint or the lifted shadow
-  - focus: a pine ring on `:focus-visible`
-  - disabled: 40%
-- **Motion:** colour and opacity only. Reduce Motion collapses it.
+- **Radius:** grouped cells and cards 12–14 (iOS-like); the round-in-progress card 22; pills 999 (filters only).
+- **Space:** a 4pt grid. Gutter 20 (32 from 600pt wide). Sections separate with space and a header, not boxes.
+- **Touch targets:** 44pt minimum (48 preferred); the score buttons 56pt with 16pt between them.
+- **Pressed state:** one opacity (`PRESSED_OPACITY` 0.6) through `ui/Pressable`; never a layout-shifting transform.
+- **Motion with meaning:** the score number ticks when it changes; Next scrolls to the top with a short cross-fade;
+  standings reorder in place. Everything is off under Reduce Motion.
+- **Haptics:** selection on segmented controls and chips; light impact on the score buttons and Next; success on
+  Save round; warning before a destructive confirm. All follow the Haptics setting.
 
 ## Icons
-Ionicons outline throughout. The tab bar uses home, map, flag, people and person outlines. Arrows (`arrow-forward`, and `arrow-up` rotated 45°) mark navigation. Decorative icons are hidden from VoiceOver.
+SF Symbols (`expo-symbols`) through `ui/Icon`, which falls back to Ionicons on web and in tests. Two sizes (20, 24).
+Decorative icons are hidden from VoiceOver. Tabs: house, map, figure.golf, person.2, person.crop.circle (filled when
+selected).
 
-## Screen anatomy (the mockups)
-- **Tabs:** Home · Courses · Bet · Friends · Profile. The bar is cream with a hairline top and outline icons; the active tab is forest with a bold label.
-- **Home:**
-  - logo chip + "birdies & bets" wordmark + avatar
-  - eyebrow, "Hey, {first}."
-  - photo `HeroCard` (pill, title, CTA)
-  - Handicap and Your circle tiles
-  - "A few familiar faces"
-  - sage "Find your next fairway"
-  - recent rounds
-- **Courses:** header, "Browsing near" sage card, search, filter pills, `PhotoCard`s (tag, check, name, facts, arrow disc), "Add your course", and a `StickyBar` when a round is set up or live.
-- **Bet (round builder):**
-  - dark round card: course, meta, day / time / tees, Start, change course
-  - Tee time: day pills, plus time chips in a card
-  - Bring your crew: one card per person, with ⊕ / ✓
-  - Add a side game: All / Wagers / For fun pills; rows with an icon tile, title, badge, blurb, stake line and player range
-  - Round add-ons card: holes, settings and the no-payments line
-- **Friends:** dark "Build your golf circle" CTA, Rounds in your circle (live, coming up, played with Rematch), Your golf friends (one card, divided rows, tinted "+"), Your groups, and the sage "Plan a round" card.
-- **Profile:** dark golfer card (photo or initials, gold camera badge, name, area, gold HCP badge), name / index stepper / home area card, Clubs in your bag pills, note bar, and More (index history, settings, tour).
+## Screen anatomy (2026-10-14 target)
+- **Tabs:** Home · Courses · Play · Friends · Profile (native tab bar; Liquid Glass on iOS 26). A round in progress
+  shows on every tab: the tab bar's bottom accessory on iOS 26, a slim banner on older iOS.
+- **Live round:** native header "Hole 7" with par, yards and SI under it; hole chips; a one-line standings strip;
+  per player a big −/+ with the score between (from no score: tap = par, − = birdie, + = bogey); game prompts inline
+  only on holes that have them; the full scorecard below the fold; Previous / Next pinned at the bottom.
+- **Standings:** a form sheet; each game opens with a headline sentence ("Jay 2 up thru 7").
+- **Results:** headline result; Player | Gross | Net | Pts with CH as a caption; Games, Points, Notes; one primary
+  "Save round".
+- **Play (New round):** one grouped form (Course, Tees, Holes, Date and tee time, Players, Games, Round options) and
+  one pinned "Start round".
+- **Home:** the wordmark; the round in progress, the next round, or "New round"; a season stats row; recent rounds.
+- **Courses:** native search; "Recently played" and "Saved" rows built from data; a course detail screen.
+- **Friends:** groups and friends lists; each friend's head to head; "Play with …".
+- **Profile:** a header row; Handicap index and Home course; Account; Settings and help links.
 
-## Components (recipes)
-- **Button:**
-  - `primary` is pine with a white label
-  - `hero` is pine on a dark card
-  - `tinted` is chip grey with a pine label
-  - `secondary` is a white card with a hairline and a pine label
-  - a leading arrow on forward actions
-- **Card:** raised · tinted (sage) · gold · accent (selected) · hero (dark forest). `onPress` makes the whole card a button.
-- **Chip:** white pill with a hairline and a pine label; selected is a pine fill. `shape="time"` is the recessed time chip.
-- **ListRow:**
-  - leading art, title, accent and meta lines
-  - `trailing` glyph inside the press area
-  - `action` control and `footer` links outside it (never nest buttons)
-- **HeroCard / PhotoCard / StickyBar:** see `components/ui/HeroCard.tsx`. Photos are the brand set in `assets/photos`, picked per course by `components/courseArt.ts`.
-- **ScreenHeader, SectionLabel** (21pt title with an optional link and sub line), **IconTile, NoteBar, Avatar / AvatarStack, Stepper** (− value +, optional typed centre).
-- **Score cell:** the birdie/eagle ring is pine, the bogey square gold.
+## Components
+- **Button:** primary (pine), secondary, plain, destructive (coral on any variant). No leading arrows.
+- **ListSection / ListItem:** inset-grouped rows: title, subtitle, value, chevron / switch / check accessory, destructive
+  style, `accessibilityState`, swipe actions and a context menu. Interactive pieces are siblings, never nested.
+- **LiveRoundCard:** the one dark card. **CourseRow**, **ResultCallout**, **Avatar** (seat colour in a round).
+- **Confirmations:** `confirm()` / `ask()` (native Alert, destructive style; browser confirm on web).
+- **Score cell:** the birdie ring is pine, the bogey square gold, a pick-up "PU"; stroke dots in the corner.
 
-## Pre-delivery checklist
-- [ ] Matches the reference mockups side by side (spacing, colour, type, radius)
-- [ ] Touch targets ≥ 48pt; hitSlop on pills and small glyphs
-- [ ] Text ≥ 4.5:1, non-text ≥ 3:1 (tokens test)
-- [ ] No nested buttons on web (ListRow `action` / `footer`)
-- [ ] Safe areas respected; the sticky bar doesn't cover the last card
-- [ ] 375pt width, largest Dynamic Type, Reduce Motion
-- [ ] Semantic tokens only; no per-screen hex
+## Pre-delivery checklist (from UI/UX Pro Max `pro-rules.md`, adapted)
+- [ ] No eyebrow/tagline header, no full-stop titles, no filler copy; glossary terms only
+- [ ] Touch targets ≥ 44pt (48 preferred), 8pt+ apart; pressed feedback on every tappable
+- [ ] Text ≥ 4.5:1, non-text ≥ 3:1 (tokens test); colour never the only signal
+- [ ] Decorative icons hidden from VoiceOver; icon buttons named; headers have the header role; focus order matches
+- [ ] Largest Dynamic Type: nothing clipped or overlapping; rows grow
+- [ ] Reduce Motion: nothing slides or bounces
+- [ ] Safe areas respected; nothing hidden behind the tab bar, accessory or a pinned button
+- [ ] 320pt and 430pt widths
+- [ ] Semantic tokens only; no hex and no numeric font sizes in screens
+- [ ] Destructive actions confirm natively, in coral

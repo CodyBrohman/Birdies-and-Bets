@@ -29,26 +29,29 @@ Expo SDK 57 · Expo Router · NativeWind 4 · Zustand · TypeScript strict.
 - Handicap math and every game module get unit tests.
 
 ## Design
-The 2026-10-01 redesign matches the owner's ten reference mockups. Tokens in `src/theme/tokens.ts` are canonical, and
-`design-system/birdies-and-bets/MASTER.md` explains them.
-- **Palette** (light only; `color.dark` aliases light): cream ground `#F5F4EC`, warm white hairline cards, forest ink
-  `#17372D`, pine `#245C45` for buttons and selected pills, dark forest hero cards, a gold `#E7BD5A` HCP badge.
-  Pine = good/under par, gold = over par, coral = errors only.
-- **Type:** Inter only. Display 32 bold titles under a green uppercase eyebrow, section titles 21, body 15. 11pt is the
-  floor, for eyebrows, badges and tabs only.
-- **Shape:** cards radius 20 with a hairline; hero and photo cards 22; buttons rounded rectangles (16/12); filter pills
-  are pills.
-- **Tabs:** Home · Courses · Bet (round builder) · Friends · Profile. Settings is a stack screen opened from Profile.
+2026-10-14: evolve the look, drop the template patterns, go native. `design-system/birdies-and-bets/MASTER.md` holds the
+ten rules, the voice and glossary, and the screen anatomy; `src/theme/tokens.ts` is canonical. Screens are rebuilt one
+at a time (TODO.md Phase 3); an unrebuilt screen may still show the old patterns.
+- **Rules in short:** no eyebrow/tagline headers (native titles); facts, not filler copy; no stock or AI photos; one
+  dark surface (the round in progress); inset-grouped lists before cards; SF Symbols, no icon tiles, no arrows in
+  buttons; colour means something and never alone; uppercase only in scorecard headers; one primary button, at the
+  bottom; native controls first. UI copy never says settle up / owes / pays / wager / bet.
+- **Palette** (light only): cream ground `#F5F4EC`, white cells, forest ink `#17372D`, pine `#245C45` (actions, under
+  par), gold (over par), coral (destructive, errors). Four seat colours mark players in a round.
+- **Type:** the iOS system font (SF Pro); weights come from the step. New screens use the iOS ramp (largeTitle,
+  title1-3, rowTitle, rowBody, callout, subhead, footnote, caption1-2, tableHeader, scoreXL/Lg/Md, cellMd). Legacy
+  steps exist only for unrebuilt screens. Never a numeric fontSize in a screen.
+- **Tabs:** Home · Courses · Play (round builder; route still `bet` until the native-tabs step) · Friends · Profile.
+  Settings is a stack screen opened from Profile.
 - **Logos:** `assets/logo.png` is the master chip (`logo-mark.png` is the same art with the faint square trimmed; it
   feeds BrandMark, the splash, the favicon and the website). `assets/app-logo.png` is the app icon source; `icon.png` is
   derived from it, opaque, with the corners filled.
-- **Kit additions:** ScreenHeader, HeroCard, PhotoCard, StickyBar, ListRow, IconTile, NoteBar, AvatarStack.
-- **ListRow:** put interactive pieces in `action`/`footer`, never inside the row (no nested buttons on web).
-- **Photos:** brand photos live in `assets/photos` (shared with the website). `components/courseArt.ts` picks one per
-  course.
-- **Profile extras** (home area, photo, bag) live in preferences. A tee time is an optional `RoundSettings.teeTime`.
-  Crew helpers are in `store/crew.ts`.
-- Min hit target 48pt (pills 40 + hitSlop). Ionicons outline. States live in `components/ui/interaction.ts`.
+- **Confirmations:** `confirm()` / `ask()` from `@/components/ui` (native Alert, destructive in coral). Screen tests answer
+  them with `pressAlert(label)` from `src/test/screen.tsx`.
+- **Interaction:** always import `Pressable` from `@/components/ui` (one pressed state). Never nest Pressables (web errors
+  on button inside button): put row controls in ListRow `action`/`footer`. Min target 44pt (48 preferred).
+- **Profile extras** (photo, legacy home area and bag) live in preferences. A tee time is an optional
+  `RoundSettings.teeTime`. Crew helpers are in `store/crew.ts`. The draft round persists (`bb:round:draft`).
 
 ## Telemetry
 - `src/services/telemetry.ts` is the only file that imports Sentry or Aptabase (an architecture test enforces it).
