@@ -11,12 +11,12 @@ export interface ChipProps {
   accessibilityLabel?: string;
   disabled?: boolean;
   haptic?: boolean;
-  /** pill (default) = filter and club pills; time = small recessed rounded chip ("8:30 AM"). */
+  /** pill (default) = a choice among a few ("Marcus", "None"); time = a small recessed rounded chip ("8:30 AM"). */
   shape?: 'pill' | 'time';
   style?: StyleProp<ViewStyle>;
 }
 
-/** Filter pill: white with a hairline and a pine label; selected = pine fill, white label. 40pt with hitSlop to 48. */
+/** A choice chip, 44pt tall: white with a hairline and a pine label; selected = pine fill, white label. */
 export function Chip({ label, selected = false, onPress, accessibilityLabel, disabled, haptic: useHaptic = true, shape = 'pill', style }: ChipProps) {
   const { c, w, hit, radius } = useTheme();
   const time = shape === 'time';
@@ -26,7 +26,6 @@ export function Chip({ label, selected = false, onPress, accessibilityLabel, dis
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ selected, disabled: !!disabled }}
       disabled={disabled}
-      hitSlop={time ? 6 : 4}
       onPress={() => {
         if (useHaptic) haptic.selection();
         onPress();
@@ -36,12 +35,12 @@ export function Chip({ label, selected = false, onPress, accessibilityLabel, dis
         const idle = time ? (pressed || hovered ? c.dividerSoft : c.neutralChip) : pressed ? c.surfaceRaised2 : hovered ? c.hover : c.surfaceRaised;
         return [
           {
-            minHeight: time ? 36 : hit.pill,
+            minHeight: hit.min - 4,
             paddingVertical: 6,
-            paddingHorizontal: time ? 12 : 16,
+            paddingHorizontal: 16,
             borderRadius: time ? 10 : radius.pill,
             borderWidth: selected || time ? 0 : 1,
-            borderColor: c.divider,
+            borderColor: c.dividerSoft,
             backgroundColor: selected ? (pressed ? c.accentSoft : c.inverse) : idle,
             alignItems: 'center',
             justifyContent: 'center',
@@ -52,7 +51,7 @@ export function Chip({ label, selected = false, onPress, accessibilityLabel, dis
         ];
       }}
     >
-      <Text step="label" style={{ color: selected ? c.onInverse : c.accentText, fontWeight: w.bold, fontSize: time ? 13 : 14 }} numberOfLines={1}>
+      <Text step="subhead" style={{ color: selected ? c.onInverse : c.accentText, fontWeight: w.semibold }} numberOfLines={1}>
         {label}
       </Text>
     </Pressable>

@@ -6,3 +6,5 @@ export * from './SettingsFields';
 export * from './HoleNotesList';
 export * from './PastRoundCard';
 export * from './LiveRoundBanner';
+export * from './HoleStrip';
+export * from './PlayerScore';

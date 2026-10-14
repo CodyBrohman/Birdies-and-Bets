@@ -1,79 +1,68 @@
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Animated, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { ask, Avatar, Badge, Button, Card, confirm, IconButton, LivePill, Screen, Sheet, Text, TextField, Pressable } from '@/components/ui';
+import { actionSheet, ask, Button, confirm, HeaderButton, Icon, Pressable, ScrollScreen, SegmentedControl, Text } from '@/components/ui';
 import { NineCard } from '@/components/scorecard';
 import { HoleInputCard, missingInputs } from '@/components/games';
-import { haptic, useTheme } from '@/theme';
-import { MAX_NOTE_LENGTH, useGameRuns, useHandicaps, useMe, usePlayOrder, useRound, useRoundStore } from '@/store';
-import type { GrossScore, Player, PlayerScores, Round } from '@/types';
-import { backNine, frontNine, holePosition, holesPlayed, nextHoleNumber, prevHoleNumber, scoreOn, scoreOptions, stepScore, totals, unscoredHoles } from '@/lib/scoring';
-import { formatIndex, formatToPar, joinMeta, plural } from '@/lib/format';
-import { dayLabel, formatSlot, parseTeeTime } from '@/lib/teeTime';
+import { HoleStrip, PlayerScore, type HoleProgress } from '@/components/round';
+import { goBackOr } from '@/components/navigation';
+import { haptic, PRESSED_OPACITY, useReduceMotion, useTheme } from '@/theme';
+import { useGameRuns, useHandicaps, useHoles, useMe, usePlayOrder, useRound, useRoundStore } from '@/store';
+import type { GrossScore, Player, PlayerScores, ScoringBasis } from '@/types';
+import { backNine, frontNine, holePosition, nextHoleNumber, prevHoleNumber, scoreOptions, stepScore, totals, unscoredHoles } from '@/lib/scoring';
+import { formatToPar, joinMeta, shortNames } from '@/lib/format';
+import { trackRoundDiscarded } from '@/services';
 
 /**
- * The live scorecard, one scrolling screen: round header, hole strip, a −/+ stepper per player, the front and back nine,
- * then Previous / Next hole. Every tap persists immediately. Moving on is manual: Next records the hole and steps
- * to the next one in play order (which wraps around on a shotgun start); on the last hole it finishes the round.
+ * The round in progress, one hole at a time. The header names the hole; under it the hole chips, a one-line standings
+ * strip, and each player's −/number/+ (from no score: tap the number for par, − for a birdie, + for a bogey). Game
+ * prompts appear when a game asks for them; the full card sits below. Previous / Next stay pinned in thumb reach, and
+ * moving on is always manual. Every tap is saved at once.
  */
-const HOLE_CHIP = 48;
-const HOLE_GAP = 8;
-
 export default function PlayScreen() {
   const router = useRouter();
-  const { c, w, space, radius, layout } = useTheme();
+  const { c, w, space, motion } = useTheme();
+  const reduceMotion = useReduceMotion();
   const round = useRound();
+  const holes = useHoles(round);
   const order = usePlayOrder(round);
   const handicaps = useHandicaps(round);
   const runs = useGameRuns(round);
   const { me } = useMe();
-  const setScore = useRoundStore((s) => s.setScore);
   const setScores = useRoundStore((s) => s.setScores);
+  const clearScore = useRoundStore((s) => s.clearScore);
   const undoLastScore = useRoundStore((s) => s.undoLastScore);
-  const undoStack = useRoundStore((s) => s.undo);
-  const setHoleNote = useRoundStore((s) => s.setHoleNote);
   const recordHole = useRoundStore((s) => s.recordHole);
   const setCurrentHole = useRoundStore((s) => s.setCurrentHole);
   const setGameInputs = useRoundStore((s) => s.setGameInputs);
+  const discardRound = useRoundStore((s) => s.discardRound);
+
+  const scrollRef = useRef<ScrollView>(null);
+  const [fade] = useState(() => new Animated.Value(1));
+  const [basis, setBasis] = useState<ScoringBasis>('gross');
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
 
   const holeNumber = round?.currentHole ?? order[0]?.number ?? 1;
   const hole = order.find((h) => h.number === holeNumber);
+  if (!round || !hole) return null;
+
   const position = holePosition(order, holeNumber);
   const prev = prevHoleNumber(order, holeNumber);
   const next = nextHoleNumber(order, holeNumber);
-  const result = round?.holeResults.find((r) => r.holeNumber === holeNumber);
+  const result = round.holeResults.find((r) => r.holeNumber === holeNumber);
   const scores = result?.scores ?? {};
-
-  const [undone, setUndone] = useState<string | null>(null);
-  const [noteOpen, setNoteOpen] = useState(false);
-  const [noteDraft, setNoteDraft] = useState('');
-  const strip = useRef<ScrollView>(null);
-  const [stripWidth, setStripWidth] = useState(0);
-
-  // Keep the current hole's chip in view.
-  useEffect(() => {
-    if (!stripWidth || position < 1) return;
-    const x = (position - 1) * (HOLE_CHIP + HOLE_GAP) - (stripWidth - HOLE_CHIP) / 2;
-    strip.current?.scrollTo({ x: Math.max(0, x), animated: true });
-  }, [position, stripWidth]);
-
-  if (!round || !hole) return null;
-
-  const played = holesPlayed(round.holeResults, order);
-  const coursePar = order.reduce((sum, h) => sum + h.par, 0);
-  // "You" only when the phone's owner is playing; otherwise the card features the first player, by name.
+  const yards = hole.yardage?.[round.teeBoxId];
   const mine = round.players.find((p) => me && p.profileId === me.id);
-  const featured = mine ?? round.players[0];
-  const myTotals = featured ? totals(round.holeResults, order, featured.id, 'gross') : null;
   const isMe = (p: Player) => !!mine && p.id === mine.id;
-  const featuredLabel = mine ? 'Your score' : `${featured?.name.trim().split(/\s+/)[0] ?? 'Score'}`;
+  const maxScore = Math.max(...scoreOptions(hole.par));
+  const anyStrokes = round.players.some((p) => Object.values(handicaps[p.id]?.strokesByHole ?? {}).some((n) => n !== 0));
 
-  // Games that need more than strokes on this hole, with their saved answers.
+  // Game prompts on this hole, with their saved answers.
   const inputGames = runs.filter((r) => (r.mode.holeInputs?.length ?? 0) > 0);
   const answersFor = (gameId: string) => result?.gameInputs?.[gameId] ?? {};
   const unanswered = inputGames.filter((r) => missingInputs(r.mode.holeInputs ?? [], answersFor(r.gameId)).length > 0);
-
   const answer = (gameId: string, key: string, value: string | undefined) => {
     const nextAnswers = { ...answersFor(gameId) };
     if (value === undefined) delete nextAnswers[key];
@@ -84,55 +73,62 @@ export default function PlayScreen() {
     setGameInputs(holeNumber, gameId, nextAnswers);
   };
 
-  const change = (playerId: string, score: GrossScore) => {
-    setUndone(null);
-    setScore(playerId, holeNumber, score);
+  const showToast = (text: string) => {
+    clearTimeout(toastTimer.current);
+    setToast(text);
+    toastTimer.current = setTimeout(() => setToast(null), 5000);
   };
   const nameOf = (id: string) => round.players.find((p) => p.id === id)?.name ?? 'Player';
-  const describe = (id: string, score: GrossScore | undefined) => `${nameOf(id)} ${score === null ? 'pick up' : score == null ? 'blank' : score}`;
-
-  // Stepper: from no score, − is a birdie and + a bogey (tap the number for par); then one stroke at a time.
-  const maxScore = Math.max(...scoreOptions(hole.par));
+  const set = (playerId: string, score: GrossScore) => setScores(holeNumber, { [playerId]: score });
+  const clear = (playerId: string) => {
+    if (!(playerId in scores)) return;
+    clearScore(playerId, holeNumber);
+    showToast(`Cleared ${nameOf(playerId)} on hole ${holeNumber}`);
+  };
   const step = (playerId: string, delta: 1 | -1) => {
     const saved = scores[playerId];
     const value = stepScore(saved, delta, hole.par, maxScore);
     if (saved === value) return;
     haptic.light();
-    change(playerId, value);
+    set(playerId, value);
   };
   const setPar = (playerId: string) => {
     if (scores[playerId] === hole.par) return;
     haptic.light();
-    change(playerId, hole.par);
+    set(playerId, hole.par);
+  };
+  const pickUp = (playerId: string) => {
+    if (scores[playerId] === null) return;
+    haptic.light();
+    set(playerId, null);
+    showToast(`${nameOf(playerId)} picked up on hole ${holeNumber}`);
   };
 
-  // "Everyone par": fill only the players who have no score yet.
+  // "Everyone par" fills only the players who have no score yet.
   const unscored = round.players.filter((p) => !(p.id in scores));
   const fillPar = () => {
     if (unscored.length === 0) return;
     const fill: PlayerScores = {};
     for (const p of unscored) fill[p.id] = hole.par;
-    setUndone(null);
+    haptic.light();
     setScores(holeNumber, fill);
+    showToast(unscored.length === round.players.length ? `Everyone par on hole ${holeNumber}` : `Par for ${unscored.map((p) => p.name).join(', ')}`);
   };
-
-  const lastUndo = undoStack[undoStack.length - 1];
-  const undoLabel = lastUndo ? `Undo ${Object.keys(lastUndo.previous).map((id) => describe(id, scores[id] ?? round.holeResults.find((r) => r.holeNumber === lastUndo.holeNumber)?.scores[id])).join(', ')} on hole ${lastUndo.holeNumber}` : 'Nothing to undo';
   const undo = () => {
     const entry = undoLastScore();
-    if (!entry) return;
-    haptic.light();
-    const who = Object.keys(entry.previous).map(nameOf).join(', ');
-    setUndone(`Undid ${who} on hole ${entry.holeNumber}`);
+    setToast(null);
+    if (entry) haptic.light();
   };
 
-  const openNote = () => {
-    setNoteDraft(result?.note ?? '');
-    setNoteOpen(true);
-  };
-  const saveNote = (text: string) => {
-    setHoleNote(holeNumber, text);
-    setNoteOpen(false);
+  // Changing hole: back to the top, the hole's content fading in (not under Reduce Motion).
+  const goTo = (n: number) => {
+    setCurrentHole(n);
+    setToast(null);
+    scrollRef.current?.scrollTo({ y: 0, animated: !reduceMotion });
+    if (!reduceMotion) {
+      fade.setValue(0.25);
+      Animated.timing(fade, { toValue: 1, duration: motion.holeChange, useNativeDriver: true }).start();
+    }
   };
 
   const goNext = async () => {
@@ -146,243 +142,159 @@ export default function PlayScreen() {
     }
     if (Object.keys(scores).length > 0) recordHole(holeNumber, scores);
     haptic.light();
-    if (next == null) {
-      const missing = unscoredHoles(round.holeResults, order, round.players.map((p) => p.id));
-      if (missing.length > 0) {
-        const ok = await confirm({
-          title: missing.length === 1 ? `Hole ${missing[0]} has missing scores` : `${missing.length} holes have missing scores`,
-          message: missing.length > 1 ? `Holes ${missing.join(', ')}. Finish anyway? Missing scores count as not played.` : 'Finish anyway? Missing scores count as not played.',
-          confirmLabel: 'Finish round',
-          cancelLabel: 'Keep scoring',
-        });
-        if (!ok) return;
-      }
-      router.push('/round/summary');
-    } else setCurrentHole(next);
+    if (next == null) await finish();
+    else goTo(next);
   };
 
-  const front = frontNine(order).sort((a, b) => a.number - b.number);
-  const back = backNine(order).sort((a, b) => a.number - b.number);
-  const labelFor = (p: Player) => (isMe(p) ? 'You' : (p.name.trim().split(/\s+/)[0] ?? p.name));
-  const onHeroLine = 'rgba(255,255,255,0.16)';
+  const finish = async () => {
+    const missing = unscoredHoles(round.holeResults, order, round.players.map((p) => p.id));
+    if (missing.length > 0) {
+      const ok = await confirm({
+        title: missing.length === 1 ? `Hole ${missing[0]} has missing scores` : `${missing.length} holes have missing scores`,
+        message: missing.length > 1 ? `Holes ${missing.join(', ')}. Finish anyway? Missing scores count as not played.` : 'Finish anyway? Missing scores count as not played.',
+        confirmLabel: 'Finish round',
+        cancelLabel: 'Keep scoring',
+      });
+      if (!ok) return;
+    }
+    router.push('/round/summary');
+  };
+
+  const endRound = async () => {
+    const choice = await ask('End this round?', 'Finish it to see the results and save it, or discard it.', [
+      { label: 'Finish round', value: 'finish' },
+      { label: 'Discard round', value: 'discard', style: 'destructive' },
+      { label: 'Cancel', value: null, style: 'cancel' },
+    ]);
+    if (choice === 'finish') await finish();
+    if (choice === 'discard') {
+      const ok = await confirm({ title: 'Discard this round?', message: `Every score from ${round.course.name} is deleted. This can't be undone.`, confirmLabel: 'Discard round', destructive: true });
+      if (!ok) return;
+      trackRoundDiscarded(round);
+      discardRound();
+      router.replace('/');
+    }
+  };
+
+  const openMenu = async () => {
+    const items = [
+      { label: result?.note ? 'Edit hole note' : 'Add hole note', run: () => router.push('/round/note') },
+      { label: round.games.length ? 'Edit games' : 'Add a game', run: () => router.push('/new-round/games?mode=edit') },
+      { label: 'End round', run: () => void endRound() },
+    ];
+    const i = await actionSheet(undefined, items);
+    if (i != null) items[i]?.run();
+  };
+
+  const progressOf = (n: number): HoleProgress => {
+    const r = round.holeResults.find((x) => x.holeNumber === n);
+    const count = r ? round.players.filter((p) => p.id in r.scores).length : 0;
+    return count === 0 ? 'none' : count === round.players.length ? 'all' : 'some';
+  };
+  const soFar = (p: Player): string | null => {
+    const t = totals(round.holeResults, order, p.id, 'gross');
+    const thru = t.holesScored + t.holesPickedUp;
+    return thru ? `${t.holesScored ? formatToPar(t.toPar) : 'PU'} thru ${thru}` : null;
+  };
+  const names = shortNames(round.players.map((p) => p.name));
+  const standingsLine = runs.map((r) => `${r.mode.name}: ${r.standings.headline}`).join(' · ');
+  const front = frontNine(holes);
+  const back = backNine(holes);
+  const holeFacts = joinMeta([`Par ${hole.par}`, yards ? `${yards} yds` : null, `SI ${hole.strokeIndex}`]);
 
   return (
-    <Screen>
-      {/* Top bar */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: space[2], paddingBottom: space[1] }}>
-        <IconButton icon="chevron-back" label="Home" variant="plain" onPress={() => router.navigate('/')} testID="round-home" />
-        <View style={{ flex: 1, alignItems: 'center' }}>
-          <LivePill label="Round in progress" live style={{ alignSelf: 'center', backgroundColor: 'transparent' }} />
-        </View>
-        <View style={{ width: 48 }} />
-      </View>
-
-      <ScrollView contentContainerStyle={{ gap: layout.stack, paddingTop: space[3], paddingBottom: space[6] }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={{ gap: 6 }}>
-          <Text step="eyebrow" tone="accent">
-            Your scorecard
-          </Text>
-          <Text accessibilityRole="header" step="display" style={{ fontSize: 28, lineHeight: 33 }}>
-            {round.course.name}
-          </Text>
-          <Text step="body" tone="tertiary">
-            {joinMeta([round.course.location, whenLabel(round)])}
+    <ScrollScreen
+      title={`Hole ${holeNumber}`}
+      scrollRef={scrollRef}
+      gap={space[4]}
+      headerTitle={() => (
+        <View accessible accessibilityRole="header" accessibilityLabel={`Hole ${holeNumber} of ${order.length}. Par ${hole.par}${yards ? `, ${yards} yards` : ''}, stroke index ${hole.strokeIndex}`} testID="current-hole" style={{ alignItems: 'center' }}>
+          <Text step="rowTitle">Hole {holeNumber}</Text>
+          <Text step="caption1" tone="secondary">
+            {holeFacts}
           </Text>
         </View>
-
-        {/* Live round card */}
-        <View style={{ backgroundColor: c.hero, borderRadius: radius.hero, padding: space[4], gap: space[4], marginTop: space[2] }}>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space[3] }}>
-            <View style={{ flex: 1, gap: 4 }}>
-              <Text step="eyebrow" style={{ color: c.onHeroSoft, fontSize: 10 }}>
-                Live round
+      )}
+      headerLeft={() => <HeaderButton label="Close" onPress={() => goBackOr('/')} testID="round-home" />}
+      headerRight={() => <HeaderButton label="Round options" icon="more" onPress={() => void openMenu()} testID="round-menu" />}
+      footer={
+        <>
+          {toast ? (
+            <View accessibilityLiveRegion="polite" style={{ flexDirection: 'row', alignItems: 'center', gap: space[3], paddingLeft: space[4], borderRadius: 12, backgroundColor: c.hero }}>
+              <Text step="subhead" style={{ flex: 1, color: c.onHero }} numberOfLines={2}>
+                {toast}
               </Text>
-              <Text step="title" style={{ color: c.onHero, fontSize: 18, lineHeight: 23 }}>
-                {joinMeta([plural(order.length, 'hole'), `Par ${coursePar}`])}
-              </Text>
-              {runs.length > 0 ? (
-                <Pressable accessibilityRole="button" accessibilityLabel={`Game standings, ${plural(runs.length, 'game')}`} onPress={() => router.push('/round/standings')} hitSlop={10} style={{ alignSelf: 'flex-start', marginTop: 4 }}>
-                  {({ pressed }) => (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill, backgroundColor: pressed ? 'rgba(255,255,255,0.26)' : 'rgba(255,255,255,0.14)' }}>
-                      <Ionicons name="trophy-outline" size={13} color={c.goldFill} />
-                      <Text step="caption" tabular={false} style={{ color: c.onHero, fontWeight: w.semibold, fontSize: 12 }}>
-                        {plural(runs.length, 'game')} · standings
-                      </Text>
-                    </View>
-                  )}
-                </Pressable>
-              ) : null}
-            </View>
-            <View accessible accessibilityLabel={`Hole ${holeNumber}`} testID="current-hole" style={{ width: 58, height: 58, borderRadius: radius.lg, backgroundColor: c.goldFill, alignItems: 'center', justifyContent: 'center' }}>
-              <Text step="total" style={{ color: c.textPrimary, fontSize: 22, lineHeight: 26 }}>
-                {String(holeNumber).padStart(2, '0')}
-              </Text>
-              <Text step="overline" style={{ color: c.textPrimary, fontSize: 8, lineHeight: 10 }}>
-                Hole
-              </Text>
-            </View>
-          </View>
-          <View style={{ flexDirection: 'row' }}>
-            {[
-              { label: featuredLabel, value: myTotals?.holesScored ? String(myTotals.strokes) : '–' },
-              { label: 'To par', value: myTotals?.holesScored ? formatToPar(myTotals.toPar) : '–' },
-              { label: 'Holes played', value: String(played), of: `/${order.length}` },
-            ].map((s, i) => (
-              <View key={s.label} accessible accessibilityLabel={`${s.label} ${s.value}${s.of ?? ''}`} style={{ flex: 1, gap: 6, paddingLeft: i === 0 ? 0 : space[3], borderLeftWidth: i === 0 ? 0 : 1, borderColor: onHeroLine }}>
-                <Text step="overline" style={{ color: c.onHeroSoft, fontSize: 9 }}>
-                  {s.label}
-                </Text>
-                <Text step="total" style={{ color: c.onHero, fontSize: 22, lineHeight: 26 }}>
-                  {s.value}
-                  {s.of ? <Text step="caption" style={{ color: c.onHeroSoft, fontSize: 12 }}>{s.of}</Text> : null}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Hole by hole */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: space[3] }}>
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text step="headline">Hole by hole</Text>
-            <Text step="caption" tone="tertiary" tabular={false}>
-              Tap a hole to enter scores.
-            </Text>
-          </View>
-          <Badge label={`Par ${hole.par}`} tone="accent" />
-        </View>
-        <ScrollView
-          ref={strip}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          onLayout={(e) => setStripWidth(e.nativeEvent.layout.width)}
-          contentContainerStyle={{ gap: HOLE_GAP }}
-          style={{ flexGrow: 0 }}
-        >
-          {order.map((h) => {
-            const current = h.number === holeNumber;
-            const s = featured ? scoreOn(round.holeResults, featured.id, h.number, 'gross') : undefined;
-            const scored = s !== undefined;
-            return (
-              <Pressable
-                key={h.number}
-                accessibilityRole="button"
-                accessibilityState={{ selected: current }}
-                accessibilityLabel={`Hole ${h.number}, par ${h.par}${scored ? `, ${s === null ? 'picked up' : `scored ${s}`}` : ''}`}
-                onPress={() => setCurrentHole(h.number)}
-                style={({ pressed }) => ({
-                  width: HOLE_CHIP,
-                  height: 58,
-                  borderRadius: radius.chip,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 2,
-                  backgroundColor: current ? c.accent : c.surfaceRaised,
-                  borderWidth: current ? 0 : 1,
-                  borderColor: c.divider,
-                  opacity: pressed ? 0.85 : 1,
-                })}
-              >
-                <Text step="overline" style={{ fontSize: 9, color: current ? c.onAccent : c.textTertiary }}>
-                  {String(h.number).padStart(2, '0')}
-                </Text>
-                <Text step="total" style={{ fontSize: 17, lineHeight: 21, color: current ? c.goldFill : scored ? c.textPrimary : c.textTertiary }}>
-                  {s === null ? 'PU' : scored ? s : h.par}
+              <Pressable accessibilityRole="button" accessibilityLabel={`Undo: ${toast}`} onPress={undo} style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: space[4], justifyContent: 'center', opacity: pressed ? PRESSED_OPACITY : 1 })}>
+                <Text step="subhead" style={{ color: c.onHero, fontWeight: w.semibold }}>
+                  Undo
                 </Text>
               </Pressable>
-            );
-          })}
-        </ScrollView>
-
-        {/* Enter scores */}
-        <Card style={{ gap: space[3] }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[2], paddingBottom: space[3], borderBottomWidth: 1, borderColor: c.divider }}>
-            <View style={{ flex: 1, gap: 2 }}>
-              <Text step="headline" style={{ fontSize: 19, lineHeight: 24 }}>
-                Enter scores
-              </Text>
-              <Text step="caption" tone="tertiary">
-                {joinMeta([`Hole ${holeNumber}`, `Par ${hole.par}`, `SI ${hole.strokeIndex}`, hole.yardage?.[round.teeBoxId] ? `${hole.yardage[round.teeBoxId]} yds` : null])}
-              </Text>
             </View>
-            <IconButton icon={result?.note ? 'create' : 'create-outline'} label={result?.note ? 'Edit hole note' : 'Add a hole note'} variant="plain" onPress={openNote} />
-          </View>
-
-          {round.players.map((p, i) => {
-            const strokes = handicaps[p.id]?.strokesByHole[holeNumber] ?? 0;
-            const saved = p.id in scores ? scores[p.id] : undefined;
-            const shown = saved === undefined ? '–' : saved === null ? 'PU' : String(saved);
-            return (
-              <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
-                <Avatar name={p.name} seat={i} size={40} />
-                <View style={{ flex: 1, gap: 2 }}>
-                  <Text step="bodyStrong" numberOfLines={1}>
-                    {p.name}
-                    {isMe(p) ? ' (you)' : ''}
-                  </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[2], flexWrap: 'wrap' }}>
-                    <Text step="caption" tone="tertiary">
-                      HCP {formatIndex(p.handicapIndex)}
-                      {strokes !== 0 ? <Text step="caption" tone="accent">{` · ${strokes > 0 ? `+${plural(strokes, 'stroke')}` : `gives ${Math.abs(strokes)}`}`}</Text> : null}
-                    </Text>
-                    <Pressable accessibilityRole="button" accessibilityState={{ selected: saved === null }} accessibilityLabel={`${p.name}: pick up, no score`} onPress={() => change(p.id, null)} hitSlop={10}>
-                      <Text step="caption" tabular={false} tone={saved === null ? 'accent' : 'secondary'} style={{ fontWeight: w.semibold, textDecorationLine: saved === null ? 'none' : 'underline' }}>
-                        {saved === null ? 'Picked up' : 'Pick up'}
-                      </Text>
-                    </Pressable>
-                  </View>
-                </View>
-                <View
-                  accessible
-                  accessibilityRole="adjustable"
-                  accessibilityLabel={`${p.name} strokes`}
-                  accessibilityValue={{ text: saved === undefined ? 'no score' : saved === null ? 'picked up' : String(saved) }}
-                  accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
-                  onAccessibilityAction={(e) => step(p.id, e.nativeEvent.actionName === 'increment' ? 1 : -1)}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: space[2] }}
-                >
-                  <StepButton icon="remove" label={`${p.name} one fewer`} disabled={saved != null && saved <= 1} onPress={() => step(p.id, -1)} testID={`stepper-minus-${i}`} />
-                  <Pressable accessibilityRole="button" accessibilityLabel={`${p.name}: par ${hole.par}`} onPress={() => setPar(p.id)} hitSlop={6} testID={`score-${i}`} style={{ minWidth: 40, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text step="total" style={{ fontSize: 20, lineHeight: 24, color: saved === undefined ? c.textTertiary : c.textPrimary }}>
-                      {saved === undefined ? hole.par : shown}
-                    </Text>
-                    <Text step="overline" tone="tertiary" style={{ fontSize: 8, lineHeight: 10 }}>
-                      {saved === undefined ? 'Tap for par' : 'Strokes'}
-                    </Text>
-                  </Pressable>
-                  <StepButton icon="add" label={`${p.name} one more`} accent disabled={saved != null && saved >= maxScore} onPress={() => step(p.id, 1)} testID={`stepper-plus-${i}`} />
-                </View>
-              </View>
-            );
-          })}
-
-          {/* Shortcuts: fill par, undo */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[2], paddingTop: space[3], borderTopWidth: 1, borderColor: c.divider }}>
-            {unscored.length > 0 ? (
-              <Button label={unscored.length === round.players.length ? `Everyone par ${hole.par}` : `Rest par ${hole.par}`} variant="secondary" size="md" haptic onPress={fillPar} style={{ flex: 1 }} />
-            ) : (
-              <View style={{ flex: 1 }} />
-            )}
-            <IconButton icon="arrow-undo-outline" label={undoLabel} disabled={!lastUndo} onPress={undo} />
-          </View>
-          {undone ? (
-            <Text step="caption" tone="secondary" tabular={false} align="center">
-              {undone}
-            </Text>
           ) : null}
-        </Card>
+          <View style={{ flexDirection: 'row', gap: space[3] }}>
+            <Button label={prev != null ? `Hole ${prev}` : 'Previous'} accessibilityLabel={prev != null ? `Previous hole, hole ${prev}` : 'Previous hole'} variant="secondary" size="lg" disabled={prev == null} onPress={() => prev != null && goTo(prev)} style={{ flex: 1 }} />
+            <Button label={next == null ? 'Finish round' : 'Next hole'} onPress={() => void goNext()} style={{ flex: 1.6 }} testID="next-hole" />
+          </View>
+        </>
+      }
+    >
+      <HoleStrip order={order} current={holeNumber} progress={progressOf} onSelect={goTo} />
+
+      {runs.length > 0 ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Standings. ${standingsLine}`}
+          onPress={() => router.push('/round/standings')}
+          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: space[3], minHeight: 48, paddingVertical: space[2], paddingHorizontal: space[4], borderRadius: 12, backgroundColor: c.surfaceRaised, borderWidth: 1, borderColor: c.divider, opacity: pressed ? PRESSED_OPACITY : 1 })}
+        >
+          <Icon name="trophy" size="sm" color={c.goldText} />
+          <Text step="subhead" style={{ flex: 1 }} numberOfLines={2}>
+            {standingsLine}
+          </Text>
+          <Icon name="chevronRight" size={14} color={c.textTertiary} />
+        </Pressable>
+      ) : null}
+
+      <Animated.View style={{ opacity: fade, gap: space[4] }}>
+        <View style={{ backgroundColor: c.surfaceRaised, borderRadius: 12, borderWidth: 1, borderColor: c.divider, overflow: 'hidden' }}>
+          {round.players.map((p, i) => (
+            <View key={p.id} style={{ borderTopWidth: i === 0 ? 0 : 1, borderColor: c.divider }}>
+              <PlayerScore
+                player={p}
+                shortName={names[i] ?? p.name}
+                seat={i}
+                you={isMe(p)}
+                par={hole.par}
+                value={p.id in scores ? scores[p.id] : undefined}
+                strokes={handicaps[p.id]?.strokesByHole[holeNumber] ?? 0}
+                progress={soFar(p)}
+                max={maxScore}
+                onStep={(d) => step(p.id, d)}
+                onPar={() => setPar(p.id)}
+                onPickUp={() => pickUp(p.id)}
+                onClear={() => clear(p.id)}
+                index={i}
+              />
+            </View>
+          ))}
+        </View>
+
+        {unscored.length > 0 && round.players.length > 1 ? (
+          <Button
+            label={unscored.length === round.players.length ? 'Everyone par' : 'Rest par'}
+            accessibilityLabel={unscored.length === round.players.length ? `Everyone par ${hole.par}` : `Par ${hole.par} for ${unscored.map((p) => p.name).join(', ')}`}
+            variant="secondary"
+            haptic={false}
+            onPress={fillPar}
+          />
+        ) : null}
 
         {result?.note ? (
-          <Pressable accessibilityRole="button" accessibilityLabel={`Hole note: ${result.note}. Edit`} onPress={openNote}>
-            {({ pressed }) => (
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space[2], paddingHorizontal: space[4], paddingVertical: space[3], borderRadius: radius.md, backgroundColor: c.accentTint, opacity: pressed ? 0.85 : 1 }}>
-                <Ionicons name="document-text-outline" size={18} color={c.accentText} style={{ marginTop: 2 }} />
-                <Text step="body" tone="accentTintText" style={{ flex: 1 }}>
-                  {result.note}
-                </Text>
-              </View>
-            )}
+          <Pressable accessibilityRole="button" accessibilityLabel={`Hole note: ${result.note}. Edit`} onPress={() => router.push('/round/note')} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'flex-start', gap: space[2], paddingHorizontal: space[4], paddingVertical: space[3], borderRadius: 12, backgroundColor: c.accentTint, opacity: pressed ? PRESSED_OPACITY : 1 })}>
+            <Icon name="note" size="sm" color={c.accentTintText} />
+            <Text step="subhead" tone="accentTintText" style={{ flex: 1 }}>
+              {result.note}
+            </Text>
           </Pressable>
         ) : null}
 
@@ -391,85 +303,32 @@ export default function PlayScreen() {
           const participants = activeGame?.playerIds ? round.players.filter((pl) => activeGame.playerIds!.includes(pl.id)) : round.players;
           return <HoleInputCard key={r.gameId} mode={r.mode} participants={participants} answers={answersFor(r.gameId)} onAnswer={(k, v) => answer(r.gameId, k, v)} />;
         })}
+      </Animated.View>
 
-        {/* Scorecard overview */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: space[3] }}>
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text step="headline">Scorecard overview</Text>
-            <Text step="caption" tone="tertiary" tabular={false}>
-              Scores save as you enter them.
-            </Text>
-          </View>
-          {runs.length > 0 ? <IconButton icon="stats-chart" label="Game standings" variant="plain" color={c.accentText} onPress={() => router.push('/round/standings')} /> : <Ionicons name="stats-chart" size={20} color={c.accentText} />}
-        </View>
-        {front.length > 0 ? <NineCard title="Front nine" holes={front} players={round.players} results={round.holeResults} currentHole={holeNumber} labelFor={labelFor} onPressHole={setCurrentHole} /> : null}
-        {back.length > 0 ? <NineCard title="Back nine" holes={back} players={round.players} results={round.holeResults} currentHole={holeNumber} labelFor={labelFor} onPressHole={setCurrentHole} /> : null}
-
-        {/* Previous / Next */}
-        <View style={{ flexDirection: 'row', gap: space[3], marginTop: space[4] }}>
-          <Button label="Previous" variant="secondary" disabled={prev == null} onPress={() => prev != null && setCurrentHole(prev)} style={{ flex: 1 }} />
-          <Button label={next == null ? 'Finish round' : 'Next hole'} onPress={() => void goNext()} style={{ flex: 1.4 }} testID="next-hole" />
-        </View>
-      </ScrollView>
-
-      <Sheet visible={noteOpen} onClose={() => setNoteOpen(false)} title={`Hole ${holeNumber} note`}>
-        <View style={{ gap: space[3] }}>
-          <TextField
-            style={{ height: 96, alignItems: 'flex-start', paddingVertical: 12 }}
-            inputStyle={{ height: '100%', textAlignVertical: 'top' }}
-            placeholder="Lost ball left, press starts here, birdie on the island…"
-            value={noteDraft}
-            onChangeText={setNoteDraft}
-            multiline
-            maxLength={MAX_NOTE_LENGTH}
-            autoFocus
-            accessibilityLabel="Hole note"
-          />
-          <Text step="caption" tone="tertiary" tabular align="right">
-            {noteDraft.length}/{MAX_NOTE_LENGTH}
+      <View style={{ gap: space[3], marginTop: space[3] }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
+          <Text accessibilityRole="header" step="title3" style={{ flex: 1 }}>
+            Scorecard
           </Text>
-          <Button label="Save note" onPress={() => saveNote(noteDraft)} />
-          {result?.note ? <Button label="Remove note" variant="secondary" destructive onPress={() => saveNote('')} /> : <Button label="Cancel" variant="secondary" onPress={() => setNoteOpen(false)} />}
+          {anyStrokes ? (
+            <SegmentedControl
+              accessibilityLabel="Scores shown"
+              options={[
+                { value: 'gross', label: 'Gross' },
+                { value: 'net', label: 'Net' },
+              ]}
+              value={basis}
+              onChange={setBasis}
+              style={{ width: 150 }}
+            />
+          ) : null}
         </View>
-      </Sheet>
-    </Screen>
-  );
-}
-
-/** "Today at 8:30 AM": the planned tee time when there is one, else when the round was started. */
-function whenLabel(round: Round): string {
-  const now = new Date();
-  const tee = parseTeeTime(round.settings.teeTime);
-  if (tee) return `${dayLabel(tee.day, now)} at ${formatSlot(tee.slot)}`;
-  const started = new Date(round.createdAt);
-  if (Number.isNaN(started.getTime())) return '';
-  const slot = `${started.getHours()}:${String(started.getMinutes()).padStart(2, '0')}`;
-  const sameDay = started.toDateString() === now.toDateString();
-  return `${sameDay ? 'Today' : started.toLocaleDateString(undefined, { weekday: 'long' })} at ${formatSlot(slot)}`;
-}
-
-/** The mockup's 40pt rounded-square − / + buttons (48pt touch target with hitSlop). */
-function StepButton({ icon, label, accent, disabled, onPress, testID }: { icon: 'add' | 'remove'; label: string; accent?: boolean; disabled?: boolean; onPress: () => void; testID?: string }) {
-  const { c, radius } = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      testID={testID}
-      disabled={disabled}
-      onPress={onPress}
-      hitSlop={4}
-      style={({ pressed }) => ({
-        width: 40,
-        height: 40,
-        borderRadius: radius.md,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: accent ? (pressed ? c.accentSoft : c.accentTint) : pressed ? c.dividerSoft : c.neutralChip,
-        opacity: disabled ? 0.35 : 1,
-      })}
-    >
-      <Ionicons name={icon} size={20} color={accent ? c.accentText : c.textPrimary} />
-    </Pressable>
+        {front.length > 0 ? <NineCard label="Out" holes={front} players={round.players} results={round.holeResults} basis={basis} handicaps={handicaps} currentHole={holeNumber} isMe={isMe} onPressHole={goTo} /> : null}
+        {back.length > 0 ? <NineCard label="In" holes={back} players={round.players} results={round.holeResults} basis={basis} handicaps={handicaps} currentHole={holeNumber} totalOver={front.length > 0 ? holes : undefined} isMe={isMe} onPressHole={goTo} /> : null}
+        <Text step="footnote" tone="tertiary">
+          {position} of {order.length} · Scores save as you enter them
+        </Text>
+      </View>
+    </ScrollScreen>
   );
 }

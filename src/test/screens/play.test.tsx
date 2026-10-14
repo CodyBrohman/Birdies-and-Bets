@@ -1,11 +1,12 @@
 import { fireEvent, screen, waitFor } from 'expo-router/testing-library';
 import PlayScreen from '@/app/round/play';
+import RoundLayout from '@/app/round/_layout';
 import { getGame } from '@/games/registry';
-import { newActiveGame, useRoundStore } from '@/store';
-import { lastAlert, pressAlert, renderScreens, resetStores, seedRound } from '../screen';
+import { newActiveGame, useProfileStore, useRoundStore } from '@/store';
+import { cody, lastActionSheet, lastAlert, marcus, pressAction, pressAlert, renderScreens, resetStores, seedPrefs, seedRound } from '../screen';
 
 const Empty = () => null;
-const routes = { 'round/play': PlayScreen, 'round/summary': Empty, 'round/standings': Empty, index: Empty };
+const routes = { 'round/_layout': RoundLayout, 'round/play': PlayScreen, 'round/summary': Empty, 'round/standings': Empty, 'round/note': Empty, 'round/card': Empty, 'new-round/games': Empty, index: Empty };
 
 const round = () => useRoundStore.getState().round!;
 const scoreOn = (hole: number, playerId: string) => round().holeResults.find((r) => r.holeNumber === hole)?.scores[playerId];
@@ -36,12 +37,56 @@ describe('Scorecard', () => {
     expect(scoreOn(1, cody.id)).toBe(1);
   });
 
-  it('Pick up records no score for that player', () => {
+  it('the player menu marks a pick-up, clears a score, and Undo puts it back', async () => {
     const { players } = seedRound();
     renderScreens(routes, '/round/play');
     const marcus = players[1]!;
-    fireEvent.press(screen.getByLabelText(`${marcus.name}: pick up, no score`));
+    fireEvent.press(screen.getByRole('button', { name: new RegExp(`^${marcus.name}.*Options$`) }));
+    await waitFor(() => expect(lastActionSheet()?.options).toEqual(['Picked up', 'Cancel']));
+    pressAction('Picked up');
+    await waitFor(() => expect(scoreOn(1, marcus.id)).toBeNull());
+    expect(screen.getByText(`${marcus.name} picked up on hole 1`)).toBeTruthy();
+
+    fireEvent.press(screen.getByRole('button', { name: new RegExp(`^${marcus.name}.*Options$`) }));
+    await waitFor(() => expect(lastActionSheet()?.options).toEqual(['Picked up', 'Clear score', 'Cancel']));
+    pressAction('Clear score');
+    await waitFor(() => expect(scoreOn(1, marcus.id)).toBeUndefined());
+    fireEvent.press(screen.getByRole('button', { name: `Undo: Cleared ${marcus.name} on hole 1` }));
     expect(scoreOn(1, marcus.id)).toBeNull();
+  });
+
+  it('Everyone par fills only the players without a score', () => {
+    const { players } = seedRound();
+    renderScreens(routes, '/round/play');
+    const [cody, marcus] = [players[0]!, players[1]!];
+    fireEvent.press(screen.getByLabelText(`${cody.name} one more`));
+    fireEvent.press(screen.getByRole('button', { name: `Par ${parOf(1)} for ${marcus.name}` }));
+    expect(scoreOn(1, cody.id)).toBe(parOf(1) + 1);
+    expect(scoreOn(1, marcus.id)).toBe(parOf(1));
+    expect(screen.queryByRole('button', { name: /^Everyone par|^Par d+ for/ })).toBeNull();
+  });
+
+  it('End round from the menu can discard the round, after a coral confirm', async () => {
+    seedRound({ scores: { 1: { cody: 4, marcus: 5 } } });
+    const r = renderScreens(routes, '/round/play');
+    fireEvent.press(screen.getByRole('button', { name: 'Round options' }));
+    await waitFor(() => expect(lastActionSheet()?.options).toEqual(['Add hole note', 'Add a game', 'End round', 'Cancel']));
+    pressAction('End round');
+    await waitFor(() => expect(lastAlert()?.title).toBe('End this round?'));
+    pressAlert('Discard round');
+    await waitFor(() => expect(lastAlert()?.title).toBe('Discard this round?'));
+    pressAlert('Discard round');
+    await waitFor(() => expect(useRoundStore.getState().round).toBeNull());
+    await waitFor(() => expect(r.getPathname()).toBe('/'));
+  });
+
+  it('the menu opens the hole note', async () => {
+    seedRound();
+    const r = renderScreens(routes, '/round/play');
+    fireEvent.press(screen.getByRole('button', { name: 'Round options' }));
+    await waitFor(() => expect(lastActionSheet()).toBeDefined());
+    pressAction('Add hole note');
+    await waitFor(() => expect(r.getPathname()).toBe('/round/note'));
   });
 
   it('Next hole moves on; a hole chip jumps straight to that hole', async () => {
@@ -81,21 +126,28 @@ describe('Scorecard', () => {
 
   it('says "you" only when the phone owner is playing', () => {
     seedRound();
+    const first = renderScreens(routes, '/round/play');
+    expect(screen.queryByText('you')).toBeNull();
+    first.unmount();
+
+    useProfileStore.setState({ profiles: [{ id: 'pr_cody', name: 'Cody', indexHistory: [], createdAt: '2026-10-01T00:00:00.000Z' }] });
+    seedPrefs({ meProfileId: 'pr_cody' });
+    seedRound({ players: [{ ...cody, profileId: 'pr_cody' }, marcus] });
     renderScreens(routes, '/round/play');
-    expect(screen.queryByText(/\(you\)/)).toBeNull();
-    expect(screen.queryByText('Your score')).toBeNull();
+    expect(screen.getByText('you')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Cody, you. Options' })).toBeTruthy();
   });
 
   it('shows the games link only when the round has games', () => {
     seedRound();
     renderScreens(routes, '/round/play');
-    expect(screen.queryByLabelText(/^Game standings/)).toBeNull();
+    expect(screen.queryByLabelText(/^Standings./)).toBeNull();
   });
 
   it('the games link opens the standings', () => {
     seedRound({ games: [newActiveGame(getGame('skins')!)] });
     const r = renderScreens(routes, '/round/play');
-    fireEvent.press(screen.getByLabelText('Game standings, 1 game'));
+    fireEvent.press(screen.getByLabelText(/^Standings. Skins: /));
     expect(r.getPathname()).toBe('/round/standings');
   });
 });

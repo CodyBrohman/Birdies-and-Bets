@@ -1,4 +1,4 @@
-import { describeHoleRow, describeProgression, describeScore, describeStandingsLine, describeTotalsRow, formatIndex, formatMatchStatus, formatShortDate, formatSigned, formatStake, formatToPar, initials, isSymbolLabel, joinMeta, parseIndex, plural, scoreChipLabel, withoutName } from './format';
+import { describeHoleRow, describeProgression, describeScore, describeStandingsLine, describeTotalsRow, formatIndex, formatMatchStatus, formatShortDate, formatSigned, formatStake, formatToPar, initials, isSymbolLabel, joinMeta, parseIndex, plural, scoreChipLabel, shortNames, withoutName } from './format';
 
 describe('formatToPar', () => {
   it('uses E and a true minus sign', () => {
@@ -35,6 +35,7 @@ describe('small helpers', () => {
     expect(plural(3, 'skin')).toBe('3 skins');
     expect(joinMeta(['Blue tees', null, '4 players', '', '3 games'])).toBe('Blue tees · 4 players · 3 games');
     expect(initials('Cody Brohman')).toBe('CB');
+    expect(shortNames(['Alex Morgan', 'Maya Chen', 'alex park', 'Sam'])).toEqual(['Alex M.', 'Maya', 'alex P.', 'Sam']);
     expect(initials('Priya')).toBe('P');
     expect(initials('  marcus  reyes  jr ')).toBe('MR');
   });

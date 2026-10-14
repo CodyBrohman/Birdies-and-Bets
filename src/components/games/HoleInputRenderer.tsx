@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { Card, Chip, Text } from '@/components/ui';
+import { Chip, Text } from '@/components/ui';
 import { useTheme } from '@/theme';
 import type { GameMode, HoleInputSpec, Player } from '@/types';
 
@@ -34,16 +34,15 @@ export function HoleInputCard({ mode, participants, answers, onAnswer }: HoleInp
   const complete = done === required.length;
 
   return (
-    <Card>
+    <View style={{ backgroundColor: c.surfaceRaised, borderRadius: 12, borderWidth: 1, borderColor: c.divider, padding: space[4] }}>
       <View style={{ gap: space[3] }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[2] }}>
-          <View style={{ width: 12, height: 12, borderRadius: 999, backgroundColor: mode.category === 'betting' ? c.accent : c.gold }} />
-          <Text step="title" style={{ flex: 1 }}>
+          <Text accessibilityRole="header" step="rowTitle" style={{ flex: 1 }}>
             {mode.name}
           </Text>
           {required.length > 0 ? (
-            <Text step="caption" tone={complete ? 'positiveText' : 'accent'}>
-              {done} of {required.length}
+            <Text step="footnote" tone={complete ? 'positiveText' : 'secondary'} tabular>
+              {complete ? 'Answered' : `${done} of ${required.length}`}
             </Text>
           ) : null}
         </View>
@@ -57,7 +56,7 @@ export function HoleInputCard({ mode, participants, answers, onAnswer }: HoleInp
           const current = answers[spec.key];
           return (
             <View key={spec.key} style={{ gap: space[2] }}>
-              <Text step="label" tone="secondary">
+              <Text step="subhead" tone="secondary">
                 {spec.label}
               </Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
@@ -66,7 +65,7 @@ export function HoleInputCard({ mode, participants, answers, onAnswer }: HoleInp
                   return (
                     <Chip
                       key={opt.value}
-                      label={spec.type === 'confirm' && on ? '✓ Done' : opt.label}
+                      label={spec.type === 'confirm' && on ? 'Done ✓' : opt.label}
                       accessibilityLabel={`${spec.label}: ${opt.label}`}
                       selected={on}
                       onPress={() => onAnswer(spec.key, on && spec.type === 'confirm' ? undefined : opt.value)}
@@ -78,6 +77,6 @@ export function HoleInputCard({ mode, participants, answers, onAnswer }: HoleInp
           );
         })}
       </View>
-    </Card>
+    </View>
   );
 }

@@ -207,6 +207,16 @@ describe('roundStore hydration resilience', () => {
       expect(scoresOn(3)).toEqual({ cody: 6 });
     });
 
+    it('clearScore takes one player back to no score, and undo brings it back', () => {
+      start();
+      useRoundStore.getState().setScores(2, { cody: 5, marcus: null });
+      useRoundStore.getState().clearScore('marcus', 2);
+      expect(scoresOn(2)).toEqual({ cody: 5 });
+      useRoundStore.getState().clearScore('marcus', 2); // nothing to clear: no undo entry
+      useRoundStore.getState().undoLastScore();
+      expect(scoresOn(2)).toEqual({ cody: 5, marcus: null });
+    });
+
     it('clears the stack when a new round starts or the round is discarded', () => {
       start();
       useRoundStore.getState().setScore('cody', 1, 4);

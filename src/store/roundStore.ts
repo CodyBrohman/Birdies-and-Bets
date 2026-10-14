@@ -89,6 +89,8 @@ interface RoundState {
   setScore(playerId: PlayerId, holeNumber: number, score: GrossScore): void;
   /** Several players on one hole in one step ("everyone par"): one undo entry. */
   setScores(holeNumber: number, scores: PlayerScores): void;
+  /** Remove one player's score from a hole (back to "no score"). Undoable. */
+  clearScore(playerId: PlayerId, holeNumber: number): void;
   /** Revert the last score change; returns to that hole when it is not the current one. */
   undoLastScore(): UndoEntry | null;
   setHoleNote(holeNumber: number, note: string): void;
@@ -223,6 +225,20 @@ export const useRoundStore = create<RoundState>()((set, get) => {
       update((r) => ({
         ...r,
         holeResults: upsertHole(r.holeResults, holeNumber, (h) => ({ ...h, scores: { ...h.scores, ...scores } })),
+      }));
+    },
+
+    clearScore(playerId, holeNumber) {
+      const existing = get().round?.holeResults.find((h) => h.holeNumber === holeNumber)?.scores ?? {};
+      if (!(playerId in existing)) return;
+      set((s) => ({ undo: [...s.undo, { holeNumber, previous: { [playerId]: existing[playerId] } }].slice(-MAX_UNDO) }));
+      update((r) => ({
+        ...r,
+        holeResults: upsertHole(r.holeResults, holeNumber, (h) => {
+          const next = { ...h.scores };
+          delete next[playerId];
+          return { ...h, scores: next };
+        }),
       }));
     },
 

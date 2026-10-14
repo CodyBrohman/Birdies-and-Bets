@@ -40,32 +40,23 @@ name: Smoke - start a round, score a hole, come back
 - tapOn:
     id: start-round
 
-# Scorecard: from no score + is a bogey, the second tap adds a stroke; Next moves to hole 2.
+# Scorecard: from no score + is a bogey, the second tap adds a stroke; Next (pinned) moves to hole 2.
 - extendedWaitUntil:
-    visible: Enter scores
+    visible:
+      id: current-hole
     timeout: 10000
 - assertVisible:
     id: current-hole
-    text: Hole 1
-- scrollUntilVisible:
-    element:
-      id: stepper-plus-0
+    text: "Hole 1 of .*"
 - tapOn:
     id: stepper-plus-0
 - tapOn:
     id: stepper-plus-0
-- scrollUntilVisible:
-    element:
-      id: next-hole
 - tapOn:
     id: next-hole
-- scrollUntilVisible:
-    element:
-      id: current-hole
-    direction: UP
 - assertVisible:
     id: current-hole
-    text: Hole 2
+    text: "Hole 2 of .*"
 
 # Home shows the round in progress and takes you back to it.
 - tapOn:
@@ -77,4 +68,4 @@ name: Smoke - start a round, score a hole, come back
 - tapOn: Back to your round
 - assertVisible:
     id: current-hole
-    text: Hole 2
+    text: "Hole 2 of .*"

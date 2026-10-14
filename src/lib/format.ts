@@ -92,6 +92,20 @@ export function initials(name: string): string {
     .join('');
 }
 
+/**
+ * Short names for a card where space is tight: first names, with the last initial added for anyone who shares a first
+ * name ("Alex M.", "Alex P."). Same order as given.
+ */
+export function shortNames(names: string[]): string[] {
+  const parts = names.map((n) => n.trim().split(/\s+/).filter(Boolean));
+  const firsts = parts.map((p) => p[0] ?? '');
+  return parts.map((p, i) => {
+    const first = firsts[i] ?? '';
+    const shared = firsts.filter((f) => f.toLowerCase() === first.toLowerCase()).length > 1;
+    return shared && p.length > 1 ? `${first} ${p[p.length - 1]!.charAt(0).toUpperCase()}.` : first || names[i] || '';
+  });
+}
+
 /** Chip caption for a score relative to par: EAGLE, BIRDIE, PAR, BOGEY, DOUBLE, TRIPLE, +4, +5. */
 export function scoreChipLabel(diff: number): string {
   if (diff >= 4) return `+${diff}`;
