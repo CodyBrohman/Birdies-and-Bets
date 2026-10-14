@@ -49,7 +49,15 @@ xcrun simctl install "$UDID" "$APP"
 
 mkdir -p "$OUT"
 STAMP=$(mktemp)
-(cd "$OUT" && maestro --device "$UDID" test "$ROOT/.maestro/screenshots.yaml")
+# A fresh simulator on a busy CI Mac can be slow to start Maestro's driver ("iOS driver not ready in time"): allow five
+# minutes, and run the flow once more if it fails. It starts from a clean install, so only that run's PNGs are kept.
+export MAESTRO_DRIVER_STARTUP_TIMEOUT=${MAESTRO_DRIVER_STARTUP_TIMEOUT:-300000}
+if ! (cd "$OUT" && maestro --device "$UDID" test "$ROOT/.maestro/screenshots.yaml"); then
+  echo "Maestro failed; running the flow once more" >&2
+  rm -f "$OUT"/0*.png
+  touch "$STAMP"
+  (cd "$OUT" && maestro --device "$UDID" test "$ROOT/.maestro/screenshots.yaml")
+fi
 
 # Maestro saves a screenshot where it runs or in its test output, depending on the version: gather them here.
 for n in $NAMES; do

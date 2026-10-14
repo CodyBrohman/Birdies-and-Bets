@@ -47,7 +47,8 @@ never do, so no TestFlight or App Store build carries the demo data.
 
    App Store Connect scales the other iPhone sizes from these.
 
-If a step fails, the `maestro-logs` artifact has Maestro's screenshots of where it stopped.
+Each size gets a second try before its step fails: a fresh simulator is sometimes slow to start Maestro's driver. If
+a step still fails, the `maestro-logs` artifact has Maestro's screenshots of where it stopped.
 
 ## Make them on a Mac
 

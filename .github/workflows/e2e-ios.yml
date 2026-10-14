@@ -12,6 +12,8 @@ jobs:
     timeout-minutes: 75
     env:
       SENTRY_DISABLE_AUTO_UPLOAD: 'true'
+      # A fresh simulator on a busy runner can take over Maestro's default two minutes to start its driver.
+      MAESTRO_DRIVER_STARTUP_TIMEOUT: '300000'
     steps:
       - uses: actions/checkout@v4
 
