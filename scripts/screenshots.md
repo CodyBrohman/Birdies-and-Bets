@@ -9,9 +9,9 @@ Golf first; the points tally is never the first picture.
 | File | Screen | On it |
 |---|---|---|
 | `01-round.png` | The round in progress | Hole 17 at Harbour Pines, four players with their scores, the hole chips, the standings line, and the Wolf prompt ("Alex Morgan is the wolf") |
-| `02-scorecard.png` | A finished round's page | Who won, Player · Gross · Net · Pts, and the paper scorecard in net: circles, squares, stroke dots, OUT / IN / TOT |
+| `02-scorecard.png` | A finished round's page | The paper scorecard in net (circles, squares, stroke dots, OUT / IN / TOT), then who won |
 | `03-standings.png` | Standings | "Maya Chen leads with 5 skins" with the hole-by-hole strip, then the Nassau (Alex v Sam) |
-| `04-new-round.png` | New round | Maple Hollow, White tees, a tee time tomorrow at 8:10, four players with HCP and CH, Skins and a 2 v 2 Nassau |
+| `04-new-round.png` | New round | Maple Hollow, White tees, 18 holes, a tee time tomorrow at 8:10, and the players with HCP and CH (Skins and a 2 v 2 Nassau are further down) |
 | `05-results.png` | Results | The round just finished: the winner, the table, the games, and Save round |
 | `06-home.png` | Home | The round in progress, the year in numbers (3 rounds, best 81, +7 points), recent rounds |
 
@@ -87,7 +87,7 @@ The flow finds its way by test ids. If one of these is renamed or removed, updat
 | Screen | Test ids |
 |---|---|
 | Home | `resume-round`, `tab-home`, `round-<id>` |
-| The round | `current-hole`, `open-standings`, `next-hole`, `everyone-par`, and the Wolf chip labelled "The wolf went: Alone" |
+| The round | `current-hole`, `open-standings`, `next-hole`, `everyone-par`, the Wolf chip labelled "The wolf went: Alone", and the toast "Everyone par on hole 18" (the flow waits for it to go) |
 | Results | `save-round` |
 | Play tab | `tab-play`, `start-round` |
 | A round's page | `scorecard-in` |

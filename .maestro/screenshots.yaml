@@ -56,6 +56,12 @@ name: App Store screenshots
     text: "Hole 18 of .*"
 - tapOn:
     id: everyone-par
+# Its Undo toast sits in the bottom bar for 5 s and makes the bar taller; on a 6.3-inch screen the bar then covers the
+# Wolf answers, and the tap lands on the toast.
+- extendedWaitUntil:
+    notVisible:
+      text: "Everyone par on hole 18"
+    timeout: 10000
 - scrollUntilVisible:
     element:
       text: "The wolf went: Alone"
@@ -82,7 +88,7 @@ name: App Store screenshots
 - waitForAnimationToEnd
 - takeScreenshot: 04-new-round
 
-# A finished round's page, scrolled to the paper scorecard (net).
+# A finished round's page: it opens on the paper scorecard (net), with who won below it.
 - tapOn:
     id: tab-home
 - scrollUntilVisible:
@@ -90,9 +96,9 @@ name: App Store screenshots
       id: round-r_demo_1
 - tapOn:
     id: round-r_demo_1
-- scrollUntilVisible:
-    element:
+- extendedWaitUntil:
+    visible:
       id: scorecard-in
-    centerElement: true
+    timeout: 10000
 - waitForAnimationToEnd
 - takeScreenshot: 02-scorecard

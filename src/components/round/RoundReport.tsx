@@ -23,13 +23,16 @@ export interface RoundReportProps {
   handicaps: Record<PlayerId, PlayerRoundState>;
   results: GameResult[];
   netted: NettedSettlement;
-  /** The hole-by-hole card, Gross or Net (a saved round's page shows it; Results has Back to the scorecard instead). */
+  /**
+   * The hole-by-hole card, Gross or Net, first: a saved round's page opens on it (the row you tapped already said who
+   * won). Results leaves it out and has Back to the scorecard instead.
+   */
   showScorecard?: boolean;
 }
 
 /**
- * A round's results, the same on Results and on a saved round's page: who won, Player · Gross · Net · Pts, the
- * scorecard, each game, the points tally and the notes.
+ * A round's results, the same on Results and on a saved round's page: who won, Player · Gross · Net · Pts, each game,
+ * the points tally and the notes, after the scorecard when there is one.
  */
 export function RoundReport({ round, holes, order, handicaps, results, netted, showScorecard }: RoundReportProps) {
   const { space } = useTheme();
@@ -45,9 +48,6 @@ export function RoundReport({ round, holes, order, handicaps, results, netted, s
 
   return (
     <>
-      <ResultCallout title={headline.title} detail={headline.detail} extra={extra} />
-      <ResultsTable rows={rows} showNet={useNet} showPoints={pointsGames.length > 0} />
-
       {showScorecard ? (
         <Section
           title="Scorecard"
@@ -72,6 +72,9 @@ export function RoundReport({ round, holes, order, handicaps, results, netted, s
           </View>
         </Section>
       ) : null}
+
+      <ResultCallout title={headline.title} detail={headline.detail} extra={extra} />
+      <ResultsTable rows={rows} showNet={useNet} showPoints={pointsGames.length > 0} />
 
       {results.length > 0 ? (
         <Section title="Games">
