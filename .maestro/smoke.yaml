@@ -6,6 +6,20 @@ name: Smoke - start a round, score a hole, come back
 - launchApp:
     clearState: true
 
+# A build with Supabase keys opens on the welcome screen: Continue without an account (everything stays on the phone).
+# A build without keys has no accounts and goes straight to the intro.
+- extendedWaitUntil:
+    visible:
+      id: "continue-without-account|onboarding-skip"
+    timeout: 20000
+- runFlow:
+    when:
+      visible:
+        id: continue-without-account
+    commands:
+      - tapOn:
+          id: continue-without-account
+
 # First launch shows the intro; skipping it also answers "no" to usage analytics.
 - extendedWaitUntil:
     visible:

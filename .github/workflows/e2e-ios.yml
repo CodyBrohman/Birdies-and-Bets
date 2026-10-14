@@ -35,6 +35,11 @@ jobs:
         run: npx expo prebuild --platform ios --clean
 
       - name: Build for the simulator
+        env:
+          # Optional repository secrets. With them the app opens on the welcome screen and the flow takes
+          # "Continue without an account"; without them it builds with no accounts, as before.
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
           WORKSPACE=$(ls -d ios/*.xcworkspace | head -n 1)
           SCHEME=$(basename "$WORKSPACE" .xcworkspace)

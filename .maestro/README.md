@@ -2,14 +2,15 @@
 
 `smoke.yaml` installs nothing and needs no network. It covers the fresh-install path:
 
-1. skip the intro
-2. on the Play tab, choose Sample course
-3. add a player in the Players sheet
-4. start the round
-5. score hole 1 with the stepper
-6. go to hole 2
-7. close the round, open Home and check Resume round
-8. return to the scorecard
+1. if the build has Supabase keys, choose Continue without an account on the welcome screen
+2. skip the intro
+3. on the Play tab, choose Sample course
+4. add a player in the Players sheet
+5. start the round
+6. score hole 1 with the stepper
+7. go to hole 2
+8. close the round, open Home and check Resume round
+9. return to the scorecard
 
 It finds elements by `testID` (see the ids in the flow) and by visible text.
 
@@ -17,7 +18,9 @@ It finds elements by `testID` (see the ids in the flow) and by visible text.
 
 - **GitHub (free, no Mac needed):** go to Actions → **e2e iOS smoke** → Run workflow. The workflow builds a Release
   simulator app on a GitHub Mac, boots an iPhone simulator and runs the flow. A run takes 20–40 minutes. The report
-  and failure screenshots are attached to the run as `maestro-results`.
+  and failure screenshots are attached to the run as `maestro-results`. To cover the welcome screen too, add
+  `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` as repository secrets (Settings → Secrets and variables
+  → Actions); without them the build has no accounts and starts at the intro.
 - **EAS (paid Expo plan only):** `npx eas workflow:run .eas/workflows/e2e-ios.yml`, which uses the `e2e-test`
   build profile.
 - **On a Mac:** install Maestro (`curl -Ls "https://get.maestro.mobile.dev" | bash`), run the app in a simulator
@@ -26,7 +29,7 @@ It finds elements by `testID` (see the ids in the flow) and by visible text.
 ## Changing screens
 
 If you rename a `testID` or change visible text the flow uses, update `smoke.yaml` too. The ids are:
-- `onboarding-skip`, `tab-play`
+- `continue-without-account`, `onboarding-skip`, `tab-play`
 - `choose-course`, `add-player`, `friend-name`, `save-friend`, `sheet-close`, `start-round`
 - `stepper-plus-0`, `next-hole`, `current-hole`, `round-home`, `tab-home`, `resume-round`
 
