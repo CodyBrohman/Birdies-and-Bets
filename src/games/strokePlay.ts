@@ -18,12 +18,12 @@ export const strokePlay: GameMode = {
   category: 'betting',
   blurb: 'Lowest total wins. Gross or net.',
   rules:
-    'Every stroke counts. Lowest total over the round wins and collects the stake from each other player. A player who picks up on any hole has no card and cannot win. A tie for low splits nothing — no one pays.',
+    'Every stroke counts. Lowest total over the round wins the stake in points from each other player. A player who picks up on any hole has no total and cannot win. A tie for low scores nothing.',
   minPlayers: 2,
   maxPlayers: 4,
   supportsNet: true,
   defaultBasis: 'net',
-  configFields: [{ key: 'stake', label: 'Stake', type: 'number', default: 5, min: 1, max: 100, help: 'Paid to the winner by each other player' }],
+  configFields: [{ key: 'stake', label: 'Stake', type: 'number', default: 5, min: 1, max: 100, help: 'Won from each other player by the lowest total' }],
 
   initState(): StrokeState {
     return { totals: {}, par: {}, holes: {}, noCard: {}, thru: 0 };

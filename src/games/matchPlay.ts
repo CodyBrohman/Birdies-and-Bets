@@ -25,7 +25,7 @@ export const matchPlay: GameMode = {
   category: 'betting',
   blurb: 'Head to head, hole by hole. Singles or 2 v 2.',
   rules:
-    'Two players, or with a foursome two teams of two playing best ball. Win a hole, go one up; halve it and nothing changes. The match ends when one side leads by more holes than remain, e.g. 3&2. If it reaches the last hole all square, the match is halved. The stake is paid once by each loser to the winner opposite. When played net, strokes are taken off the lowest handicap in the match so the best player plays scratch.',
+    'Two players, or with a foursome two teams of two playing best ball. Win a hole, go one up; halve it and nothing changes. The match ends when one side leads by more holes than remain, e.g. 3&2. If it reaches the last hole all square, the match is halved. The winning side takes the stake in points from each player on the losing side. When played net, strokes are taken off the lowest handicap in the match so the best player plays scratch.',
   minPlayers: 2,
   maxPlayers: 4,
   supportsNet: true,
@@ -46,7 +46,7 @@ export const matchPlay: GameMode = {
       help: 'Teams play best ball',
     },
     { key: 'teams', label: 'Team A', type: 'teams', default: [], teamSize: 2, showWhen: { key: 'format', equals: 'teams' }, help: 'The other two are team B' },
-    { key: 'stake', label: 'Stake', type: 'number', default: 5, min: 1, max: 100, help: 'Paid once by each loser' },
+    { key: 'stake', label: 'Stake', type: 'number', default: 5, min: 1, max: 100, help: 'Won once from each player on the losing side' },
     { key: 'playOffLow', label: 'Play off low handicap', type: 'boolean', default: true, help: 'Subtract the lowest handicap from everyone' },
   ],
 

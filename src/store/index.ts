@@ -11,3 +11,4 @@ export * from './selectors';
 export * from './games';
 export * from './crew';
 export * from './liveRound';
+export * from './gamesTarget';

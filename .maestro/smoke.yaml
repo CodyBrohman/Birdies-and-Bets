@@ -14,29 +14,21 @@ name: Smoke - start a round, score a hole, come back
 - tapOn:
     id: onboarding-skip
 
-# Pick the bundled sample course (no network needed).
+# New round (Play tab): choose the bundled sample course (no network needed), add one player, start.
 - tapOn:
-    id: tab-courses
-- scrollUntilVisible:
-    element:
-      text: Sample course
+    id: tab-play
+- tapOn:
+    id: choose-course
 - tapOn: Sample course
-
-# Round builder: add one player, then start.
-- scrollUntilVisible:
-    element:
-      id: add-first-friend
 - tapOn:
-    id: add-first-friend
+    id: add-player
 - tapOn:
     id: friend-name
 - inputText: Smoke
 - tapOn:
     id: save-friend
-- scrollUntilVisible:
-    element:
-      id: start-round
-    direction: UP
+- tapOn:
+    id: sheet-close
 - tapOn:
     id: start-round
 

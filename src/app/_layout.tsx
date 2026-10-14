@@ -8,6 +8,7 @@ import { useTheme } from '@/theme';
 import { migrate, storage, useAuthStore, useCourseStore, useHistoryStore, usePreferences, useProfileStore, useRoundStore } from '@/store';
 import { Button, Text } from '@/components/ui';
 import { captureError, initAuth, initTelemetry, withCrashReporting } from '@/services';
+import { formSheet } from '@/components/TabStack';
 
 void SplashScreen.preventAutoHideAsync();
 // Crash reports and analytics each start only once preferences have loaded and allow them (see services/telemetry).
@@ -91,7 +92,14 @@ function RootLayout() {
           <Stack.Protected guard={appOpen}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
-            <Stack.Screen name="new-round" />
+            {/* Setting up a round: sheets over the Play tab (and, with target=round, over the round in progress). */}
+            <Stack.Screen name="new-round/course" options={formSheet([1])} />
+            <Stack.Screen name="new-round/players" options={formSheet([1])} />
+            <Stack.Screen name="new-round/add-game" options={formSheet([1])} />
+            <Stack.Screen name="new-round/game/[gameId]" options={formSheet([1])} />
+            <Stack.Screen name="new-round/options" options={formSheet([0.75, 1])} />
+            <Stack.Screen name="new-round/games" options={formSheet([0.6, 1])} />
+            <Stack.Screen name="new-round/add-course" />
             <Stack.Screen name="round" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
           </Stack.Protected>
           <Stack.Protected guard={accountsOn}>

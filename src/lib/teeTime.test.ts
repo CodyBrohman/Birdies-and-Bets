@@ -1,4 +1,4 @@
-import { dayLabel, formatSlot, parseTeeTime, teeDays, teeTimeValue } from './teeTime';
+import { dayLabel, formatSlot, formatTeeTime, parseTeeTime, suggestedTeeTime, teeDays, teeTimeFromDate, teeTimeToDate, teeTimeValue } from './teeTime';
 
 describe('tee time', () => {
   const thu = new Date(2026, 9, 1, 18, 0); // Thursday 1 Oct 2026
@@ -34,5 +34,22 @@ describe('tee time', () => {
     expect(dayLabel('2026-10-01', thu)).toBe('Today');
     expect(dayLabel('2026-10-03', thu)).toBe('Saturday');
     expect(dayLabel('2026-12-25', thu)).toBe('Friday');
+  });
+});
+
+describe('tee time as a date', () => {
+  it('converts both ways and suggests the next ten minutes an hour out', () => {
+    expect(teeTimeFromDate(new Date(2026, 9, 3, 8, 5))).toBe('2026-10-03T08:05');
+    expect(teeTimeToDate('2026-10-03T08:05')?.getTime()).toBe(new Date(2026, 9, 3, 8, 5).getTime());
+    expect(teeTimeToDate('garbage')).toBeNull();
+    expect(suggestedTeeTime(new Date(2026, 9, 3, 8, 3))).toBe('2026-10-03T09:10');
+    expect(suggestedTeeTime(new Date(2026, 9, 3, 23, 30))).toBe('2026-10-04T00:30');
+  });
+
+  it('reads as a day and a time', () => {
+    const now = new Date(2026, 9, 3, 7, 0);
+    expect(formatTeeTime('2026-10-03T08:30', now)).toBe('Today, 8:30 AM');
+    expect(formatTeeTime('2026-10-04T13:10', now)).toBe('Tomorrow, 1:10 PM');
+    expect(formatTeeTime(undefined, now)).toBeNull();
   });
 });

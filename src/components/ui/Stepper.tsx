@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import { Pressable } from './Pressable';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { haptic, useTheme } from '@/theme';
+import { Icon } from './Icon';
+import { haptic, PRESSED_OPACITY, useTheme } from '@/theme';
 import { Text } from './Text';
 
 export interface StepperProps {
@@ -22,7 +22,7 @@ export interface StepperProps {
   accessibilityLabel?: string;
 }
 
-/** The `− 14.2 +` control from the profile mockup: recessed rounded-square buttons either side of a bold value. */
+/** A number with round − and + either side (36pt, 52pt to the touch): stakes, points per hole, a handicap index. */
 export function Stepper({ value, onChange, min = 0, max = 999, step = 1, prefix, suffix, format, center, accessibilityLabel }: StepperProps) {
   const { c } = useTheme();
   const atMin = value <= min;
@@ -35,16 +35,16 @@ export function Stepper({ value, onChange, min = 0, max = 999, step = 1, prefix,
     onChange(next);
   };
   const shown = `${prefix ?? ''}${format ? format(value) : value}${suffix ? ` ${suffix}` : ''}`;
-  const side = (icon: 'remove' | 'add', delta: number, disabled: boolean) => (
+  const side = (icon: 'minus' | 'plus', delta: number, disabled: boolean) => (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${accessibilityLabel ?? 'Value'} ${delta > 0 ? 'up' : 'down'}`}
       disabled={disabled}
       onPress={() => go(delta)}
       hitSlop={8}
-      style={({ pressed }) => ({ width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: pressed ? c.dividerSoft : c.neutralChip, opacity: disabled ? 0.35 : 1 })}
+      style={({ pressed }) => ({ width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 999, backgroundColor: c.surfaceRaised2, opacity: disabled ? 0.35 : pressed ? PRESSED_OPACITY : 1 })}
     >
-      <Ionicons name={icon} size={18} color={c.textPrimary} />
+      <Icon name={icon} size={18} color={c.textPrimary} />
     </Pressable>
   );
   return (
@@ -57,15 +57,15 @@ export function Stepper({ value, onChange, min = 0, max = 999, step = 1, prefix,
       onAccessibilityAction={(e) => go(e.nativeEvent.actionName === 'increment' ? step : -step)}
       style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48 }}
     >
-      {side('remove', -step, atMin)}
+      {side('minus', -step, atMin)}
       <View style={{ minWidth: 52, alignItems: 'center' }}>
         {center ?? (
-          <Text step="title" tabular numberOfLines={1} style={{ fontSize: 17 }}>
+          <Text step="rowTitle" tabular numberOfLines={1}>
             {shown}
           </Text>
         )}
       </View>
-      {side('add', step, atMax)}
+      {side('plus', step, atMax)}
     </View>
   );
 }

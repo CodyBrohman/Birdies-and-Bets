@@ -42,7 +42,7 @@ export const nassau: GameMode = {
   category: 'betting',
   blurb: 'Three matches: front nine, back nine, overall. Singles or 2 v 2.',
   rules:
-    'Three separate match-play bets at the same stake: the front nine, the back nine, and all eighteen. Each is won, lost or halved on its own. Two players, or with a foursome two teams of two on best ball, each loser paying the winner opposite. With presses on, whenever a side goes two down on the front or back a new bet starts from the next hole to the end of that nine, for the same stake. Played net off the lowest handicap. On a nine-hole round there is just the one match.',
+    'Three separate matches at the same stake: the front nine, the back nine, and all eighteen. Each is won, lost or halved on its own, and each win takes the stake in points from each player on the losing side. Two players, or with a foursome two teams of two on best ball. With presses on, whenever a side goes two down on the front or back a new match starts from the next hole to the end of that nine, for the same stake. Played net off the lowest handicap. On a nine-hole round there is just the one match.',
   minPlayers: 2,
   maxPlayers: 4,
   supportsNet: true,
@@ -63,8 +63,8 @@ export const nassau: GameMode = {
       help: 'Teams play best ball',
     },
     { key: 'teams', label: 'Team A', type: 'teams', default: [], teamSize: 2, showWhen: { key: 'format', equals: 'teams' }, help: 'The other two are team B' },
-    { key: 'stake', label: 'Stake', type: 'number', default: 5, min: 1, max: 100, unit: 'per bet', help: 'Front, back and overall each' },
-    { key: 'presses', label: 'Auto press', type: 'boolean', default: false, help: 'New bet when a side goes 2 down' },
+    { key: 'stake', label: 'Stake', type: 'number', default: 5, min: 1, max: 100, unit: 'per match', help: 'Front, back and overall each' },
+    { key: 'presses', label: 'Auto press', type: 'boolean', default: false, help: 'A new match when a side goes 2 down' },
     { key: 'playOffLow', label: 'Play off low handicap', type: 'boolean', default: true, help: 'Subtract the lowest handicap from everyone' },
   ],
 

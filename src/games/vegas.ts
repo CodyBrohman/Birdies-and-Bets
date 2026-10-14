@@ -29,9 +29,9 @@ export const vegas: GameMode = {
   id: 'vegas',
   name: 'Vegas',
   category: 'betting',
-  blurb: 'Teams of two. A 4 and a 6 make 46. Difference is the bet.',
+  blurb: 'Teams of two. A 4 and a 6 make 46. The difference is the points.',
   rules:
-    'Two teams of two. On each hole a team’s two scores form a two-digit number with the lower score first: a 4 and a 6 make 46. The difference between the two numbers is the points won on the hole. A 10 or worse goes first, and a pick-up counts as 10. With flip on, a birdie or better flips the other team’s number so the high score leads. Each player on the losing side pays each player on the winning side the point difference times the stake.',
+    'Two teams of two. On each hole a team’s two scores form a two-digit number with the lower score first: a 4 and a 6 make 46. The difference between the two numbers is the points won on the hole. A 10 or worse goes first, and a pick-up counts as 10. With flip on, a birdie or better flips the other team’s number so the high score leads. Each player on the winning side takes the point difference times the stake from each player on the losing side.',
   minPlayers: 4,
   maxPlayers: 4,
   supportsNet: true,

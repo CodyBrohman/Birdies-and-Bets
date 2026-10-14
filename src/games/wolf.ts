@@ -24,14 +24,14 @@ export const wolf: GameMode = {
   category: 'betting',
   blurb: 'Rotating wolf picks a partner off the tee, or goes alone.',
   rules:
-    'The wolf rotates each hole and tees off last. After each drive the wolf may take that player as partner or pass; passing everyone means going alone. Best ball of each side decides the hole. Partners who win get a point each; when the pack wins, each of them gets a point. A lone wolf who wins takes a point from everyone else (three with four players, two with three); a lone wolf who loses gives the others a point each. With lone-wolf doubles on, those points double. Ties score nothing. Tell the app after the hole who the wolf took, or that they went alone. With a stake, every pair settles the difference in their points at the end.',
+    'The wolf rotates each hole and tees off last. After each drive the wolf may take that player as partner or pass; passing everyone means going alone. Best ball of each side decides the hole. Partners who win get a point each; when the pack wins, each of them gets a point. A lone wolf who wins takes a point from everyone else (three with four players, two with three); a lone wolf who loses gives the others a point each. With lone-wolf doubles on, those points double. Ties score nothing. Tell the app after the hole who the wolf took, or that they went alone. With a stake, each pair’s difference in points goes into the points tally at the stake per point.',
   minPlayers: 3,
   maxPlayers: 4,
   supportsNet: true,
   defaultBasis: 'net',
   configFields: [
     { key: 'points', label: 'Points per hole', type: 'number', default: 1, min: 1, max: 5, help: 'Multiplier for every hole' },
-    { key: 'stake', label: 'Stake', type: 'number', default: 1, min: 0, max: 100, unit: 'per point', help: '0 = points only, nothing to settle' },
+    { key: 'stake', label: 'Stake', type: 'number', default: 1, min: 0, max: 100, unit: 'per point', help: '0 keeps it just for fun, with no tally' },
     { key: 'loneDoubles', label: 'Lone wolf counts double', type: 'boolean', default: false, help: 'Going alone doubles the points on that hole, won or lost' },
   ],
   holeInputs: [

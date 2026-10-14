@@ -33,7 +33,7 @@ export const skins: GameMode = {
   category: 'betting',
   blurb: 'Lowest score on a hole takes the skin. Ties carry.',
   rules:
-    'Every hole is worth one skin. The outright lowest score wins it. If two or more tie for low, nobody wins and the skin rolls to the next hole, so a hole can be worth several skins. Skins are paid by each other player at the stake. With validation on, a skin is only kept if the winner at least ties for low on the next hole.',
+    'Every hole is worth one skin. The outright lowest score wins it. If two or more tie for low, nobody wins and the skin rolls to the next hole, so a hole can be worth several skins. Each skin adds the stake to the winner’s points and takes it from every other player’s. With validation on, a skin is only kept if the winner at least ties for low on the next hole.',
   minPlayers: 2,
   maxPlayers: 4,
   supportsNet: true,

@@ -51,6 +51,11 @@ at a time (TODO.md Phase 3); an unrebuilt screen may still show the old patterns
   and the web show `LiveRoundBanner` at the top of each tab root. `useLiveRound()` summarises it.
 - **Native headers:** `TabStack` styles each tab's stack (cream, pine tint) with headers off; a rebuilt screen turns its
   header on through `ScrollScreen` (large title on tab roots).
+- **Sheets are routes** (form sheets, registered with `formSheet()` in the layout that owns them; inside, `SheetScreen`
+  draws Cancel · title · Save or title · Done). Round setup lives in `app/new-round/` in the root stack: `course`,
+  `players`, `add-game`, `game/[gameId]`, `options`, `games`. With `?target=round` the game and option sheets edit the
+  round in progress instead of the draft (`useGamesTarget`), so the live round reuses them. The round's own sheets
+  (`round/standings`, `round/note`) are in `round/_layout.tsx`.
 - **Logos:** `assets/logo.png` is the master chip (`logo-mark.png` is the same art with the faint square trimmed; it
   feeds BrandMark, the splash, the favicon and the website). `assets/app-logo.png` is the app icon source; `icon.png` is
   derived from it, opaque, with the corners filled.

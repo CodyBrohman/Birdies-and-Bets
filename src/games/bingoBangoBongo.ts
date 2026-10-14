@@ -22,7 +22,7 @@ export const bingoBangoBongo: GameMode = {
   category: 'betting',
   blurb: 'Three points a hole: first on, closest on, first in.',
   rules:
-    'Every hole has three points. Bingo: first ball on the green. Bango: closest to the pin once everyone is on. Bongo: first ball in the hole. Play strictly in order — furthest away plays first — so the slow player gets a look. Points are settled between every pair at the stake per point. Strokes do not matter, so there is no gross or net.',
+    'Every hole has three points. Bingo: first ball on the green. Bango: closest to the pin once everyone is on. Bongo: first ball in the hole. Play strictly in order — furthest away plays first — so the slow player gets a look. Each pair’s difference in points goes into the points tally at the stake per point. Strokes do not matter, so there is no gross or net.',
   minPlayers: 2,
   maxPlayers: 4,
   supportsNet: false,

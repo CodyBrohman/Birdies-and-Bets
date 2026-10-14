@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { ActiveGame, GameMode, Player, Round } from '@/types';
 import { GAME_MODES, getGame, runGame, type GameRun, defaultConfig } from '@/games';
+import { formatStake, joinMeta } from '@/lib/format';
 import { useHandicaps } from './selectors';
 
 /** The catalog, for the picker. The only place app/ reads game metadata from. */
@@ -36,6 +37,25 @@ export function sidesLabel(mode: GameMode, active: ActiveGame, players: Player[]
   }
   if (!active.playerIds?.length) return null;
   return active.playerIds.map(name).filter(Boolean).join(' vs ');
+}
+
+/** What a game still needs before the round can start ("Pick 2 players", "Pick the teams"), or null. */
+export function setupNeeded(mode: GameMode, active: ActiveGame, players: Player[]): string | null {
+  const count = participantCountOf(mode, active);
+  if (count && (active.playerIds?.length ?? 0) !== count) return `Pick ${count} players`;
+  if (sidesLabel(mode, active, players) === 'Pick the teams') return 'Pick the teams';
+  return null;
+}
+
+/** A game as one line for the round form: "5 pts per skin · Net", "Alex vs Maya · 5 pts per bet · Net". */
+export function gameSummary(mode: GameMode, active: ActiveGame, players: Player[], stakeLabel: string): string {
+  const needs = setupNeeded(mode, active, players);
+  const stakeField = mode.configFields.find((f) => f.key === 'stake' && f.type === 'number');
+  const stake = typeof active.config.stake === 'number' ? active.config.stake : 0;
+  const unit = stakeField && stakeField.type === 'number' ? stakeField.unit : undefined;
+  const stakeText = stake ? `${formatStake(stake, stakeLabel)}${unit ? ` ${unit}` : ''}` : mode.category === 'social' ? 'Just for fun' : null;
+  const sides = needs ? null : sidesLabel(mode, active, players);
+  return joinMeta([needs, sides, stakeText, mode.supportsNet ? (active.basis === 'net' ? 'Net' : 'Gross') : null]);
 }
 
 /** Why a game can't be added for this group size, or null when it fits. */

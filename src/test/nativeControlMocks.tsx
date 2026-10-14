@@ -34,6 +34,8 @@ export function MockSegmentedControl({ values = [], selectedIndex = 0, enabled =
   );
 }
 
-export function MockDateTimePicker({ testID, accessibilityLabel }: { testID?: string; accessibilityLabel?: string }) {
-  return <View testID={testID} accessibilityLabel={accessibilityLabel} />;
+/** Tests change the value with fireEvent(picker, 'change', { type: 'set' }, date), as the native control reports it. */
+export function MockDateTimePicker({ testID, accessibilityLabel, onChange }: { testID?: string; accessibilityLabel?: string; onChange?: (e: { type: string }, d?: Date) => void }) {
+  const props = { accessible: true, testID, accessibilityLabel, onChange };
+  return <View {...(props as object)} />;
 }

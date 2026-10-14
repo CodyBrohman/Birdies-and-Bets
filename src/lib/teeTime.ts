@@ -65,3 +65,30 @@ export function dayLabel(key: string, now: Date): string {
   const [y, mo, d] = key.split('-').map(Number) as [number, number, number];
   return WEEKDAYS[new Date(y, mo - 1, d).getDay()]!;
 }
+
+/** A stored tee time as a local Date, or null. */
+export function teeTimeToDate(value: string | undefined): Date | null {
+  const t = parseTeeTime(value);
+  if (!t) return null;
+  const [y, mo, d] = t.day.split('-').map(Number) as [number, number, number];
+  const [h, m] = t.slot.split(':').map(Number) as [number, number];
+  return new Date(y, mo - 1, d, h, m);
+}
+
+/** A local Date as a stored tee time ("2026-10-03T08:30"). */
+export function teeTimeFromDate(d: Date): string {
+  return teeTimeValue(dateKey(d), `${pad(d.getHours())}:${pad(d.getMinutes())}`);
+}
+
+/** A sensible first tee time when one is switched on: an hour from now, on the next 10 minutes. */
+export function suggestedTeeTime(now: Date): string {
+  const d = new Date(now.getTime() + 60 * 60 * 1000);
+  d.setMinutes(Math.ceil(d.getMinutes() / 10) * 10, 0, 0);
+  return teeTimeFromDate(d);
+}
+
+/** "Today, 8:30 AM", "Saturday, 1:10 PM". */
+export function formatTeeTime(value: string | undefined, now: Date): string | null {
+  const t = parseTeeTime(value);
+  return t ? `${dayLabel(t.day, now)}, ${formatSlot(t.slot)}` : null;
+}

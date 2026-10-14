@@ -38,7 +38,7 @@ export default function StandingsScreen() {
           })}
         </>
       )}
-      <Button label={runs.length ? 'Edit games' : 'Add a game'} variant="secondary" onPress={() => router.push('/new-round/games?mode=edit')} />
+      <Button label={runs.length ? 'Edit games' : 'Add a game'} variant="secondary" onPress={() => router.push('/new-round/games?target=round')} />
     </SheetScreen>
   );
 }

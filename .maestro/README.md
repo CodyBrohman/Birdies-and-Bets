@@ -3,8 +3,8 @@
 `smoke.yaml` installs nothing and needs no network. It covers the fresh-install path:
 
 1. skip the intro
-2. pick Sample course
-3. add a player
+2. on the Play tab, choose Sample course
+3. add a player in the Players sheet
 4. start the round
 5. score hole 1 with the stepper
 6. go to hole 2
@@ -26,6 +26,6 @@ It finds elements by `testID` (see the ids in the flow) and by visible text.
 ## Changing screens
 
 If you rename a `testID` or change visible text the flow uses, update `smoke.yaml` too. The ids are:
-- `onboarding-skip`, `tab-courses`
-- `add-first-friend`, `friend-name`, `save-friend`, `start-round`
+- `onboarding-skip`, `tab-play`
+- `choose-course`, `add-player`, `friend-name`, `save-friend`, `sheet-close`, `start-round`
 - `stepper-plus-0`, `next-hole`, `current-hole`, `round-home`

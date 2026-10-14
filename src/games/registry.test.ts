@@ -30,4 +30,12 @@ describe('registry', () => {
       expect(JSON.parse(JSON.stringify(run.state))).toEqual(run.state);
     }
   });
+
+  it('game copy talks about points, never paying, owing or betting', () => {
+    const banned = /\b(pay|pays|paid|owe|owes|owed|wager|settle|settles|bet|bets)\b/i;
+    for (const g of GAME_MODES) {
+      const texts = [g.blurb, g.rules, ...g.configFields.flatMap((f) => [f.label, f.help ?? '', 'unit' in f ? (f.unit ?? '') : ''])];
+      for (const t of texts) expect(`${g.id}: ${t}`).not.toMatch(banned);
+    }
+  });
 });

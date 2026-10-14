@@ -179,7 +179,7 @@ export default function PlayScreen() {
   const openMenu = async () => {
     const items = [
       { label: result?.note ? 'Edit hole note' : 'Add hole note', run: () => router.push('/round/note') },
-      { label: round.games.length ? 'Edit games' : 'Add a game', run: () => router.push('/new-round/games?mode=edit') },
+      { label: round.games.length ? 'Edit games' : 'Add a game', run: () => router.push('/new-round/games?target=round') },
       { label: 'End round', run: () => void endRound() },
     ];
     const i = await actionSheet(undefined, items);

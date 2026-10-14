@@ -78,6 +78,8 @@ export interface ListItemProps {
   accessory?: ListAccessory;
   /** Coral text: a destructive row ("Delete account"). */
   destructive?: boolean;
+  /** Pine text and no chevron: a row that does something here ("Add player"). */
+  action?: boolean;
   onPress?: () => void;
   /** Long-press actions in a native action sheet; VoiceOver offers the same as custom actions. */
   menu?: ListMenuItem[];
@@ -92,11 +94,11 @@ export interface ListItemProps {
 }
 
 /** One row in a ListSection. 44pt minimum (grows with Dynamic Type). */
-export function ListItem({ title, strong, subtitle, subtitleLines = 2, value, leading, trailing, accessory, destructive, onPress, menu, menuTitle, disabled, selected, accessibilityLabel, accessibilityHint, testID, first }: ListItemProps) {
+export function ListItem({ title, strong, subtitle, subtitleLines = 2, value, leading, trailing, accessory, destructive, action, onPress, menu, menuTitle, disabled, selected, accessibilityLabel, accessibilityHint, testID, first }: ListItemProps) {
   const { c, space } = useTheme();
   const isSwitch = typeof accessory === 'object' && accessory !== null && 'switch' in accessory;
   const tappable = !!onPress && !isSwitch;
-  const shown = accessory ?? (tappable && !destructive ? 'chevron' : 'none');
+  const shown = accessory ?? (tappable && !destructive && !action ? 'chevron' : 'none');
   const openMenu = async () => {
     if (!menu?.length) return;
     const i = await actionSheet(menuTitle ?? title, menu);
@@ -107,7 +109,7 @@ export function ListItem({ title, strong, subtitle, subtitleLines = 2, value, le
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3], minHeight: 44, paddingVertical: space[3], paddingRight: space[4] }}>
       {leading}
       <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-        <Text step={strong ? 'rowTitle' : 'rowBody'} style={destructive ? { color: c.destructive } : undefined} numberOfLines={2}>
+        <Text step={strong ? 'rowTitle' : 'rowBody'} style={destructive ? { color: c.destructive } : action ? { color: c.accentText } : undefined} numberOfLines={2}>
           {title}
         </Text>
         {subtitle ? (
