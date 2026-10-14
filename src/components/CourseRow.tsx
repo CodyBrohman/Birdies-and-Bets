@@ -11,10 +11,12 @@ export interface CourseRowProps {
   selected?: boolean;
   menu?: ListMenuItem[];
   testID?: string;
+  /** Set by ListSection. */
+  first?: boolean;
 }
 
 /** A course identified by its data: the name, then "Pebble Beach, CA · Par 72 · 4 tees". No photos. */
-export function CourseRow({ course, value, onPress, accessory, selected, menu, testID }: CourseRowProps) {
+export function CourseRow({ course, value, onPress, accessory, selected, menu, testID, first }: CourseRowProps) {
   return (
     <ListItem
       title={course.name}
@@ -27,6 +29,7 @@ export function CourseRow({ course, value, onPress, accessory, selected, menu, t
       menu={menu}
       menuTitle={course.name}
       testID={testID}
+      first={first}
     />
   );
 }

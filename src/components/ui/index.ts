@@ -13,7 +13,6 @@ export * from './Screen';
 export * from './Footer';
 export * from './Sheet';
 export * from './TextField';
-export * from './StatTile';
 export * from './LivePill';
 export * from './interaction';
 export * from './ScreenHeader';

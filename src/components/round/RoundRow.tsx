@@ -10,13 +10,15 @@ export interface RoundRowProps {
   me?: Me;
   onPress: () => void;
   menu?: { label: string; onPress: () => void; destructive?: boolean }[];
+  /** Set by ListSection. */
+  first?: boolean;
 }
 
 /**
  * One finished round in a list: the course, then the date, who won and the games; on the right your score (or the
  * leader's) with the points or the score to par under it.
  */
-export function RoundRow({ insight, me, onPress, menu }: RoundRowProps) {
+export function RoundRow({ insight, me, onPress, menu, first }: RoundRowProps) {
   const { summary } = insight;
   const mine = me ? findMe(insight, me) : undefined;
   const featured = mine ?? summary.players.find((p) => p.id === summary.leaderId) ?? summary.players[0];
@@ -35,6 +37,7 @@ export function RoundRow({ insight, me, onPress, menu }: RoundRowProps) {
       subtitle={subtitle}
       onPress={onPress}
       menu={menu}
+      first={first}
       accessibilityLabel={joinMeta([summary.courseName, subtitle, featured ? `${mine ? 'you' : featured.name} ${featured.gross}, ${second}` : null])}
       trailing={
         featured ? (

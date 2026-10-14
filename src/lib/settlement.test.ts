@@ -1,8 +1,5 @@
-import { auditLines, netSettlements } from './settlement';
+import { netSettlements } from './settlement';
 import type { Settlement } from '../types/game';
-
-const names: Record<string, string> = { cody: 'Cody', marcus: 'Marcus', priya: 'Priya', dan: 'Dan' };
-const nameOf = (id: string) => names[id] ?? id;
 
 describe('netSettlements', () => {
   it('offsets both directions into one figure per pair and drops zero pairs', () => {
@@ -19,7 +16,6 @@ describe('netSettlements', () => {
     const { pairs, totals } = netSettlements([skins, match, null], ['cody', 'marcus', 'priya', 'dan']);
     expect(pairs.map((p) => `${p.from}>${p.to}:${p.amount}`)).toEqual(['priya>marcus:30', 'marcus>cody:5']);
     expect(totals).toEqual({ cody: 5, marcus: 25, priya: -30, dan: 0 });
-    expect(auditLines(pairs[0]!, nameOf)).toEqual(['Skins · Marcus 8 × 5 = 40 · owed by Priya', 'Skins · Priya 2 × 5 = 10 · owed by Marcus', 'Net 30 → Marcus']);
   });
 
   it('orders biggest debts first and ignores empty or self entries', () => {

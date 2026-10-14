@@ -55,10 +55,3 @@ export function netSettlements(settlements: (Settlement | null)[], playerIds: Pl
   pairs.sort((x, y) => y.amount - x.amount || x.from.localeCompare(y.from) || x.to.localeCompare(y.to));
   return { pairs, totals };
 }
-
-/** Audit lines for a netted pair, e.g. "Skins · Marcus 8 × 5 = 40 · owed by Priya". */
-export function auditLines(pair: NettedPair, nameOf: (id: PlayerId) => string): string[] {
-  const lines = pair.contributions.map((c) => `${c.reason} · owed by ${nameOf(c.from)}`);
-  lines.push(`Net ${pair.amount} → ${nameOf(pair.to)}`);
-  return lines;
-}

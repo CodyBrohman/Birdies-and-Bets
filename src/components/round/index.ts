@@ -1,9 +1,6 @@
-export * from './ScoreSummaryTable';
 export * from './GameResultsList';
-export * from './SettlementList';
 export * from './SettingsFields';
 export * from './HoleNotesList';
-export * from './PastRoundCard';
 export * from './LiveRoundBanner';
 export * from './HoleStrip';
 export * from './PlayerScore';
@@ -12,3 +9,4 @@ export * from './ResultsTable';
 export * from './PointsList';
 export * from './RoundRow';
 export * from './LiveRoundCard';
+export * from './RoundReport';

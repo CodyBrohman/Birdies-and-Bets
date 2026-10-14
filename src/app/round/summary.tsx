@@ -1,15 +1,14 @@
 import { useMemo } from 'react';
-import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button, HeaderButton, ScrollScreen, Text } from '@/components/ui';
-import { GameResultsList, HoleNotesList, PointsList, ResultCallout, ResultsTable } from '@/components/round';
+import { RoundReport } from '@/components/round';
 import { useShareCard } from '@/components/share';
 import { haptic, useTheme } from '@/theme';
 import { useGameRuns, useHandicaps, useHistoryStore, useHoles, usePlayOrder, useRound, useRoundStore } from '@/store';
-import { formatStake, joinMeta, plural } from '@/lib/format';
+import { joinMeta, plural } from '@/lib/format';
 import { holesPlayed } from '@/lib/scoring';
 import { netSettlements } from '@/lib/settlement';
-import { resultHeadline, resultRows, summarizeRound } from '@/lib/history';
+import { summarizeRound } from '@/lib/history';
 import { maybeAskForReview, trackRoundFinished } from '@/services';
 
 /**
@@ -35,12 +34,6 @@ export default function SummaryScreen() {
 
   const tee = round.course.teeBoxes.find((t) => t.id === round.teeBoxId);
   const played = holesPlayed(round.holeResults, order);
-  const rows = resultRows(round, holes, handicaps, netted);
-  const useNet = rows.some((r) => r.playingHandicap !== 0);
-  const pointsGames = runs.filter((r) => r.mode.category === 'betting');
-  const headline = resultHeadline(rows, useNet);
-  const pointsLeader = [...rows].sort((a, b) => b.points - a.points)[0];
-  const extra = pointsLeader && pointsLeader.points > 0 ? `Most points: ${pointsLeader.name} ${formatStake(`+${pointsLeader.points}`, round.settings.stakeLabel)}` : null;
 
   const save = () => {
     const completedAt = new Date().toISOString();
@@ -63,44 +56,11 @@ export default function SummaryScreen() {
       headerRight={() => <HeaderButton label="Share scorecard" icon="share" disabled={busy} onPress={() => void share()} />}
       footer={<Button label="Save round" onPress={save} testID="save-round" />}
     >
-      <View style={{ gap: space[3] }}>
-        <Text step="subhead" tone="secondary">
-          {joinMeta([round.course.name, tee ? `${tee.name} tees` : null, played === order.length ? plural(order.length, 'hole') : `${played} of ${order.length} holes`])}
-        </Text>
-        <ResultCallout title={headline.title} detail={headline.detail} extra={extra} />
-      </View>
-
-      <ResultsTable rows={rows} showNet={useNet} showPoints={pointsGames.length > 0} />
-
-      {runs.length > 0 ? (
-        <Section title="Games">
-          <GameResultsList results={results} />
-        </Section>
-      ) : null}
-
-      {pointsGames.length > 0 ? (
-        <Section title="Points">
-          <PointsList netted={netted} players={round.players} stakeLabel={round.settings.stakeLabel} />
-        </Section>
-      ) : null}
-
-      <Section title="Notes">
-        <HoleNotesList results={round.holeResults} order={order} />
-      </Section>
+      <Text step="subhead" tone="secondary" style={{ marginBottom: -space[3] }}>
+        {joinMeta([round.course.name, tee ? `${tee.name} tees` : null, played === order.length ? plural(order.length, 'hole') : `${played} of ${order.length} holes`])}
+      </Text>
+      <RoundReport round={round} holes={holes} order={order} handicaps={handicaps} results={results} netted={netted} />
       {host}
     </ScrollScreen>
   );
 }
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  const { space } = useTheme();
-  return (
-    <View style={{ gap: space[2] }}>
-      <Text accessibilityRole="header" step="title3">
-        {title}
-      </Text>
-      {children}
-    </View>
-  );
-}
-
