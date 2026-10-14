@@ -50,14 +50,17 @@ name: Smoke - start a round, score a hole, come back
     id: current-hole
     text: "Hole 2 of .*"
 
-# Home shows the round in progress and takes you back to it.
+# Close the round (it stays in progress), then Home shows it and Resume round goes back to it.
 - tapOn:
     id: round-home
+- tapOn:
+    id: tab-home
 - extendedWaitUntil:
-    visible: Back to your round
+    visible:
+      id: resume-round
     timeout: 10000
-- assertVisible: Keep the good shots coming.
-- tapOn: Back to your round
+- tapOn:
+    id: resume-round
 - assertVisible:
     id: current-hole
     text: "Hole 2 of .*"

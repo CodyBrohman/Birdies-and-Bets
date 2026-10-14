@@ -10,3 +10,5 @@ export * from './PlayerScore';
 export * from './ResultCallout';
 export * from './ResultsTable';
 export * from './PointsList';
+export * from './RoundRow';
+export * from './LiveRoundCard';

@@ -8,7 +8,7 @@
 4. start the round
 5. score hole 1 with the stepper
 6. go to hole 2
-7. go back Home and check "Back to your round"
+7. close the round, open Home and check Resume round
 8. return to the scorecard
 
 It finds elements by `testID` (see the ids in the flow) and by visible text.
@@ -28,4 +28,4 @@ It finds elements by `testID` (see the ids in the flow) and by visible text.
 If you rename a `testID` or change visible text the flow uses, update `smoke.yaml` too. The ids are:
 - `onboarding-skip`, `tab-play`
 - `choose-course`, `add-player`, `friend-name`, `save-friend`, `sheet-close`, `start-round`
-- `stepper-plus-0`, `next-hole`, `current-hole`, `round-home`
+- `stepper-plus-0`, `next-hole`, `current-hole`, `round-home`, `tab-home`, `resume-round`
