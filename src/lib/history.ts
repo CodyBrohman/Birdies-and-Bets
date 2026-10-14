@@ -6,7 +6,7 @@ import type { Round, RoundSummary, RoundSummaryPlayer } from '../types/round';
 import type { Standings } from '../types/game';
 import { totals } from './scoring';
 import { formatSigned, formatStake, formatToPar } from './format';
-import type { NettedSettlement } from './settlement';
+import type { NettedPair, NettedSettlement } from './settlement';
 
 export interface SummarizeInput {
   round: Round;
@@ -74,6 +74,80 @@ export function summarizeRound({ round, holes, handicaps, standings, gameNames, 
     ...(winnerId ? { winnerId } : {}),
     holesScored,
     resultLabel,
+  };
+}
+
+/** One player's line on the results: scores, the handicap behind the net, and the points tally across games. */
+export interface ResultRow {
+  id: PlayerId;
+  name: string;
+  gross: number;
+  grossToPar: number;
+  net: number;
+  netToPar: number;
+  /** Course handicap (the "CH 13" caption). */
+  courseHandicap: number;
+  /** Strokes actually received after the allowance (what net subtracts). */
+  playingHandicap: number;
+  /** Holes with a number (a pick-up is not one). */
+  holesScored: number;
+  pickedUp: number;
+  /** Net points across every game, + up / − down. */
+  points: number;
+}
+
+export function resultRows(round: Round, holes: Hole[], handicaps: Record<PlayerId, PlayerRoundState>, netted: NettedSettlement): ResultRow[] {
+  return round.players.map((p) => {
+    const hcp = handicaps[p.id];
+    const gross = totals(round.holeResults, holes, p.id, 'gross');
+    const net = totals(round.holeResults, holes, p.id, 'net', hcp);
+    return {
+      id: p.id,
+      name: p.name,
+      gross: gross.strokes,
+      grossToPar: gross.toPar,
+      net: net.strokes,
+      netToPar: net.toPar,
+      courseHandicap: hcp?.courseHandicap ?? 0,
+      playingHandicap: hcp?.playingHandicap ?? 0,
+      holesScored: gross.holesScored,
+      pickedUp: gross.holesPickedUp,
+      points: netted.totals[p.id] ?? 0,
+    };
+  });
+}
+
+/**
+ * The headline result in words: "Maya won" over "Net 70 (−2) · Gross 82", "Maya and Sam tied" over "Net −2", or for a
+ * round on your own "Alex shot 84" over "+12 over 18 holes". Ranked net when anyone gets strokes, else gross, over the
+ * holes each player finished.
+ */
+export function resultHeadline(rows: ResultRow[], useNet: boolean): { title: string; detail: string | null } {
+  const scored = rows.filter((r) => r.holesScored > 0);
+  if (scored.length === 0) return { title: 'No scores entered', detail: null };
+  if (rows.length === 1) {
+    const r = scored[0]!;
+    return { title: `${r.name} shot ${r.gross}`, detail: `${formatToPar(r.grossToPar)} over ${r.holesScored} ${r.holesScored === 1 ? 'hole' : 'holes'}${useNet ? ` · net ${r.net}` : ''}` };
+  }
+  const toPar = (r: ResultRow) => (useNet ? r.netToPar : r.grossToPar);
+  const best = Math.min(...scored.map(toPar));
+  const top = scored.filter((r) => toPar(r) === best);
+  if (top.length === 1) {
+    const r = top[0]!;
+    return { title: `${r.name} won`, detail: useNet ? `Net ${r.net} (${formatToPar(r.netToPar)}) · Gross ${r.gross}` : `${r.gross} (${formatToPar(r.grossToPar)})` };
+  }
+  const who = top.length === 2 ? `${top[0]!.name} and ${top[1]!.name}` : `${top.length} players`;
+  return { title: `${who} tied`, detail: `${useNet ? 'Net ' : ''}${formatToPar(best)}` };
+}
+
+/**
+ * How the points net out between two players, in words: "Maya +20 vs Jordan", then each game's part. Never "owes" or
+ * "pays": points are a tally, nothing changes hands.
+ */
+export function pointsBreakdown(pair: NettedPair, nameOf: (id: PlayerId) => string, stakeLabel: string): { line: string; parts: string[] } {
+  return {
+    line: `${nameOf(pair.to)} ${formatStake(`+${pair.amount}`, stakeLabel)} vs ${nameOf(pair.from)}`,
+    parts: pair.contributions.map((c) => (c.to === pair.to ? c.reason : `${c.reason} (to ${nameOf(c.to)})`)),
   };
 }
 

@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { Text } from '@/components/ui';
+import { BasisTag, Text } from '@/components/ui';
 import { seatColors, useTheme } from '@/theme';
 import type { ActiveGame, GameMode, Player, ProgressionCell, Standings } from '@/types';
 import { describeProgression, describeStandingsLine, formatStake, withoutName } from '@/lib/format';
@@ -19,19 +19,6 @@ function splitLine(text: string): { left: string; right: string | null } {
   const idx = text.lastIndexOf(' · ');
   if (idx === -1) return { left: text, right: null };
   return { left: text.slice(0, idx), right: text.slice(idx + 3) };
-}
-
-/** "Net" or "Gross", in a small capsule: the basis decides how a game reads the scores. */
-export function BasisTag({ basis }: { basis: 'net' | 'gross' }) {
-  const { c, w } = useTheme();
-  const net = basis === 'net';
-  return (
-    <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: net ? c.accentTint : c.goldTint }}>
-      <Text step="footnote" style={{ color: net ? c.accentTintText : c.goldTintText, fontWeight: w.semibold }}>
-        {net ? 'Net' : 'Gross'}
-      </Text>
-    </View>
-  );
 }
 
 /**

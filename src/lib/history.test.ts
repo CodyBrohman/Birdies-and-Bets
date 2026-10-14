@@ -1,4 +1,4 @@
-import { summarizeRound, stakeUnit } from './history';
+import { pointsBreakdown, resultHeadline, resultRows, summarizeRound, stakeUnit } from './history';
 import { computeAllHandicaps, holesInPlay } from './handicap';
 import { netSettlements } from './settlement';
 import { cedarRidge, cody, marcus, scratchTheo } from './__fixtures__/cedarRidge';
@@ -75,5 +75,50 @@ describe('summarizeRound', () => {
   it('uses the configured stake label', () => {
     expect(stakeUnit('points')).toBe('pts');
     expect(stakeUnit('$')).toBe('$');
+  });
+});
+
+describe('results', () => {
+  const holes = holesInPlay(cedarRidge, 18);
+  const rowsFor = (round: ReturnType<typeof makeRound>, netted = netSettlements([], round.players.map((p) => p.id))) =>
+    resultRows(round, holes, computeAllHandicaps(round.players, cedarRidge, round.settings), netted);
+
+  it('rows carry gross, net, course handicap and the points tally', () => {
+    const round = makeRound({ players: [cody, marcus], results: full(eighteen(4), eighteen(5)) });
+    const netted = netSettlements([{ gameId: 'skins', entries: [{ from: 'marcus', to: 'cody', amount: 15, reason: 'Skins · Cody 3 × 5 = 15' }] }], ['cody', 'marcus']);
+    const [c, m] = rowsFor(round, netted);
+    expect(c).toMatchObject({ id: 'cody', gross: 72, grossToPar: 0, holesScored: 18, points: 15 });
+    expect(m).toMatchObject({ gross: 90, grossToPar: 18, points: -15 });
+    expect(c!.net).toBe(72 - c!.playingHandicap);
+    expect(c!.courseHandicap).toBeGreaterThan(0);
+  });
+
+  it('names a winner, a tie, or a lone golfer', () => {
+    const won = rowsFor(makeRound({ players: [cody, marcus], results: full(eighteen(4), eighteen(5)) }));
+    expect(resultHeadline(won, false)).toEqual({ title: 'Cody won', detail: '72 (E)' });
+    expect(resultHeadline(won, true).title).toBe('Cody won');
+    expect(resultHeadline(won, true).detail).toMatch(/^Net \d+ \(.+\) · Gross 72$/);
+
+    const tied = rowsFor(makeRound({ players: [cody, scratchTheo], results: resultsFrom({ cody: eighteen(4), theo: eighteen(4) }) }));
+    expect(resultHeadline(tied, false)).toEqual({ title: 'Cody and Theo tied', detail: 'E' });
+
+    const solo = rowsFor(makeRound({ players: [cody], results: resultsFrom({ cody: [5, 5, 4] }) }));
+    expect(resultHeadline(solo, false)).toEqual({ title: 'Cody shot 14', detail: '+1 over 3 holes' });
+    expect(resultHeadline(rowsFor(makeRound({ players: [cody], results: [] })), false)).toEqual({ title: 'No scores entered', detail: null });
+  });
+
+  it('breaks points down without saying anyone owes anything', () => {
+    const netted = netSettlements(
+      [
+        { gameId: 'skins', entries: [{ from: 'marcus', to: 'cody', amount: 15, reason: 'Skins · Cody 3 × 5 = 15' }] },
+        { gameId: 'wolf', entries: [{ from: 'cody', to: 'marcus', amount: 5, reason: 'Wolf · Marcus 5 pts up on Cody × 1 pt = 5' }] },
+      ],
+      ['cody', 'marcus'],
+    );
+    const names: Record<string, string> = { cody: 'Cody', marcus: 'Marcus' };
+    const b = pointsBreakdown(netted.pairs[0]!, (id) => names[id]!, 'points');
+    expect(b.line).toBe('Cody +10 pts vs Marcus');
+    expect(b.parts).toEqual(['Skins · Cody 3 × 5 = 15', 'Wolf · Marcus 5 pts up on Cody × 1 pt = 5 (to Marcus)']);
+    expect([b.line, ...b.parts].join(' ')).not.toMatch(/owe|pay|settle/i);
   });
 });

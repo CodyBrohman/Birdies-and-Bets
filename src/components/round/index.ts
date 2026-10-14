@@ -8,3 +8,6 @@ export * from './PastRoundCard';
 export * from './LiveRoundBanner';
 export * from './HoleStrip';
 export * from './PlayerScore';
+export * from './ResultCallout';
+export * from './ResultsTable';
+export * from './PointsList';

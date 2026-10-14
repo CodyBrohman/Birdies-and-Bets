@@ -1,22 +1,21 @@
 import { useMemo } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Footer, Screen, SectionLabel, StatTile } from '@/components/ui';
-import { SetupHeader } from '@/components/SetupHeader';
-import { GameResultsList, HoleNotesList, ScoreSummaryTable, SettlementList } from '@/components/round';
-import { ShareCardButton } from '@/components/share';
-import { useTheme } from '@/theme';
+import { Button, HeaderButton, ScrollScreen, Text } from '@/components/ui';
+import { GameResultsList, HoleNotesList, PointsList, ResultCallout, ResultsTable } from '@/components/round';
+import { useShareCard } from '@/components/share';
+import { haptic, useTheme } from '@/theme';
 import { useGameRuns, useHandicaps, useHistoryStore, useHoles, usePlayOrder, useRound, useRoundStore } from '@/store';
-import { formatToPar, joinMeta, plural } from '@/lib/format';
-import { holesPlayed, totals } from '@/lib/scoring';
+import { formatStake, joinMeta, plural } from '@/lib/format';
+import { holesPlayed } from '@/lib/scoring';
 import { netSettlements } from '@/lib/settlement';
-import { summarizeRound } from '@/lib/history';
+import { resultHeadline, resultRows, summarizeRound } from '@/lib/history';
 import { maybeAskForReview, trackRoundFinished } from '@/services';
 
 /**
- * Round summary. Final gross and net, strokes received, per-game results, and the settlement netted
- * across every game into one figure per pair. Tap a row to audit it.
- * Display only: no pay button, no payment links, nothing that implies money movement.
+ * Results, at the end of a round: who won, the scores (Player · Gross · Net · Pts), each game's result, the points
+ * tally and the notes. Save round files it in Rounds; Share sends the card; Back returns to the scorecard. Points are a
+ * tally only: no pay button, no payment links, nothing that implies money changing hands.
  */
 export default function SummaryScreen() {
   const router = useRouter();
@@ -30,66 +29,78 @@ export default function SummaryScreen() {
   const addHistory = useHistoryStore((s) => s.add);
 
   const netted = useMemo(() => netSettlements(runs.map((r) => r.settlement), round?.players.map((p) => p.id) ?? []), [runs, round]);
-
+  const results = useMemo(() => runs.map((r) => ({ mode: r.mode, standings: r.standings })), [runs]);
+  const { share, busy, host } = useShareCard({ round: round!, holes, handicaps, results });
   if (!round) return null;
-  const tee = round.course.teeBoxes.find((t) => t.id === round.teeBoxId);
-  const results = runs.map((r) => ({ mode: r.mode, standings: r.standings }));
-  const betting = runs.filter((r) => r.mode.category === 'betting');
-  const played = holesPlayed(round.holeResults, order);
-  const low = round.players
-    .map((p) => ({ p, t: totals(round.holeResults, holes, p.id, 'gross') }))
-    .filter((x) => x.t.holesScored > 0)
-    .sort((a, b) => a.t.toPar - b.t.toPar)[0];
 
-  const done = () => {
+  const tee = round.course.teeBoxes.find((t) => t.id === round.teeBoxId);
+  const played = holesPlayed(round.holeResults, order);
+  const rows = resultRows(round, holes, handicaps, netted);
+  const useNet = rows.some((r) => r.playingHandicap !== 0);
+  const pointsGames = runs.filter((r) => r.mode.category === 'betting');
+  const headline = resultHeadline(rows, useNet);
+  const pointsLeader = [...rows].sort((a, b) => b.points - a.points)[0];
+  const extra = pointsLeader && pointsLeader.points > 0 ? `Most points: ${pointsLeader.name} ${formatStake(`+${pointsLeader.points}`, round.settings.stakeLabel)}` : null;
+
+  const save = () => {
     const completedAt = new Date().toISOString();
     const completed = { ...round, status: 'complete' as const, updatedAt: completedAt };
     const summary = summarizeRound({ round: completed, holes, handicaps, standings: runs.map((r) => r.standings), gameNames: runs.map((r) => r.mode.name), netted, completedAt });
     addHistory({ summary, round: completed });
     trackRoundFinished(completed);
+    haptic.success();
     discardRound();
-    router.replace('/');
+    router.dismissTo('/');
     // After the third finished round, ask once for a rating, over Home rather than this closing screen.
     const finished = useHistoryStore.getState().entries.length;
     setTimeout(() => void maybeAskForReview(finished), 900);
   };
 
   return (
-    <Screen>
-      <SetupHeader title="Round summary" subtitle={joinMeta([round.course.name, tee ? `${tee.name} tees` : null, `${played} of ${round.settings.holeCount} holes`])} onBack={() => router.navigate('/round/play')} />
-      <ScrollView contentContainerStyle={{ gap: space[3], paddingBottom: space[4] }} showsVerticalScrollIndicator={false}>
-        <View style={{ flexDirection: 'row', gap: space[2] }}>
-          <StatTile label="Holes" value={String(played)} sub={`of ${round.settings.holeCount}`} />
-          <StatTile label="Low gross" value={low ? low.p.name.split(/\s+/)[0]! : '—'} sub={low ? `${low.t.strokes} · ${formatToPar(low.t.toPar)}` : undefined} subTone={low && low.t.toPar < 0 ? 'accent' : low && low.t.toPar > 0 ? 'goldText' : 'secondary'} />
-          <StatTile label="Games" value={String(runs.length)} sub={betting.length ? plural(betting.length, 'bet') : 'for fun'} />
-        </View>
-        <ScoreSummaryTable players={round.players} holes={holes} results={round.holeResults} handicaps={handicaps} />
+    <ScrollScreen
+      title="Results"
+      gap={space[6]}
+      headerRight={() => <HeaderButton label="Share scorecard" icon="share" disabled={busy} onPress={() => void share()} />}
+      footer={<Button label="Save round" onPress={save} testID="save-round" />}
+    >
+      <View style={{ gap: space[3] }}>
+        <Text step="subhead" tone="secondary">
+          {joinMeta([round.course.name, tee ? `${tee.name} tees` : null, played === order.length ? plural(order.length, 'hole') : `${played} of ${order.length} holes`])}
+        </Text>
+        <ResultCallout title={headline.title} detail={headline.detail} extra={extra} />
+      </View>
 
-        {runs.length > 0 ? (
-          <>
-            <SectionLabel style={{ marginTop: space[3] }}>Game results</SectionLabel>
-            <GameResultsList results={results} />
-          </>
-        ) : null}
-        {round.holeResults.some((r) => r.note) ? (
-          <>
-            <SectionLabel style={{ marginTop: space[3] }}>Notes</SectionLabel>
-            <HoleNotesList results={round.holeResults} order={order} />
-          </>
-        ) : null}
+      <ResultsTable rows={rows} showNet={useNet} showPoints={pointsGames.length > 0} />
 
-        {betting.length > 0 ? (
-          <>
-            <SectionLabel style={{ marginTop: space[3] }}>Settle up</SectionLabel>
-            <SettlementList netted={netted} players={round.players} stakeLabel={round.settings.stakeLabel} />
-          </>
-        ) : null}
-      </ScrollView>
-      <Footer>
-        <Button label="Done" onPress={done} />
-        <ShareCardButton round={round} holes={holes} handicaps={handicaps} results={results} />
-        <Button label="Back to the card" variant="secondary" onPress={() => router.navigate('/round/play')} />
-      </Footer>
-    </Screen>
+      {runs.length > 0 ? (
+        <Section title="Games">
+          <GameResultsList results={results} />
+        </Section>
+      ) : null}
+
+      {pointsGames.length > 0 ? (
+        <Section title="Points">
+          <PointsList netted={netted} players={round.players} stakeLabel={round.settings.stakeLabel} />
+        </Section>
+      ) : null}
+
+      <Section title="Notes">
+        <HoleNotesList results={round.holeResults} order={order} />
+      </Section>
+      {host}
+    </ScrollScreen>
   );
 }
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  const { space } = useTheme();
+  return (
+    <View style={{ gap: space[2] }}>
+      <Text accessibilityRole="header" step="title3">
+        {title}
+      </Text>
+      {children}
+    </View>
+  );
+}
+

@@ -29,3 +29,4 @@ export * from './SegmentedControl';
 export * from './ScrollScreen';
 export * from './HeaderButton';
 export * from './SheetScreen';
+export * from './BasisTag';

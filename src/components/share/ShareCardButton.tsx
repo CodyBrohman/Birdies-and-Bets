@@ -1,24 +1,22 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactElement } from 'react';
 import { Platform, Share, View } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
-import { Button, Text } from '@/components/ui';
+import { ask, Button } from '@/components/ui';
 import { ShareCard, type ShareCardProps } from './ShareCard';
 import { track } from '@/services';
 import { cardDataFrom, cardUrlWithin } from '@/lib/cardLink';
 
-export interface ShareCardButtonProps extends Omit<ShareCardProps, 'width'> {
-  label?: string;
-}
+export type ShareCardInput = Omit<ShareCardProps, 'width'>;
 
 /**
- * Renders the share card off-screen and shares a PNG of it through the system sheet, with a link that opens the same
- * card on the website (or in the app). Off-screen means far left, not opacity 0: iOS captures transparent views as blank.
+ * Sharing a round: renders the share card off-screen (render `host` somewhere in the screen) and `share()` sends a PNG
+ * of it through the system sheet, with a link that opens the same card on the website or in the app. Off-screen means
+ * far left, not opacity 0: iOS captures transparent views as blank. A failure is explained in an alert.
  */
-export function ShareCardButton({ label = 'Share scorecard', ...card }: ShareCardButtonProps) {
+export function useShareCard(card: ShareCardInput): { share: () => Promise<void>; busy: boolean; host: ReactElement } {
   const ref = useRef<View>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   /** The card as a link, or null when it is too big to travel as one (the image still goes). */
   const link = () => {
@@ -28,7 +26,7 @@ export function ShareCardButton({ label = 'Share scorecard', ...card }: ShareCar
   };
 
   const share = async () => {
-    setError(null);
+    if (busy) return;
     setBusy(true);
     try {
       if (Platform.OS !== 'web' && !(await Sharing.isAvailableAsync())) throw new Error('Sharing is not available on this device.');
@@ -44,23 +42,31 @@ export function ShareCardButton({ label = 'Share scorecard', ...card }: ShareCar
       const result = await Share.share({ url: uri, message }, { subject: `Scorecard: ${card.round.course.name}` });
       if (result.action === Share.sharedAction) track('scorecard_shared');
     } catch (e) {
-      setError(e instanceof Error && e.message ? e.message : 'Could not share the card.');
+      void ask("Couldn't share the card", e instanceof Error && e.message ? e.message : 'Try again in a moment.', [{ label: 'OK', value: true }]);
     } finally {
       setBusy(false);
     }
   };
 
+  const host = (
+    <View style={{ position: 'absolute', left: -10000, top: 0 }} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <ShareCard ref={ref} {...card} />
+    </View>
+  );
+  return { share, busy, host };
+}
+
+export interface ShareCardButtonProps extends ShareCardInput {
+  label?: string;
+}
+
+/** A "Share scorecard" button with its own off-screen card. */
+export function ShareCardButton({ label = 'Share scorecard', ...card }: ShareCardButtonProps) {
+  const { share, busy, host } = useShareCard(card);
   return (
     <>
       <Button label={busy ? 'Preparing…' : label} variant="secondary" disabled={busy} onPress={() => void share()} />
-      {error ? (
-        <Text step="caption" tone="negative" tabular={false} align="center">
-          {error}
-        </Text>
-      ) : null}
-      <View style={{ position: 'absolute', left: -10000, top: 0 }} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        <ShareCard ref={ref} {...card} />
-      </View>
+      {host}
     </>
   );
 }
