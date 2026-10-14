@@ -1,5 +1,4 @@
 export * from './GameResultsList';
-export * from './SettingsFields';
 export * from './HoleNotesList';
 export * from './LiveRoundBanner';
 export * from './HoleStrip';

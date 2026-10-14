@@ -10,6 +10,8 @@ import { usePreferences } from '@/store';
 import type { Round } from '@/types';
 
 export const PRIVACY_POLICY_URL = 'https://www.birdiesandbets.com/privacy.html';
+/** The website's support page (Settings and Profile › Contact support). */
+export const SUPPORT_URL = 'https://www.birdiesandbets.com/support.html';
 
 /** Every event the app can send, with its allowed props. Counts and ids only. */
 export interface TelemetryEvents {

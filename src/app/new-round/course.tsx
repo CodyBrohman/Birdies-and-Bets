@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Icon, ListItem, ListSection, SheetScreen, Text } from '@/components/ui';
 import { CourseRow } from '@/components/CourseRow';
 import { useTheme } from '@/theme';
-import { useCourseStore, useRoundStore } from '@/store';
+import { useCourseStore, usePreferences, useRoundStore } from '@/store';
 import type { Course } from '@/types';
 
 /** Choose the course for the round being set up: recent and saved courses, filtered as you type. */
@@ -18,14 +18,16 @@ export default function ChooseCourseSheet() {
   const recentIds = useCourseStore((s) => s.recentIds);
   const allCourses = useCourseStore((s) => s.allCourses);
   const markRecent = useCourseStore((s) => s.markRecent);
+  const homeCourseId = usePreferences((s) => s.homeCourseId);
   const [query, setQuery] = useState('');
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/play'));
   const all = allCourses();
   const q = query.trim().toLowerCase();
   const match = (k: Course) => !q || k.name.toLowerCase().includes(q) || (k.location ?? '').toLowerCase().includes(q);
-  const recent = recentIds.map((id) => all.find((k) => k.id === id)).filter((k): k is Course => !!k && match(k));
-  const saved = all.filter((k) => match(k) && !recent.includes(k));
+  const home = all.find((k) => k.id === homeCourseId && match(k));
+  const recent = recentIds.map((id) => all.find((k) => k.id === id)).filter((k): k is Course => !!k && match(k) && k !== home);
+  const saved = all.filter((k) => match(k) && !recent.includes(k) && k !== home);
 
   const choose = (course: Course) => {
     const tee = course.teeBoxes.find((x) => x.id === draft.teeBoxId) ?? course.teeBoxes[0];
@@ -52,9 +54,10 @@ export default function ChooseCourseSheet() {
           style={{ flex: 1, color: c.textPrimary, fontSize: t.rowBody.fontSize, paddingVertical: space[2] }}
         />
       </View>
+      {home ? <ListSection header="Home course">{row(home)}</ListSection> : null}
       {recent.length > 0 ? <ListSection header="Recently played">{recent.map(row)}</ListSection> : null}
       {saved.length > 0 ? <ListSection header={recent.length > 0 ? 'Saved' : 'Courses'}>{saved.map(row)}</ListSection> : null}
-      {recent.length + saved.length === 0 ? (
+      {!home && recent.length + saved.length === 0 ? (
         <Text step="subhead" tone="secondary" align="center" style={{ paddingVertical: space[4] }}>
           {`No saved course matches “${query.trim()}”.`}
         </Text>

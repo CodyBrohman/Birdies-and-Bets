@@ -56,7 +56,7 @@ interface Meta {
 }
 
 /** Preferences that follow the person between phones. Device things (haptics, privacy answers, photo file) stay put. */
-const SYNCED_PREFS = ['defaultStakeLabel', 'defaultAllowance', 'bag', 'homeArea', 'meProfileId'] as const;
+const SYNCED_PREFS = ['defaultStakeLabel', 'defaultAllowance', 'bag', 'homeArea', 'homeCourseId', 'meProfileId'] as const;
 type SyncedPrefs = Pick<Preferences, (typeof SYNCED_PREFS)[number]>;
 
 interface TableSpec {

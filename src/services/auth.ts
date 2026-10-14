@@ -242,7 +242,7 @@ export function needsName(): boolean {
 async function clearLocal(): Promise<void> {
   await resetSync();
   await clearAllData();
-  usePreferences.getState().update({ meProfileId: undefined, homeArea: undefined, bag: undefined });
+  usePreferences.getState().update({ meProfileId: undefined, homeCourseId: undefined, homeArea: undefined, bag: undefined });
 }
 
 /** End the session on this phone only, even without signal (other phones stay signed in). */

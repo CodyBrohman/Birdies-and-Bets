@@ -14,11 +14,13 @@ export interface Preferences {
   onboarded: boolean;
   /** The saved player profile that is the phone's owner; drives the personal stats on Home. */
   meProfileId?: string;
-  /** Free-text home area shown on Courses and Profile ("Toronto, ON"). */
+  /** Your home course (a saved course id), listed first when choosing a course. */
+  homeCourseId?: string;
+  /** Legacy (2026-10-01): a free-text home area. Kept as stored; nothing shows it any more. */
   homeArea?: string;
   /** Local URI of the profile photo. */
   photoUri?: string;
-  /** Clubs in the bag, by id from CLUBS. Undefined = never edited (the default set). */
+  /** Legacy (2026-10-01): clubs in the bag, by id from CLUBS. Kept as stored; nothing shows it any more. */
   bag?: string[];
   /** Send anonymous crash reports. On by default; Settings turns it off. */
   crashReports: boolean;
@@ -68,6 +70,7 @@ export function sanitizePreferences(v: unknown): Preferences {
     ...(typeof o.analytics === 'boolean' ? { analytics: o.analytics } : {}),
     ...(o.reviewPrompted === true ? { reviewPrompted: true } : {}),
     ...(typeof o.meProfileId === 'string' && o.meProfileId ? { meProfileId: o.meProfileId } : {}),
+    ...(typeof o.homeCourseId === 'string' && o.homeCourseId ? { homeCourseId: o.homeCourseId } : {}),
     ...(typeof o.homeArea === 'string' && o.homeArea.trim() ? { homeArea: o.homeArea.trim().slice(0, MAX_AREA) } : {}),
     ...(typeof o.photoUri === 'string' && o.photoUri ? { photoUri: o.photoUri } : {}),
     ...(Array.isArray(o.bag) ? { bag: CLUBS.map((c) => c.id as string).filter((id) => (o.bag as unknown[]).includes(id)) } : {}),
@@ -84,12 +87,12 @@ interface PreferencesState extends Preferences {
 export const usePreferences = create<PreferencesState>()((set, get) => {
   const apply = (p: Preferences) => {
     // Spread merges, so absent optional fields must be written explicitly to clear them.
-    set({ ...p, meProfileId: p.meProfileId, homeArea: p.homeArea, photoUri: p.photoUri, bag: p.bag, analytics: p.analytics, reviewPrompted: p.reviewPrompted });
+    set({ ...p, meProfileId: p.meProfileId, homeCourseId: p.homeCourseId, homeArea: p.homeArea, photoUri: p.photoUri, bag: p.bag, analytics: p.analytics, reviewPrompted: p.reviewPrompted });
     useHapticsPreference.getState().setEnabled(p.haptics);
   };
   const current = (): Preferences => {
-    const { haptics, defaultStakeLabel, defaultAllowance, onboarded, meProfileId, homeArea, photoUri, bag, crashReports, analytics, reviewPrompted } = get();
-    return { haptics, defaultStakeLabel, defaultAllowance, onboarded, crashReports, ...(analytics !== undefined ? { analytics } : {}), ...(reviewPrompted ? { reviewPrompted } : {}), ...(meProfileId ? { meProfileId } : {}), ...(homeArea ? { homeArea } : {}), ...(photoUri ? { photoUri } : {}), ...(bag ? { bag } : {}) };
+    const { haptics, defaultStakeLabel, defaultAllowance, onboarded, meProfileId, homeCourseId, homeArea, photoUri, bag, crashReports, analytics, reviewPrompted } = get();
+    return { haptics, defaultStakeLabel, defaultAllowance, onboarded, crashReports, ...(analytics !== undefined ? { analytics } : {}), ...(reviewPrompted ? { reviewPrompted } : {}), ...(meProfileId ? { meProfileId } : {}), ...(homeCourseId ? { homeCourseId } : {}), ...(homeArea ? { homeArea } : {}), ...(photoUri ? { photoUri } : {}), ...(bag ? { bag } : {}) };
   };
   return {
     ...DEFAULT_PREFERENCES,

@@ -102,6 +102,8 @@ function RootLayout() {
             <Stack.Screen name="new-round/add-course" />
             <Stack.Screen name="friend/add" options={formSheet([0.5, 1])} />
             <Stack.Screen name="group/[id]" options={formSheet([1])} />
+            <Stack.Screen name="handicap" options={formSheet([0.6, 1])} />
+            <Stack.Screen name="home-course" options={formSheet([1])} />
             <Stack.Screen name="round" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
           </Stack.Protected>
           <Stack.Protected guard={accountsOn}>
