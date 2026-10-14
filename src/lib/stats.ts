@@ -49,6 +49,12 @@ export interface Me {
   name: string;
 }
 
+/** Who won a finished round outright; older summaries fall back to the leader when two or more played. */
+export function winnerOf(summary: RoundSummary): PlayerId | undefined {
+  if (summary.winnerId) return summary.winnerId;
+  return summary.holesScored === undefined && summary.players.length >= 2 ? summary.leaderId : undefined;
+}
+
 /** The round player that is "me": linked by profile id first, else by name. */
 export function findMe(insight: RoundInsight, me: Me): RoundSummaryPlayer | undefined {
   const byId = Object.entries(insight.profileIds).find(([, pid]) => pid === me.id)?.[0];
@@ -72,7 +78,7 @@ export function aggregateStats(insights: RoundInsight[], me?: Me): Stats {
         avgGross: Math.round((grosses.reduce((a, b) => a + b, 0) / grosses.length) * 10) / 10,
         bestGross: Math.min(...grosses),
         netPoints: mine.reduce((sum, x) => sum + (x.i.netByPlayer[x.p.id] ?? 0), 0),
-        wins: mine.filter((x) => x.i.summary.leaderId === x.p.id).length,
+        wins: mine.filter((x) => winnerOf(x.i.summary) === x.p.id).length,
       };
     }
   }

@@ -38,13 +38,13 @@ describe('courseStore', () => {
     const copy = await useCourseStore.getState().duplicateCourse(cedarRidge.id);
     expect(copy).toBeDefined();
     expect(copy!.id).not.toBe(cedarRidge.id);
-    expect(copy!.name).toBe('Cedar Ridge Golf Club (copy)');
+    expect(copy!.name).toBe('Sample course (copy)'); // the bundled course's name in the app
     expect(copy!.userEntered).toBe(true);
     expect(copy!.holes).toHaveLength(18);
     expect(copy!.holes[0]).not.toBe(cedarRidge.holes[0]);
     expect(useCourseStore.getState().byId(copy!.id)).toBeDefined();
     const again = await useCourseStore.getState().duplicateCourse(cedarRidge.id);
-    expect(again!.name).toBe('Cedar Ridge Golf Club (copy 2)');
+    expect(again!.name).toBe('Sample course (copy 2)');
     expect(await useCourseStore.getState().duplicateCourse('nope')).toBeUndefined();
   });
 

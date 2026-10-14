@@ -36,10 +36,26 @@ export function newProfile(id: string, name: string, handicapIndex: number | und
   };
 }
 
-/** Set the current index. A change is appended to the history; the same value is a no-op. */
+/** Index edits this close together are one change (tapping a stepper ten times is not ten history entries). */
+export const INDEX_EDIT_WINDOW_MS = 10 * 60 * 1000;
+
+/**
+ * Set the current index. A change is appended to the history; the same value is a no-op. A change within ten minutes
+ * of the last one replaces it, so adjusting the index in small steps leaves one entry. If that brings it back to the
+ * value before, the entry goes.
+ */
 export function withIndex(profile: PlayerProfile, handicapIndex: number | undefined, at: string): PlayerProfile {
   if (sameIndex(profile.handicapIndex, handicapIndex)) return profile;
-  return { ...profile, handicapIndex, indexHistory: [...profile.indexHistory, { at, index: handicapIndex ?? null }] };
+  const history = profile.indexHistory;
+  const last = history[history.length - 1];
+  const gap = last ? Date.parse(at) - Date.parse(last.at) : NaN;
+  if (last && gap >= 0 && gap < INDEX_EDIT_WINDOW_MS) {
+    const earlier = history.slice(0, -1);
+    const before = earlier[earlier.length - 1];
+    const backToBefore = !!before && sameIndex(before.index ?? undefined, handicapIndex);
+    return { ...profile, handicapIndex, indexHistory: backToBefore ? earlier : [...earlier, { at: last.at, index: handicapIndex ?? null }] };
+  }
+  return { ...profile, handicapIndex, indexHistory: [...history, { at, index: handicapIndex ?? null }] };
 }
 
 /** Most recently played first, never-played profiles after, alphabetical within each. */

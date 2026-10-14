@@ -20,7 +20,8 @@ describe('profileStore', () => {
     s.updateProfile(sam.id, { name: '  Samantha ' });
     await flush();
     const p = useProfileStore.getState().profiles[0];
-    expect([p.name, p.handicapIndex, p.indexHistory.length]).toEqual(['Samantha', 7.9, 2]);
+    // Changed straight after it was set: one history entry, holding the latest value.
+    expect([p.name, p.handicapIndex, p.indexHistory.length]).toEqual(['Samantha', 7.9, 1]);
     expect((await stored(STORAGE_KEYS.playerProfiles))[0].name).toBe('Samantha');
   });
 

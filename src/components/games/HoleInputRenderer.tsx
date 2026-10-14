@@ -23,6 +23,7 @@ export function missingInputs(specs: HoleInputSpec[], answers: Record<string, st
 /**
  * One prompt card per active game that declares hole inputs. Renders `player`, `choice` and
  * `confirm` prompts as 44pt chips from the spec alone. No branching on game id.
+ * A `player` answer is the player's id (two players can share a name); older rounds stored the name, which still reads.
  */
 export function HoleInputCard({ mode, participants, answers, onAnswer }: HoleInputCardProps) {
   const { c, space } = useTheme();
@@ -47,7 +48,12 @@ export function HoleInputCard({ mode, participants, answers, onAnswer }: HoleInp
           ) : null}
         </View>
         {visible.map((spec) => {
-          const options = spec.type === 'player' ? participants.map((p) => p.name) : spec.type === 'choice' ? spec.options : ['Done'];
+          const options =
+            spec.type === 'player'
+              ? participants.map((p) => ({ value: p.id, label: p.name, legacy: p.name }))
+              : spec.type === 'choice'
+                ? spec.options.map((o) => ({ value: o, label: o, legacy: o }))
+                : [{ value: 'yes', label: 'Done', legacy: 'yes' }];
           const current = answers[spec.key];
           return (
             <View key={spec.key} style={{ gap: space[2] }}>
@@ -56,15 +62,14 @@ export function HoleInputCard({ mode, participants, answers, onAnswer }: HoleInp
               </Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
                 {options.map((opt) => {
-                  const value = spec.type === 'confirm' ? 'yes' : opt;
-                  const on = current === value;
+                  const on = current === opt.value || (spec.type === 'player' && current === opt.legacy && !participants.some((p) => p.id === current));
                   return (
                     <Chip
-                      key={opt}
-                      label={spec.type === 'confirm' && on ? '✓ Done' : opt}
-                      accessibilityLabel={`${spec.label}: ${opt}`}
+                      key={opt.value}
+                      label={spec.type === 'confirm' && on ? '✓ Done' : opt.label}
+                      accessibilityLabel={`${spec.label}: ${opt.label}`}
                       selected={on}
-                      onPress={() => onAnswer(spec.key, on && spec.type === 'confirm' ? undefined : value)}
+                      onPress={() => onAnswer(spec.key, on && spec.type === 'confirm' ? undefined : opt.value)}
                     />
                   );
                 })}

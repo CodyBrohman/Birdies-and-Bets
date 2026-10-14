@@ -4,6 +4,7 @@ import type { Player, PlayerGroup, PlayerProfile } from '@/types';
 import { newId } from '@/lib/id';
 import { groupsWithoutProfile, isGroup, isProfile, MAX_GROUP_SIZE, MAX_PROFILE_NAME, MIN_GROUP_SIZE, newProfile, sortProfiles, syncProfilesWithPlayers, withIndex } from '@/lib/profiles';
 import { storage, STORAGE_KEYS } from './storage';
+import { usePreferences } from './preferencesStore';
 
 interface ProfileState {
   hydrated: boolean;
@@ -64,6 +65,8 @@ export const useProfileStore = create<ProfileState>()((set, get) => {
     },
 
     removeProfile(id) {
+      // The phone owner's own profile is not deletable (rounds, stats and sync all hang off it).
+      if (id === usePreferences.getState().meProfileId) return;
       const profiles = get().profiles.filter((p) => p.id !== id);
       const groups = groupsWithoutProfile(get().groups, id);
       set({ profiles, groups });

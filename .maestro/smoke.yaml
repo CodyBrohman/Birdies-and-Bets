@@ -14,13 +14,13 @@ name: Smoke - start a round, score a hole, come back
 - tapOn:
     id: onboarding-skip
 
-# Pick the bundled course (no network needed).
+# Pick the bundled sample course (no network needed).
 - tapOn:
     id: tab-courses
 - scrollUntilVisible:
     element:
-      text: Cedar Ridge Golf Club
-- tapOn: Cedar Ridge Golf Club
+      text: Sample course
+- tapOn: Sample course
 
 # Round builder: add one player, then start.
 - scrollUntilVisible:
@@ -40,7 +40,7 @@ name: Smoke - start a round, score a hole, come back
 - tapOn:
     id: start-round
 
-# Scorecard: the first + fills in par, the second adds a stroke; Next moves to hole 2.
+# Scorecard: from no score + is a bogey, the second tap adds a stroke; Next moves to hole 2.
 - extendedWaitUntil:
     visible: Enter scores
     timeout: 10000

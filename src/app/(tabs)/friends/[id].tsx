@@ -1,13 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Keyboard, ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Avatar, Badge, Button, Card, Screen, SectionLabel, Sheet, Text, TextField, Pressable } from '@/components/ui';
+import { Avatar, Badge, Button, Card, confirm, Screen, SectionLabel, Text, TextField, Pressable } from '@/components/ui';
 import { SetupHeader } from '@/components/SetupHeader';
 import { goBackOr } from '@/components/navigation';
 import { IndexField } from '@/components/IndexField';
 import { EmptyState } from '@/components/EmptyState';
 import { useTheme } from '@/theme';
-import { useHistoryStore, useProfile, useProfileStore } from '@/store';
+import { useHistoryStore, usePreferences, useProfile, useProfileStore } from '@/store';
 import { formatIndex, formatShortDate, formatSigned, formatToPar, joinMeta, plural } from '@/lib/format';
 import { MAX_PROFILE_NAME, roundsForProfile } from '@/lib/profiles';
 
@@ -21,7 +21,7 @@ export default function ProfileScreen() {
   const removeProfile = useProfileStore((s) => s.removeProfile);
   const entries = useHistoryStore((s) => s.entries);
   const rounds = useMemo(() => (profile ? roundsForProfile(profile, entries) : []), [profile, entries]);
-  const [confirm, setConfirm] = useState(false);
+  const meId = usePreferences((s) => s.meProfileId);
 
   if (!profile) {
     return (
@@ -117,23 +117,22 @@ export default function ProfileScreen() {
           </Text>
         ) : null}
 
-        <Button label="Delete player" variant="secondary" destructive style={{ marginTop: space[3] }} onPress={() => setConfirm(true)} />
-      </ScrollView>
-
-      <Sheet visible={confirm} onClose={() => setConfirm(false)} title={`Delete ${profile.name}?`} subtitle="Finished rounds are kept">
-        <View style={{ gap: space[2] }}>
-          <Text tone="secondary">Their index history goes too.</Text>
+        {profile.id !== meId ? (
           <Button
             label="Delete player"
-            onPress={() => {
+            variant="secondary"
+            destructive
+            style={{ marginTop: space[3] }}
+            onPress={async () => {
+              const ok = await confirm({ title: `Delete ${profile.name}?`, message: 'Finished rounds are kept. Their index history goes.', confirmLabel: 'Delete player', destructive: true });
+              if (!ok) return;
               removeProfile(profile.id);
-              setConfirm(false);
               goBackOr('/friends');
             }}
           />
-          <Button label="Keep" variant="secondary" onPress={() => setConfirm(false)} />
-        </View>
-      </Sheet>
+        ) : null}
+      </ScrollView>
+
     </Screen>
   );
 }

@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { asyncStorageAdapter } from './asyncStorage';
-import { migrate } from './migrate';
+import { migrate, promptAnswersToIds } from './migrate';
 import { SCHEMA_VERSION, STORAGE_KEYS } from './adapter';
 
 jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
@@ -56,5 +56,33 @@ describe('migrate', () => {
     expect(r).toEqual({ from: SCHEMA_VERSION + 5, to: SCHEMA_VERSION + 5 });
     expect(await storage.get(STORAGE_KEYS.roundHistory)).toEqual([{ future: true }]);
     expect(await version()).toBe(SCHEMA_VERSION + 5);
+  });
+
+  it('v4: player prompts store ids instead of names, only where the name is unambiguous', async () => {
+    const round = (inputs: Record<string, Record<string, string>>) => ({
+      players: [
+        { id: 'p1', name: 'Cody' },
+        { id: 'p2', name: 'Sam' },
+        { id: 'p3', name: 'Sam' },
+      ],
+      holeResults: [{ holeNumber: 1, scores: {}, gameInputs: inputs }],
+    });
+    await storage.set(STORAGE_KEYS.schemaVersion, 3);
+    await storage.set(STORAGE_KEYS.activeRound, round({ wolf: { mode: 'With a partner', partner: 'Cody' }, 'bingo-bango-bongo': { bingo: 'Sam', bango: 'Cody' } }));
+    await storage.set(STORAGE_KEYS.roundHistory, [{ summary: { id: 'h1' }, round: round({ wolf: { mode: 'Alone' } }) }]);
+    await migrate(storage);
+    const active = (await storage.get<ReturnType<typeof round>>(STORAGE_KEYS.activeRound))!;
+    expect(active.holeResults[0]!.gameInputs).toEqual({
+      wolf: { mode: 'With a partner', partner: 'p1' }, // choice answers ("With a partner") are not names
+      'bingo-bango-bongo': { bingo: 'Sam', bango: 'p1' }, // two players called Sam: left as it was
+    });
+    expect(await version()).toBe(4);
+  });
+
+  it('v4 conversion leaves ids, unknown games and odd shapes alone', () => {
+    const r = { players: [{ id: 'p1', name: 'Cody' }], holeResults: [{ holeNumber: 1, scores: {}, gameInputs: { wolf: { partner: 'p1' }, 'not-a-game': { partner: 'Cody' } } }] };
+    expect(promptAnswersToIds(r)).toBe(r);
+    expect(promptAnswersToIds(null)).toBeNull();
+    expect(promptAnswersToIds({ players: 'nope' })).toEqual({ players: 'nope' });
   });
 });

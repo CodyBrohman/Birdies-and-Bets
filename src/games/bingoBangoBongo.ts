@@ -41,7 +41,8 @@ export const bingoBangoBongo: GameMode = {
     let answered = 0;
     for (const prompt of PROMPTS) {
       const v = inputs[prompt.key];
-      const who = v ? ctx.participants.find((p) => p.name === v || p.id === v) : undefined;
+      // The answer is a player id; rounds saved before ids were stored hold the name.
+      const who = v ? (ctx.participants.find((p) => p.id === v) ?? ctx.participants.find((p) => p.name === v)) : undefined;
       if (!who) continue;
       answered += 1;
       points[who.id] = (points[who.id] ?? 0) + 1;

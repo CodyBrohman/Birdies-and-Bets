@@ -24,7 +24,7 @@ export const wolf: GameMode = {
   category: 'betting',
   blurb: 'Rotating wolf picks a partner off the tee, or goes alone.',
   rules:
-    'The wolf rotates each hole and tees off last. After each drive the wolf may take that player as partner or pass; passing everyone means going alone. Best ball of each side decides the hole. Partners who win get a point each; when the pack wins, each of them gets a point. A lone wolf who wins takes a point from everyone else (three with four players, two with three); a lone wolf who loses gives the others a point each. Ties score nothing. Tell the app after the hole who the wolf took, or that they went alone. With a stake, every pair settles the difference in their points at the end.',
+    'The wolf rotates each hole and tees off last. After each drive the wolf may take that player as partner or pass; passing everyone means going alone. Best ball of each side decides the hole. Partners who win get a point each; when the pack wins, each of them gets a point. A lone wolf who wins takes a point from everyone else (three with four players, two with three); a lone wolf who loses gives the others a point each. With lone-wolf doubles on, those points double. Ties score nothing. Tell the app after the hole who the wolf took, or that they went alone. With a stake, every pair settles the difference in their points at the end.',
   minPlayers: 3,
   maxPlayers: 4,
   supportsNet: true,
@@ -32,6 +32,7 @@ export const wolf: GameMode = {
   configFields: [
     { key: 'points', label: 'Points per hole', type: 'number', default: 1, min: 1, max: 5, help: 'Multiplier for every hole' },
     { key: 'stake', label: 'Stake', type: 'number', default: 1, min: 0, max: 100, unit: 'per point', help: '0 = points only, nothing to settle' },
+    { key: 'loneDoubles', label: 'Lone wolf counts double', type: 'boolean', default: false, help: 'Going alone doubles the points on that hole, won or lost' },
   ],
   holeInputs: [
     { key: 'mode', label: 'The wolf went', type: 'choice', options: ['Alone', 'With a partner'] },
@@ -49,11 +50,13 @@ export const wolf: GameMode = {
     const inputs = hole.gameInputs?.wolf ?? {};
     const points = { ...state.points };
     for (const id of ids) points[id] = points[id] ?? 0;
-    const mult = Number(cfg(ctx, 'points', 1)) || 1;
+    const base = Number(cfg(ctx, 'points', 1)) || 1;
 
     const alone = inputs.mode === 'Alone';
-    const partnerName = inputs.mode === 'With a partner' ? inputs.partner : undefined;
-    const partner = partnerName ? (ctx.participants.find((p) => (p.name === partnerName || p.id === partnerName) && p.id !== wolfId)?.id ?? null) : null;
+    const picked = inputs.mode === 'With a partner' ? inputs.partner : undefined;
+    // The answer is a player id; rounds saved before ids were stored hold the name.
+    const others = ctx.participants.filter((p) => p.id !== wolfId);
+    const partner = picked ? (others.find((p) => p.id === picked) ?? others.find((p) => p.name === picked))?.id ?? null : null;
     if (!alone && !partner) {
       return { ...state, points, holes: [...state.holes, { holeNumber: hole.holeNumber, wolf: wolfId, partner: null, result: 'pending' }], thru: hole.holeNumber };
     }
@@ -63,6 +66,8 @@ export const wolf: GameMode = {
       const s = scores.filter((x) => side.includes(x.playerId)).map((x) => x.score);
       return s.length ? Math.min(...s) : Infinity;
     };
+    // Lone-wolf doubles (opt-in): going alone puts twice the points on the hole, either way.
+    const mult = alone && cfg(ctx, 'loneDoubles', false) ? base * 2 : base;
     const wolfSide = alone ? [wolfId] : [wolfId, partner!];
     const pack = ids.filter((id) => !wolfSide.includes(id));
     const w = best(wolfSide);

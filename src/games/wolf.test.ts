@@ -14,6 +14,16 @@ describe('Wolf', () => {
     expect(wolfFor(['a', 'b', 'c', 'd'], 5)).toBe('a');
   });
 
+  it('a partner is picked by id, so two players with the same name never get mixed up', () => {
+    const samA = { ...priya, id: 'sam-a', name: 'Sam' };
+    const samB = { ...priya, id: 'sam-b', name: 'Sam' };
+    // Order: cody, marcus, sam-a, sam-b. Hole 1 wolf Cody takes the second Sam (by id); they win with a 3.
+    const results = resultsFrom({ cody: [5], marcus: [5], 'sam-a': [6], 'sam-b': [3] });
+    const round = makeRound({ players: [cody, marcus, samA, samB], results: withInputs(results, { 1: { mode: 'With a partner', partner: 'sam-b' } }) });
+    const pts = Object.fromEntries(runGame(round, active('wolf', {}, 'gross'), wolf).standings.lines.map((l) => [l.playerId, l.value]));
+    expect(pts).toEqual({ cody: 1, marcus: 0, 'sam-a': 0, 'sam-b': 1 });
+  });
+
   it('scores partners, lone wolf wins and losses, and ties (gross)', () => {
     // Order: cody, marcus, priya, dan. h1 wolf Cody, h2 Marcus, h3 Priya, h4 Dan.
     const results = resultsFrom({
@@ -43,6 +53,21 @@ describe('Wolf', () => {
     const run = runGame(makeRound({ results }), active('wolf', {}, 'gross'), wolf);
     expect(run.standings.subline).toBe('Marcus is the wolf on 2 · 1 hole waiting on who the wolf took');
     expect(run.standings.lines.every((l) => l.value === 0)).toBe(true);
+  });
+
+  it('lone-wolf doubles (opt-in) doubles a lone hole, won or lost; partners are unaffected', () => {
+    // h1 Cody alone wins: 3 × 2 = 6. h2 Marcus alone loses: the pack +2 each. h3 Priya takes Cody and wins: +1 each.
+    const results = withInputs(resultsFrom({ cody: [3, 4, 3], marcus: [5, 6, 5], priya: [5, 5, 3], dan: [6, 5, 6] }), {
+      1: { mode: 'Alone' },
+      2: { mode: 'Alone' },
+      3: { mode: 'With a partner', partner: 'cody' },
+    });
+    const doubled = runGame(makeRound({ results }), active('wolf', { loneDoubles: true }, 'gross'), wolf);
+    const pts = Object.fromEntries(doubled.standings.lines.map((l) => [l.playerId, l.value]));
+    expect(pts).toEqual({ cody: 6 + 2 + 1, marcus: 0, priya: 2 + 1, dan: 2 });
+    // Off by default: the same holes score as before.
+    const plain = Object.fromEntries(runGame(makeRound({ results }), active('wolf', {}, 'gross'), wolf).standings.lines.map((l) => [l.playerId, l.value]));
+    expect(plain).toEqual({ cody: 3 + 1 + 1, marcus: 0, priya: 1 + 1, dan: 1 });
   });
 
   it('applies the points multiplier', () => {

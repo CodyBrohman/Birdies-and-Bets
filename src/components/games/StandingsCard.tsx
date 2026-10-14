@@ -2,7 +2,7 @@ import { View } from 'react-native';
 import { Avatar, Badge, Card, Text } from '@/components/ui';
 import { useTheme } from '@/theme';
 import type { ActiveGame, GameMode, Player, ProgressionCell, Standings } from '@/types';
-import { describeProgression, describeStandingsLine, formatStake } from '@/lib/format';
+import { describeProgression, describeStandingsLine, formatStake, withoutName } from '@/lib/format';
 
 export interface StandingsCardProps {
   mode: GameMode;
@@ -31,7 +31,6 @@ export function StandingsCard({ mode, active, standings, stakeLabel, players, de
   const stake = typeof active.config.stake === 'number' ? active.config.stake : 0;
   const stakeField = mode.configFields.find((f) => f.key === 'stake');
   const stakeText = stake ? `${formatStake(stake, stakeLabel)}${stakeField && stakeField.type === 'number' && stakeField.unit ? ` ${stakeField.unit}` : ''}` : betting ? 'no stake' : '';
-  const callout = standings.subline ?? standings.headline;
   const leaderValue = Math.max(...standings.lines.map((l) => (typeof l.value === 'number' ? l.value : -Infinity)));
 
   const nameOf = (id: string | undefined) => (id ? players.find((p) => p.id === id)?.name : undefined);
@@ -56,9 +55,15 @@ export function StandingsCard({ mode, active, standings, stakeLabel, players, de
       </View>
 
       <View accessible accessibilityLabel={calloutLabel} style={{ marginTop: space[4], padding: space[4], borderRadius: radius.lg, backgroundColor: betting ? c.accentTint : c.goldTint }}>
-        <Text step="body" style={{ color: betting ? c.accentTintText : c.goldTintText }}>
-          {callout}
+        {/* The headline says who leads; the subline adds what is at stake next. Both show. */}
+        <Text step="bodyStrong" style={{ color: betting ? c.accentTintText : c.goldTintText }}>
+          {standings.headline}
         </Text>
+        {standings.subline ? (
+          <Text step="body" style={{ color: betting ? c.accentTintText : c.goldTintText, marginTop: 2 }}>
+            {standings.subline}
+          </Text>
+        ) : null}
       </View>
 
       {standings.progression ? <Progression cells={standings.progression} /> : null}
@@ -69,7 +74,8 @@ export function StandingsCard({ mode, active, standings, stakeLabel, players, de
             const player = l.playerId ? players.find((p) => p.id === l.playerId) : undefined;
             const playerIndex = l.playerId ? players.findIndex((p) => p.id === l.playerId) : -1;
             const { left, right } = splitLine(l.text);
-            const label = player ? left.replace(new RegExp(`^${player.name}\\s*`), '') : left;
+            // Plain text, not a pattern: a name like "Bob (Jr" must not break the row.
+            const label = player ? withoutName(left, player.name) : left;
             const leading = typeof l.value === 'number' && l.value > 0 && l.value === leaderValue;
             return (
               <View

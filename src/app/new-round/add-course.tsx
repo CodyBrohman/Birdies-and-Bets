@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Button, Card, Chip, Footer, IconButton, Screen, Segmented, Sheet, Text, TextField, Toggle } from '@/components/ui';
+import { Button, Card, Chip, confirm, Footer, IconButton, Screen, Segmented, Text, TextField, Toggle } from '@/components/ui';
 import { SetupHeader } from '@/components/SetupHeader';
 import { goBackOr } from '@/components/navigation';
 import { useTheme } from '@/theme';
@@ -92,7 +92,6 @@ export default function AddCourseScreen() {
   const [holeCount, setHoleCount] = useState<HoleCount>(initial.holeCount);
   const [holes, setHoles] = useState<HoleDraft[]>(initial.holes);
   const [yardages, setYardages] = useState(initial.yardages);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const visibleHoles = holes.slice(0, holeCount);
@@ -177,8 +176,9 @@ export default function AddCourseScreen() {
 
   const del = async () => {
     if (!source) return;
+    const ok = await confirm({ title: `Delete ${source.name}?`, message: 'Rounds already played there keep their own copy.', confirmLabel: 'Delete course', destructive: true });
+    if (!ok) return;
     await removeUserCourse(source.id);
-    setConfirmDelete(false);
     goBackOr('/courses');
   };
 
@@ -317,7 +317,7 @@ export default function AddCourseScreen() {
           {editing && source ? (
             <View style={{ gap: space[2], marginTop: space[2] }}>
               <Button label="Duplicate course" variant="secondary" onPress={() => router.replace({ pathname: '/new-round/add-course', params: { id: source.id, duplicate: '1' } })} />
-              <Button label="Delete course" variant="secondary" destructive onPress={() => setConfirmDelete(true)} />
+              <Button label="Delete course" variant="secondary" destructive onPress={() => void del()} />
             </View>
           ) : null}
         </ScrollView>
@@ -330,12 +330,6 @@ export default function AddCourseScreen() {
           <Button label={editing ? 'Save changes' : copying ? 'Save copy and choose players' : 'Save and choose players'} disabled={!canSave} onPress={() => void save()} />
         </Footer>
       </KeyboardAvoidingView>
-      <Sheet visible={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete this course?" subtitle="Played rounds keep their copy.">
-        <View style={{ gap: space[2] }}>
-          <Button label="Delete" onPress={() => void del()} />
-          <Button label="Keep it" variant="secondary" onPress={() => setConfirmDelete(false)} />
-        </View>
-      </Sheet>
     </Screen>
   );
 }

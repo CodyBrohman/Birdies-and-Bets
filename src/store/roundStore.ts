@@ -3,6 +3,8 @@ import type { ActiveGame, Course, GrossScore, HoleResult, Player, PlayerId, Play
 import { newId } from '@/lib/id';
 import { holesInPlay } from '@/lib/handicap';
 import { holePosition, playOrder } from '@/lib/scoring';
+import { teeTimeIsStale } from '@/lib/teeTime';
+import { getGame } from '@/games/registry';
 import { storage, STORAGE_KEYS } from './storage';
 import { draftDefaults } from './preferencesStore';
 import { useProfileStore } from './profileStore';
@@ -10,11 +12,13 @@ import { useProfileStore } from './profileStore';
 export const MIN_PLAYERS = 1;
 export const MAX_PLAYERS = 4;
 
+/** The round being set up. Persisted (bb:round:draft) so a restart keeps the course, players, games and tee time. */
 export interface Draft {
   course: Course | null;
   teeBoxId: string | null;
   players: Player[];
   settings: RoundSettings;
+  games: ActiveGame[];
 }
 
 /** Undo keeps this many score changes, in memory only. */
@@ -30,7 +34,32 @@ export interface UndoEntry {
 export const DEFAULT_SETTINGS: RoundSettings = { holeCount: 18, allowance: 100, stakeLabel: 'points', nine: 'front' };
 
 /** A fresh draft picks up the user's default stake label and allowance (see preferencesStore). */
-const emptyDraft = (): Draft => ({ course: null, teeBoxId: null, players: [], settings: { ...DEFAULT_SETTINGS, ...draftDefaults() } });
+const emptyDraft = (): Draft => ({ course: null, teeBoxId: null, players: [], settings: { ...DEFAULT_SETTINGS, ...draftDefaults() }, games: [] });
+
+/** Games keep only the picked players and team seats that are still in the round (the builder then asks again). */
+export function seatsFor(games: ActiveGame[], players: Player[]): ActiveGame[] {
+  const ids = new Set(players.map((p) => p.id));
+  return games.map((g) => {
+    const teamKeys = (getGame(g.gameId)?.configFields ?? []).filter((f) => f.type === 'teams').map((f) => f.key);
+    const config = { ...g.config };
+    for (const k of teamKeys) if (Array.isArray(config[k])) config[k] = (config[k] as string[]).filter((id) => ids.has(id));
+    return { ...g, config, ...(g.playerIds ? { playerIds: g.playerIds.filter((id) => ids.has(id)) } : {}) };
+  });
+}
+
+/** A saved draft, checked field by field (anything unreadable falls back to a fresh value). A stale tee time is dropped. */
+export function readDraft(saved: unknown, now: Date = new Date()): Draft {
+  const fresh = emptyDraft();
+  if (!saved || typeof saved !== 'object') return fresh;
+  const d = saved as Partial<Draft>;
+  const course = d.course && typeof d.course === 'object' && Array.isArray(d.course.holes) && d.course.holes.length > 0 && Array.isArray(d.course.teeBoxes) && d.course.teeBoxes.length > 0 ? d.course : null;
+  const teeBoxId = course ? (course.teeBoxes.some((t) => t.id === d.teeBoxId) ? (d.teeBoxId as string) : course.teeBoxes[0]!.id) : null;
+  const players = Array.isArray(d.players) ? d.players.filter((p) => p && typeof p.id === 'string' && typeof p.name === 'string').map((p) => (teeBoxId ? { ...p, teeBoxId } : p)) : [];
+  const games = Array.isArray(d.games) ? d.games.filter((g) => g && typeof g.gameId === 'string' && !!getGame(g.gameId) && g.config && typeof g.config === 'object') : [];
+  const settings: RoundSettings = { ...fresh.settings, ...(d.settings && typeof d.settings === 'object' ? d.settings : {}) };
+  if (settings.teeTime && teeTimeIsStale(settings.teeTime, now)) delete settings.teeTime;
+  return { course, teeBoxId, players, settings, games };
+}
 
 /** Holes in play for a round's settings, in the order they are played. */
 export function orderFor(course: Course, settings: RoundSettings) {
@@ -52,7 +81,9 @@ interface RoundState {
   setDraftCourse(course: Course, teeBoxId: string): void;
   setDraftPlayers(players: Player[]): void;
   setDraftSettings(patch: Partial<RoundSettings>): void;
-  startRound(games: ActiveGame[]): Round | null;
+  setDraftGames(games: ActiveGame[]): void;
+  /** Start from the draft. `games` defaults to the draft's own (the builder passes only those that fit the group). */
+  startRound(games?: ActiveGame[]): Round | null;
 
   // Play
   setScore(playerId: PlayerId, holeNumber: number, score: GrossScore): void;
@@ -75,6 +106,13 @@ interface RoundState {
 export const useRoundStore = create<RoundState>()((set, get) => {
   const persist = (round: Round | null) => {
     void (round ? storage.set(STORAGE_KEYS.activeRound, round) : storage.remove(STORAGE_KEYS.activeRound));
+  };
+
+  const persistDraft = (draft: Draft) => void storage.set(STORAGE_KEYS.draft, draft);
+  const setDraft = (fn: (draft: Draft) => Draft) => {
+    const draft = fn(get().draft);
+    set({ draft });
+    persistDraft(draft);
   };
 
   const update = (fn: (round: Round) => Round) => {
@@ -100,10 +138,10 @@ export const useRoundStore = create<RoundState>()((set, get) => {
 
     async hydrate() {
       try {
-        const round = await storage.get<Round>(STORAGE_KEYS.activeRound);
+        const [round, savedDraft] = await Promise.all([storage.get<Round>(STORAGE_KEYS.activeRound), storage.get<unknown>(STORAGE_KEYS.draft)]);
         const valid = round && Array.isArray(round.players) && Array.isArray(round.holeResults) && round.course?.holes?.length ? round : null;
         set({
-          draft: emptyDraft(),
+          draft: readDraft(savedDraft),
           round: valid,
           undo: [],
           hydrated: true,
@@ -116,29 +154,32 @@ export const useRoundStore = create<RoundState>()((set, get) => {
     },
 
     setDraftCourse(course, teeBoxId) {
-      set((s) => ({
-        draft: {
-          ...s.draft,
-          course,
-          teeBoxId,
-          // Keep players, but point them at the new tee.
-          players: s.draft.players.map((p) => ({ ...p, teeBoxId })),
-          // A start hole from another course may not exist here.
-          settings: { ...s.draft.settings, startHole: undefined },
-        },
+      setDraft((d) => ({
+        ...d,
+        course,
+        teeBoxId,
+        // Keep players, but point them at the new tee.
+        players: d.players.map((p) => ({ ...p, teeBoxId })),
+        // A start hole from another course may not exist here.
+        settings: { ...d.settings, startHole: undefined },
       }));
     },
 
     setDraftPlayers(players) {
-      set((s) => ({ draft: { ...s.draft, players } }));
+      setDraft((d) => ({ ...d, players, games: seatsFor(d.games, players) }));
     },
 
     setDraftSettings(patch) {
-      set((s) => ({ draft: { ...s.draft, settings: { ...s.draft.settings, ...patch } } }));
+      setDraft((d) => ({ ...d, settings: { ...d.settings, ...patch } }));
     },
 
-    startRound(games) {
+    setDraftGames(games) {
+      setDraft((d) => ({ ...d, games }));
+    },
+
+    startRound(gamesArg) {
       const { draft } = get();
+      const games = gamesArg ?? draft.games;
       if (!draft.course || !draft.teeBoxId) return null;
       const named = draft.players.filter((p) => p.name.trim().length > 0);
       if (named.length < MIN_PLAYERS || named.length > MAX_PLAYERS) return null;
@@ -164,6 +205,7 @@ export const useRoundStore = create<RoundState>()((set, get) => {
       };
       set({ round, draft: emptyDraft(), undo: [] });
       persist(round);
+      void storage.remove(STORAGE_KEYS.draft);
       return round;
     },
 

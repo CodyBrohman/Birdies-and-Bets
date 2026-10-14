@@ -46,6 +46,32 @@ describe('summarizeRound', () => {
     expect(s.resultLabel).toBe('E');
   });
 
+  it('names a winner only with someone to beat and no tie at the top, and counts holes scored', () => {
+    const scratch = { ...marcus, handicapIndex: undefined };
+    const two = makeRound({ players: [scratchTheo, scratch], results: resultsFrom({ theo: eighteen(5), marcus: eighteen(4) }) });
+    const hcp = computeAllHandicaps(two.players, cedarRidge, two.settings);
+    const s = summarizeRound({ round: two, holes, handicaps: hcp, standings: [], gameNames: [], netted: netSettlements([], ['theo', 'marcus']) });
+    expect(s.winnerId).toBe('marcus');
+    expect(s.holesScored).toBe(18);
+
+    const tied = makeRound({ players: [scratchTheo, scratch], results: resultsFrom({ theo: eighteen(4), marcus: eighteen(4) }) });
+    expect(summarizeRound({ round: tied, holes, handicaps: hcp, standings: [], gameNames: [], netted: netSettlements([], ['theo', 'marcus']) }).winnerId).toBeUndefined();
+
+    const solo = makeRound({ players: [scratchTheo], results: resultsFrom({ theo: [4, 4, 4] }) });
+    const soloSummary = summarizeRound({ round: solo, holes, handicaps: computeAllHandicaps(solo.players, cedarRidge, solo.settings), standings: [], gameNames: [], netted: netSettlements([], ['theo']) });
+    expect(soloSummary.winnerId).toBeUndefined();
+    expect(soloSummary.holesScored).toBe(3);
+  });
+
+  it('ranks an unfinished card by score to par over the holes played, not raw strokes', () => {
+    // Theo shot 4s on all 18 (E), Marcus 3s on only 9 holes (27 strokes but −9): Marcus leads.
+    const scratch = { ...marcus, handicapIndex: undefined };
+    const partial = makeRound({ players: [scratchTheo, scratch], results: resultsFrom({ theo: eighteen(4), marcus: [3, 4, 3, 3, 3, 2, 3, 4, 2] }) });
+    const hcp = computeAllHandicaps(partial.players, cedarRidge, partial.settings);
+    const s = summarizeRound({ round: partial, holes, handicaps: hcp, standings: [], gameNames: [], netted: netSettlements([], ['theo', 'marcus']) });
+    expect(s.leaderId).toBe('marcus');
+  });
+
   it('uses the configured stake label', () => {
     expect(stakeUnit('points')).toBe('pts');
     expect(stakeUnit('$')).toBe('$');

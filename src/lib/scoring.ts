@@ -147,6 +147,25 @@ export function scoreOptions(par: number): number[] {
   return out;
 }
 
+/**
+ * The −/+ stepper. From no score (or a pick-up), − is a birdie and + a bogey; tapping the number itself enters par.
+ * After that each tap moves one stroke, between 1 and `max`.
+ */
+export function stepScore(saved: GrossScore | undefined, delta: 1 | -1, par: number, max: number): number {
+  const from = saved == null ? par : saved;
+  return Math.max(1, Math.min(max, from + delta));
+}
+
+/** Holes in play where someone has no score yet (a pick-up counts as a score), in the order given. */
+export function unscoredHoles(results: HoleResult[], holes: Hole[], playerIds: PlayerId[]): number[] {
+  return holes
+    .filter((h) => {
+      const r = results.find((x) => x.holeNumber === h.number);
+      return playerIds.some((id) => !r || !(id in r.scores));
+    })
+    .map((h) => h.number);
+}
+
 // ---------- Play order (shotgun starts) ----------
 
 /** Holes in the order they are played: rotated so the start hole comes first. Unknown start → unchanged. */

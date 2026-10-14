@@ -9,11 +9,13 @@ export interface StorageAdapter {
 }
 
 /** Bump when the shape of any persisted value changes; add a migration in migrate.ts. */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export const STORAGE_KEYS = {
   schemaVersion: 'bb:schema',
   activeRound: 'bb:round:active',
+  /** The round being set up (course, tees, players, games, tee time). Survives a restart; not synced. */
+  draft: 'bb:round:draft',
   roundHistory: 'bb:rounds:history',
   /** Legacy (schema ≤ 2): seeded into profiles by the v3 migration, then removed. */
   recentPlayers: 'bb:players:recent',

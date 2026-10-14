@@ -1,4 +1,5 @@
 import {
+  ALLOWANCE_OPTIONS,
   allocateStrokes,
   applyAllowance,
   applyMatchDifferential,
@@ -13,6 +14,7 @@ import {
   rankedHoles,
   roundHalfAwayFromZero,
   strokesForHole,
+  teeHasRating,
 } from './handicap';
 import { cedarRidge, cody, dan, foursome, marcus, priya, scratchTheo } from './__fixtures__/cedarRidge';
 
@@ -269,5 +271,18 @@ describe('nine-hole rounds: which nine', () => {
     const got = Object.entries(strokes).filter(([, s]) => s > 0).map(([n]) => Number(n)).sort((a, b) => a - b);
     const lowest = [...back].sort((a, b) => a.strokeIndex - b.strokeIndex).slice(0, 3).map((h) => h.number).sort((a, b) => a - b);
     expect(got).toEqual(lowest);
+  });
+});
+
+describe('ratings and allowances', () => {
+  it('knows when handicaps cannot be worked out on a tee', () => {
+    expect(teeHasRating({ rating: 71.2, slope: 129 })).toBe(true);
+    expect(teeHasRating({ rating: 71.2 })).toBe(false);
+    expect(teeHasRating({ slope: 129 })).toBe(false);
+    expect(teeHasRating(undefined)).toBe(false);
+  });
+
+  it('offers the WHS 95% for individual stroke play', () => {
+    expect(ALLOWANCE_OPTIONS).toContain(95);
   });
 });

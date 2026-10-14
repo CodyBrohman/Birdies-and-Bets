@@ -25,10 +25,12 @@ export function stakeUnit(stakeLabel: string): string {
 }
 
 export function summarizeRound({ round, holes, handicaps, standings, gameNames, netted, completedAt }: SummarizeInput): RoundSummary {
+  const netToPar: Record<PlayerId, number> = {};
   const players: RoundSummaryPlayer[] = round.players.map((p) => {
     const hcp = handicaps[p.id];
     const gross = totals(round.holeResults, holes, p.id, 'gross');
     const net = totals(round.holeResults, holes, p.id, 'net', hcp);
+    netToPar[p.id] = net.toPar;
     return {
       id: p.id,
       name: p.name,
@@ -40,9 +42,15 @@ export function summarizeRound({ round, holes, handicaps, standings, gameNames, 
     };
   });
 
+  // Ranked by score to par over the holes each player finished, so an unfinished or picked-up card is compared fairly.
   const anyStrokes = players.some((p) => p.playingHandicap !== 0);
-  const leader = [...players].sort((a, b) => (anyStrokes ? a.net - b.net : a.gross - b.gross))[0] ?? players[0];
+  const toPar = (p: RoundSummaryPlayer) => (anyStrokes ? (netToPar[p.id] ?? 0) : p.grossToPar);
+  const ranked = [...players].sort((a, b) => toPar(a) - toPar(b));
+  const leader = ranked[0] ?? players[0];
   const leaderId = leader?.id ?? round.players[0]?.id ?? '';
+  // A winner needs someone to beat, and no tie at the top.
+  const winnerId = ranked.length >= 2 && toPar(ranked[0]!) < toPar(ranked[1]!) ? ranked[0]!.id : undefined;
+  const holesScored = holes.filter((h) => round.holeResults.some((r) => r.holeNumber === h.number && Object.keys(r.scores).length > 0)).length;
 
   const stakeTotal = netted.totals[leaderId] ?? 0;
   let resultLabel: string;
@@ -63,6 +71,8 @@ export function summarizeRound({ round, holes, handicaps, standings, gameNames, 
     gameNames,
     players,
     leaderId,
+    ...(winnerId ? { winnerId } : {}),
+    holesScored,
     resultLabel,
   };
 }

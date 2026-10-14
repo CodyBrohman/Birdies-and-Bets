@@ -25,6 +25,33 @@ describe('withIndex', () => {
   });
 });
 
+describe('withIndex: quick adjustments are one change', () => {
+  const at = (minutes: number) => new Date(Date.parse(t1) + minutes * 60_000).toISOString();
+
+  it('steps within ten minutes replace the last entry instead of adding one each', () => {
+    let p = withIndex(newProfile('a', 'Sam', 8.2, t0), 8.1, at(0));
+    p = withIndex(p, 8.0, at(1));
+    p = withIndex(p, 7.9, at(2));
+    expect(p.indexHistory).toEqual([
+      { at: t0, index: 8.2 },
+      { at: at(0), index: 7.9 },
+    ]);
+  });
+
+  it('stepping back to where it was leaves no entry', () => {
+    let p = withIndex(newProfile('a', 'Sam', 8.2, t0), 8.1, at(0));
+    p = withIndex(p, 8.2, at(1));
+    expect(p.indexHistory).toEqual([{ at: t0, index: 8.2 }]);
+    expect(p.handicapIndex).toBe(8.2);
+  });
+
+  it('a change after ten minutes is a new entry', () => {
+    let p = withIndex(newProfile('a', 'Sam', 8.2, t0), 8.1, at(0));
+    p = withIndex(p, 7.5, at(11));
+    expect(p.indexHistory.map((e) => e.index)).toEqual([8.2, 8.1, 7.5]);
+  });
+});
+
 describe('syncProfilesWithPlayers', () => {
   it('creates profiles for new names, links by name, and records a changed index', () => {
     const sam = newProfile('sam', 'Sam', 8.2, t0);

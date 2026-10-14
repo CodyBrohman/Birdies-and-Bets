@@ -33,6 +33,18 @@ export function teeTimeValue(day: string, slot: string): string {
   return `${day}T${slot}`;
 }
 
+/**
+ * A planned tee time more than `hours` in the past: a draft left from last weekend should not still say "Saturday 8:30".
+ * Unreadable values count as stale.
+ */
+export function teeTimeIsStale(value: string, now: Date, hours = 12): boolean {
+  const t = parseTeeTime(value);
+  if (!t) return true;
+  const [y, mo, d] = t.day.split('-').map(Number) as [number, number, number];
+  const [h, m] = t.slot.split(':').map(Number) as [number, number];
+  return now.getTime() - new Date(y, mo - 1, d, h, m).getTime() > hours * 3600 * 1000;
+}
+
 /** Split a stored tee time back into its day key and slot. */
 export function parseTeeTime(value: string | undefined): { day: string; slot: string } | null {
   const m = value ? /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})$/.exec(value) : null;

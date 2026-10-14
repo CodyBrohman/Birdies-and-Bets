@@ -6,8 +6,8 @@ import type { Player, PlayerId, PlayerRoundState } from '../types/player';
 import type { Nine, RoundSettings } from '../types/round';
 
 export const DEFAULT_ALLOWANCE = 100;
-/** The allowances the app offers. Anything else stored is treated as the default. */
-export const ALLOWANCE_OPTIONS = [100, 90, 85, 75] as const;
+/** The allowances the app offers (95% is the WHS recommendation for individual stroke play). Anything else stored is treated as the default. */
+export const ALLOWANCE_OPTIONS = [100, 95, 90, 85, 75] as const;
 
 /** Round half away from zero, so −2.5 → −3 and 2.5 → 3 (WHS rounding for plus handicaps). */
 export function roundHalfAwayFromZero(n: number): number {
@@ -22,6 +22,14 @@ export function courseHandicap(handicapIndex: number | undefined, tee: Pick<TeeB
   if (handicapIndex == null || Number.isNaN(handicapIndex)) return 0;
   if (tee.slope == null || tee.rating == null) return 0;
   return roundHalfAwayFromZero(handicapIndex * (tee.slope / 113) + (tee.rating - coursePar));
+}
+
+/**
+ * Whether handicaps can be worked out on these tees. Without both a rating and a slope every course handicap is 0, so
+ * the round silently plays as gross: say so instead.
+ */
+export function teeHasRating(tee: Pick<TeeBox, 'slope' | 'rating'> | undefined): boolean {
+  return !!tee && tee.slope != null && tee.rating != null;
 }
 
 /** Percentage allowance applied to the course handicap. Default 100. */

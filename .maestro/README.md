@@ -3,7 +3,7 @@
 `smoke.yaml` installs nothing and needs no network. It covers the fresh-install path:
 
 1. skip the intro
-2. pick Cedar Ridge
+2. pick Sample course
 3. add a player
 4. start the round
 5. score hole 1 with the stepper

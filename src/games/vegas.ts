@@ -9,6 +9,8 @@ interface VegasState extends GameState {
   diff: number;
   thru: number;
   holes: { holeNumber: number; a: number; b: number }[];
+  /** Holes waiting for someone's score (a missing score is not a pick-up). */
+  waiting: number[];
 }
 
 /** Two scores make a two-digit number, low digit first. A 10+ goes first ("104"); a pick-up counts as 10. */
@@ -41,13 +43,15 @@ export const vegas: GameMode = {
   ],
 
   initState(): VegasState {
-    return { diff: 0, thru: 0, holes: [] };
+    return { diff: 0, thru: 0, holes: [], waiting: [] };
   },
 
   onHoleComplete(prev, hole, ctx): VegasState {
     const state = prev as VegasState;
     const { a, b } = teamsOf(ctx);
     if (a.length !== 2 || b.length !== 2) return { ...state, thru: positionOf(ctx, hole.holeNumber) };
+    // A hole counts once all four have a score or picked up. A score not entered yet is not a 10.
+    if (![...a, ...b].every((id) => id in hole.scores)) return { ...state, waiting: [...(state.waiting ?? []), hole.holeNumber] };
     const par = ctx.course.holes.find((h) => h.number === hole.holeNumber)?.par ?? 0;
     const scores = scoresFor(ctx, hole);
     const of = (ids: string[]) => ids.map((id) => scores.find((s) => s.playerId === id)?.score ?? null);
@@ -59,7 +63,7 @@ export const vegas: GameMode = {
     const na = vegasNumber(sa, birdieB && !birdieA);
     const nb = vegasNumber(sb, birdieA && !birdieB);
     const diff = state.diff + (nb - na);
-    return { diff, thru: positionOf(ctx, hole.holeNumber), holes: [...state.holes, { holeNumber: hole.holeNumber, a: na, b: nb }] };
+    return { diff, thru: positionOf(ctx, hole.holeNumber), holes: [...state.holes, { holeNumber: hole.holeNumber, a: na, b: nb }], waiting: state.waiting ?? [] };
   },
 
   getStandings(prev, ctx): Standings {
@@ -75,7 +79,12 @@ export const vegas: GameMode = {
           ? `All square thru ${state.thru}`
           : `${name(state.diff > 0 ? a : b)} ${formatToPar(Math.abs(state.diff))} thru ${state.thru}`;
     const last = state.holes[state.holes.length - 1];
-    const subline = teamsSet ? `${name(a)} vs ${name(b)}${last ? ` · hole ${last.holeNumber}: ${last.a} v ${last.b}` : ''}` : 'Two players on team A, the rest on team B';
+    const waiting = state.waiting ?? [];
+    const subline = !teamsSet
+      ? 'Two players on team A, the rest on team B'
+      : waiting.length
+        ? `${name(a)} vs ${name(b)} · hole ${waiting.join(', ')} needs every score`
+        : `${name(a)} vs ${name(b)}${last ? ` · hole ${last.holeNumber}: ${last.a} v ${last.b}` : ''}`;
     return {
       gameId: 'vegas',
       basis: ctx.active.basis,

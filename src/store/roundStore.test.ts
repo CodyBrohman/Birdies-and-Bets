@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DEFAULT_SETTINGS, MAX_UNDO, useRoundStore } from './roundStore';
+import { DEFAULT_SETTINGS, MAX_UNDO, readDraft, seatsFor, useRoundStore } from './roundStore';
 import { useProfileStore } from './profileStore';
 import { STORAGE_KEYS } from './storage';
 import { cedarRidge, cody, marcus } from '../lib/__fixtures__/cedarRidge';
@@ -17,7 +17,7 @@ async function persisted(): Promise<Round | null> {
 beforeEach(async () => {
   await AsyncStorage.clear();
   useProfileStore.setState({ profiles: [], groups: [] });
-  useRoundStore.setState({ round: null, draft: { course: null, teeBoxId: null, players: [], settings: { ...DEFAULT_SETTINGS } } });
+  useRoundStore.setState({ round: null, draft: { course: null, teeBoxId: null, players: [], settings: { ...DEFAULT_SETTINGS }, games: [] } });
 });
 
 describe('roundStore', () => {
@@ -214,7 +214,7 @@ describe('roundStore hydration resilience', () => {
       expect(useRoundStore.getState().undo).toEqual([]);
       start();
       useRoundStore.getState().setScore('cody', 1, 4);
-      useRoundStore.setState({ draft: { course: cedarRidge, teeBoxId: 'blue', players: [cody, marcus], settings: { ...DEFAULT_SETTINGS } } });
+      useRoundStore.setState({ draft: { course: cedarRidge, teeBoxId: 'blue', players: [cody, marcus], settings: { ...DEFAULT_SETTINGS }, games: [] } });
       useRoundStore.getState().startRound([]);
       expect(useRoundStore.getState().undo).toEqual([]);
     });
@@ -229,5 +229,56 @@ describe('roundStore hydration resilience', () => {
       useRoundStore.getState().setHoleNote(7, '   ');
       expect(useRoundStore.getState().round?.holeResults[0]).toEqual({ holeNumber: 7, scores: {} });
     });
+  });
+});
+
+describe('the round being set up (draft)', () => {
+  const skins = { gameId: 'skins', config: { stake: 1 }, basis: 'net' as const };
+
+  it('survives a restart: course, players, games and tee time', async () => {
+    const s = useRoundStore.getState();
+    s.setDraftCourse(cedarRidge, 'blue');
+    s.setDraftPlayers([cody, marcus]);
+    s.setDraftGames([skins]);
+    s.setDraftSettings({ teeTime: '2999-01-01T08:30' });
+    await flush();
+    useRoundStore.setState({ draft: { course: null, teeBoxId: null, players: [], settings: { ...DEFAULT_SETTINGS }, games: [] }, hydrated: false });
+    await useRoundStore.getState().hydrate();
+    const d = useRoundStore.getState().draft;
+    expect(d.course?.id).toBe(cedarRidge.id);
+    expect(d.players.map((p) => p.name)).toEqual(['Cody', 'Marcus']);
+    expect(d.games.map((g) => g.gameId)).toEqual(['skins']);
+    expect(d.settings.teeTime).toBe('2999-01-01T08:30');
+  });
+
+  it('starting the round clears the saved draft', async () => {
+    const s = useRoundStore.getState();
+    s.setDraftCourse(cedarRidge, 'blue');
+    s.setDraftPlayers([cody]);
+    s.setDraftGames([skins]);
+    const round = useRoundStore.getState().startRound();
+    expect(round?.games.map((g) => g.gameId)).toEqual(['skins']); // the draft's own games by default
+    await flush();
+    expect(await AsyncStorage.getItem(STORAGE_KEYS.draft)).toBeNull();
+    expect(useRoundStore.getState().draft.games).toEqual([]);
+  });
+
+  it('drops a tee time from more than 12 hours ago, unknown games and broken pieces', () => {
+    const now = new Date(2026, 9, 14, 12, 0);
+    const d = readDraft({ course: cedarRidge, teeBoxId: 'gone', players: [cody, { nope: true }], games: [skins, { gameId: 'darts', config: {} }], settings: { teeTime: '2026-10-13T08:30' } }, now);
+    expect(d.teeBoxId).toBe(cedarRidge.teeBoxes[0]!.id);
+    expect(d.players.map((p) => p.name)).toEqual(['Cody']);
+    expect(d.games.map((g) => g.gameId)).toEqual(['skins']);
+    expect(d.settings.teeTime).toBeUndefined();
+    expect(readDraft({ settings: { teeTime: '2026-10-14T08:30' } }, now).settings.teeTime).toBe('2026-10-14T08:30'); // this morning stays
+    expect(readDraft('garbage', now).course).toBeNull();
+  });
+
+  it('when someone leaves the group, games keep only the seats still in the round', () => {
+    const match = { gameId: 'match-play', config: {}, basis: 'net' as const, playerIds: ['cody', 'marcus'] };
+    const vegas = { gameId: 'vegas', config: { teams: ['cody', 'marcus'] }, basis: 'net' as const };
+    const [m, v] = seatsFor([match, vegas], [cody]);
+    expect(m!.playerIds).toEqual(['cody']);
+    expect(v!.config.teams).toEqual(['cody']);
   });
 });

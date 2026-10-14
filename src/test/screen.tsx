@@ -14,7 +14,7 @@ export async function resetStores(): Promise<void> {
   await AsyncStorage.clear();
   useProfileStore.setState({ profiles: [], groups: [] });
   useHistoryStore.setState({ entries: [] });
-  useRoundStore.setState({ round: null, undo: [], draft: { course: null, teeBoxId: null, players: [], settings: { ...DEFAULT_SETTINGS } } });
+  useRoundStore.setState({ round: null, undo: [], draft: { course: null, teeBoxId: null, players: [], settings: { ...DEFAULT_SETTINGS }, games: [] } });
   usePreferences.setState({ ...DEFAULT_PREFERENCES, onboarded: true, analytics: false, meProfileId: undefined, hydrated: true });
   // Local-only by default (as with no backend keys); account tests sign in explicitly.
   useAuthStore.setState({ status: 'disabled', sessionExpired: false, pendingSwitch: undefined, userId: undefined, email: undefined, method: undefined });

@@ -84,7 +84,7 @@ async function newPhone() {
   useProfileStore.setState({ profiles: [], groups: [] });
   useHistoryStore.setState({ entries: [] });
   useCourseStore.setState({ userCourses: [] });
-  useRoundStore.setState({ round: null, undo: [], draft: { course: null, teeBoxId: null, players: [], settings: { ...DEFAULT_SETTINGS } } });
+  useRoundStore.setState({ round: null, undo: [], draft: { course: null, teeBoxId: null, players: [], settings: { ...DEFAULT_SETTINGS }, games: [] } });
   usePreferences.setState({ ...DEFAULT_PREFERENCES, meProfileId: undefined, homeArea: undefined, bag: undefined, hydrated: true });
 }
 

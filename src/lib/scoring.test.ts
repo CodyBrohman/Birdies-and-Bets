@@ -16,7 +16,9 @@ import {
   relationToPar,
   scoreOn,
   scoreOptions,
+  stepScore,
   totals,
+  unscoredHoles,
 } from './scoring';
 import { cedarRidge, foursome, throughSix } from './__fixtures__/cedarRidge';
 import type { HoleResult } from '../types/round';
@@ -149,5 +151,33 @@ describe('play order', () => {
   it('counts played holes regardless of number', () => {
     const order = playOrder(holes, 10);
     expect(holesPlayed([{ holeNumber: 10, scores: { a: 4 } }, { holeNumber: 1, scores: {} }, { holeNumber: 3, scores: { a: 5 } }], order)).toBe(2);
+  });
+});
+
+describe('stepScore (the −/+ buttons)', () => {
+  it('from no score: − is a birdie, + a bogey', () => {
+    expect(stepScore(undefined, -1, 4, 9)).toBe(3);
+    expect(stepScore(undefined, 1, 4, 9)).toBe(5);
+    expect(stepScore(null, 1, 5, 10)).toBe(6); // from a pick-up too
+  });
+
+  it('then one stroke at a time, never below 1 or above the cap', () => {
+    expect(stepScore(5, 1, 4, 9)).toBe(6);
+    expect(stepScore(3, -1, 4, 9)).toBe(2);
+    expect(stepScore(1, -1, 3, 8)).toBe(1);
+    expect(stepScore(9, 1, 4, 9)).toBe(9);
+    expect(stepScore(undefined, -1, 1, 5)).toBe(1);
+  });
+});
+
+describe('unscoredHoles', () => {
+  it('lists holes where anyone is missing a score; a pick-up counts as a score', () => {
+    const holes = cedarRidge.holes.slice(0, 4);
+    const results: HoleResult[] = [
+      { holeNumber: 1, scores: { a: 4, b: 5 } },
+      { holeNumber: 2, scores: { a: 4 } },
+      { holeNumber: 3, scores: { a: null, b: 3 } },
+    ];
+    expect(unscoredHoles(results, holes, ['a', 'b'])).toEqual([2, 4]);
   });
 });

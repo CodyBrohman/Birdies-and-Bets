@@ -10,7 +10,7 @@ jest.mock('@react-native-async-storage/async-storage', () => require('@react-nat
 beforeEach(async () => {
   await AsyncStorage.clear();
   useProfileStore.setState({ profiles: [], groups: [] });
-  useRoundStore.setState({ round: null, draft: { course: null, teeBoxId: null, players: [], settings: { ...DEFAULT_SETTINGS } } });
+  useRoundStore.setState({ round: null, draft: { course: null, teeBoxId: null, players: [], settings: { ...DEFAULT_SETTINGS }, games: [] } });
 });
 
 const draftPlayers = () => useRoundStore.getState().draft.players;

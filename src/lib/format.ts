@@ -15,13 +15,19 @@ export function formatSigned(n: number): string {
 }
 
 /** Parse "8.2" or "+1.8" (plus handicap → negative index). Undefined when blank or invalid. */
+/** Handicap indexes run from +10.0 (stored as −10) to 54.0 under the World Handicap System. */
+export const INDEX_MIN = -10;
+export const INDEX_MAX = 54;
+
+/** Parse an index as typed ("8.2", "+1.8" for a plus handicap), clamped to the WHS range and rounded to one decimal. */
 export function parseIndex(raw: string): number | undefined {
   const s = raw.trim();
   if (!s) return undefined;
   const plus = s.startsWith('+');
   const n = Number(s.replace(/^\+/, ''));
   if (!Number.isFinite(n)) return undefined;
-  return plus ? -n : n;
+  const value = plus ? -n : n;
+  return Math.round(Math.min(INDEX_MAX, Math.max(INDEX_MIN, value)) * 10) / 10;
 }
 
 /** Handicap index as entered: "8.2", "+1.8" for plus handicaps. */
@@ -62,6 +68,12 @@ export function formatMatchStatus(opts: {
 /** "1 skin" / "3 skins". */
 export function plural(n: number, singular: string, pluralForm: string = `${singular}s`): string {
   return `${n} ${n === 1 ? singular : pluralForm}`;
+}
+
+/** A standings line for a player's own row: "Marcus · in the seat · 2×" → "in the seat · 2×". The name and the separator after it go. */
+export function withoutName(text: string, name: string): string {
+  const rest = name && text.startsWith(name) ? text.slice(name.length) : text;
+  return rest.replace(/^[\s·:,–-]+/, '');
 }
 
 /** Join display parts with the middle-dot convention used throughout: "Blue tees · 4 players · 3 games". */

@@ -2,14 +2,18 @@ import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Avatar, Button, Card, Chip, IconButton, IconTile, ListRow, Screen, ScreenHeader, SectionLabel, Sheet, Text, TextField } from '@/components/ui';
+import { Avatar, Button, Card, Chip, confirm, IconButton, IconTile, ListRow, Screen, ScreenHeader, SectionLabel, Sheet, Text, TextField } from '@/components/ui';
 import { AddFriendSheet } from '@/components/AddFriendSheet';
 import { useTheme } from '@/theme';
-import { groupAsCrew, inCrew, rematch, toggleCrew, useHistoryStore, useMe, useProfileStore, useRoundStore } from '@/store';
+import { draftIsDirty, groupAsCrew, inCrew, rematch, toggleCrew, useHistoryStore, useMe, useProfileStore, useRoundStore } from '@/store';
 import type { HistoryEntry, Round } from '@/types';
 import { formatIndex, formatShortDate, joinMeta } from '@/lib/format';
 import { groupMembers, MAX_GROUP_SIZE, MAX_PROFILE_NAME, MIN_GROUP_SIZE } from '@/lib/profiles';
 import { dayLabel, formatSlot, parseTeeTime } from '@/lib/teeTime';
+
+/** Rematch and a group's Play fill New round: ask first when something is already set up there. */
+const confirmReplaceDraft = () =>
+  confirm({ title: 'Replace the round you are setting up?', message: 'Its course, players and games in New round are replaced.', confirmLabel: 'Replace' });
 
 type GroupDraft = { id?: string; name: string; memberIds: string[] };
 
@@ -84,7 +88,8 @@ export default function FriendsScreen() {
             primary={{ label: 'View round', onPress: () => router.push({ pathname: '/history/[id]', params: { id: e.summary.id } }) }}
             secondary={{
               label: 'Rematch',
-              onPress: () => {
+              onPress: async () => {
+                if (draftIsDirty() && !(await confirmReplaceDraft())) return;
                 rematch(e.round!);
                 router.navigate('/bet');
               },
@@ -156,7 +161,8 @@ export default function FriendsScreen() {
                         label="Play"
                         size="sm"
                         variant="tinted"
-                        onPress={() => {
+                        onPress={async () => {
+                          if (draftIsDirty() && !(await confirmReplaceDraft())) return;
                           groupAsCrew(g.memberIds);
                           router.navigate('/bet');
                         }}
@@ -200,7 +206,9 @@ export default function FriendsScreen() {
                 label="Delete group"
                 variant="secondary"
                 destructive
-                onPress={() => {
+                onPress={async () => {
+                  const ok = await confirm({ title: `Delete ${group.name || 'this group'}?`, message: 'The players stay saved; only the group goes.', confirmLabel: 'Delete group', destructive: true });
+                  if (!ok) return;
                   removeGroup(group.id!);
                   setGroup(null);
                 }}

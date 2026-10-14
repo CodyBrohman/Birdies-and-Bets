@@ -98,8 +98,12 @@ export interface RoundSummary {
   holeCount: HoleCount;
   gameNames: string[];
   players: RoundSummaryPlayer[];
-  /** Featured on Home: lowest net when anyone has strokes, else lowest gross. */
+  /** Featured on Home: best to par (net when anyone has strokes, else gross) over the holes each player finished. */
   leaderId: PlayerId;
+  /** Who won the round outright: set only with two or more players and no tie at the top. Absent on older summaries. */
+  winnerId?: PlayerId;
+  /** Holes with at least one score. Absent on older summaries. */
+  holesScored?: number;
   /** "+12 pts", "38 pts", "+4" — precomputed so Home stays dumb. */
   resultLabel: string;
 }

@@ -1,5 +1,5 @@
 import { nextAfter, paySide, positionOf, progressionFor, remainingAfter, sideName, sideOutcome, sidesOf, sidesReady, stakeOf, type GameMode, type GameState, type Settlement, type SideOutcome, type Standings } from './types';
-import { formatMatchStatus } from '../lib/format';
+import { formatMatchStatus, plural } from '../lib/format';
 
 interface MatchState extends GameState {
   /** Per hole: which side won. */
@@ -100,8 +100,8 @@ export const matchPlay: GameMode = {
       subline,
       lines: ready
         ? [
-            { playerId: sides.a[0], text: `${nameA} · ${won('a')} holes won`, value: state.lead },
-            { playerId: sides.b[0], text: `${nameB} · ${won('b')} holes won`, value: -state.lead },
+            { playerId: sides.a[0], text: `${nameA} · ${plural(won('a'), 'hole')} won`, value: state.lead },
+            { playerId: sides.b[0], text: `${nameB} · ${plural(won('b'), 'hole')} won`, value: -state.lead },
           ]
         : ctx.participants.map((p) => ({ playerId: p.id, text: p.name, value: 0 })),
       progression,

@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Avatar, Badge, Button, Card, Chip, IconTile, ListRow, Screen, ScreenHeader, SectionLabel, Segmented, Sheet, Text, type IoniconName, Pressable } from '@/components/ui';
+import { Avatar, Badge, Button, Card, Chip, confirm, IconTile, ListRow, Screen, ScreenHeader, SectionLabel, Segmented, Sheet, Text, type IoniconName, Pressable } from '@/components/ui';
 import { AddFriendSheet } from '@/components/AddFriendSheet';
 import { GameConfigSheet } from '@/components/games';
 import { RoundSettingsSheet } from '@/components/round';
@@ -10,7 +10,7 @@ import { coursePar } from '@/components/courseArt';
 import { useTheme } from '@/theme';
 import { ensureMeInCrew, fitReason, inCrew, MIN_PLAYERS, newActiveGame, participantCountOf, sidesLabel, toggleCrew, useGameCatalog, useMe, useRoundStore } from '@/store';
 import type { ActiveGame, GameMode, Nine, PlayerProfile } from '@/types';
-import { holesInPlay } from '@/lib/handicap';
+import { holesInPlay, teeHasRating } from '@/lib/handicap';
 import { formatIndex, joinMeta, plural } from '@/lib/format';
 import { TEE_SLOTS, dayLabel, formatSlot, parseTeeTime, teeDays, teeTimeValue } from '@/lib/teeTime';
 import { trackRoundDiscarded, trackRoundStarted } from '@/services';
@@ -42,14 +42,16 @@ export default function BetScreen() {
   const discardRound = useRoundStore((s) => s.discardRound);
   const { me, friends } = useMe();
 
-  const [games, setGames] = useState<ActiveGame[]>([]);
+  // Picked games live in the draft, so they survive a restart with the course and players.
+  const games = useRoundStore((s) => s.draft.games);
+  const setGames = useRoundStore((s) => s.setDraftGames);
+  const [dayChoice, setDayChoice] = useState<string | null>(null);
   const [filter, setFilter] = useState<GameFilter>('all');
   const [configFor, setConfigFor] = useState<string | null>(null);
   const [rulesFor, setRulesFor] = useState<GameMode | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [teeOpen, setTeeOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
-  const [confirmReplace, setConfirmReplace] = useState(false);
   const [full, setFull] = useState(false);
 
   // The owner joins every new round by default.
@@ -69,7 +71,7 @@ export default function BetScreen() {
   const now = new Date();
   const days = teeDays(now);
   const picked = parseTeeTime(settings.teeTime);
-  const day = picked?.day ?? days[0]!.key;
+  const day = picked?.day ?? dayChoice ?? days[0]!.key;
   const setTee = (d: string, slot: string | undefined) => setDraftSettings({ teeTime: slot ? teeTimeValue(d, slot) : undefined });
 
   const crew: PlayerProfile[] = useMemo(() => [...(me ? [me] : []), ...friends], [me, friends]);
@@ -109,16 +111,17 @@ export default function BetScreen() {
 
   const blocker = !course ? 'Pick a course to get started.' : players.length < MIN_PLAYERS ? 'Add yourself to the round.' : incomplete.length ? `Pick players for ${incomplete.map((g) => catalog.find((m) => m.id === g.gameId)?.name).join(', ')}.` : null;
 
-  const start = () => {
+  const start = async () => {
     if (blocker) return;
     if (live) {
-      setConfirmReplace(true);
-      return;
+      const ok = await confirm({ title: 'End the round in progress?', message: `Your round at ${live.course.name} is still going. Starting a new one discards it.`, confirmLabel: 'Discard and start', destructive: true });
+      if (!ok) return;
+      trackRoundDiscarded(live);
+      discardRound();
     }
     const r = startRound(fitting);
     if (r) {
       trackRoundStarted(r);
-      setGames([]);
       router.push('/round/play');
     }
   };
@@ -166,8 +169,14 @@ export default function BetScreen() {
           </View>
           {course ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[4], flexWrap: 'wrap' }}>
-              <HeroFact icon="calendar-outline" text={dayLabel(day, now)} />
-              <HeroFact icon="time-outline" text={picked ? formatSlot(picked.slot) : 'Any time'} />
+              {picked ? (
+                <>
+                  <HeroFact icon="calendar-outline" text={dayLabel(picked.day, now)} />
+                  <HeroFact icon="time-outline" text={formatSlot(picked.slot)} />
+                </>
+              ) : (
+                <HeroFact icon="time-outline" text="No tee time" />
+              )}
               <Pressable accessibilityRole="button" accessibilityLabel={`Tees: ${tee?.name ?? 'pick'}. Change`} onPress={() => setTeeOpen(true)} hitSlop={10} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
                 <HeroFact icon="flag-outline" text={tee ? `${tee.name} tees` : 'Pick tees'} chevron />
               </Pressable>
@@ -186,13 +195,18 @@ export default function BetScreen() {
               {blocker}
             </Text>
           ) : null}
+          {course && tee && !teeHasRating(tee) && players.some((p) => p.handicapIndex != null) ? (
+            <Text step="caption" tabular={false} style={{ color: c.onHeroSoft }}>
+              {`${tee.name} tees have no rating or slope, so handicaps can't be worked out: everyone plays off scratch. Add them by editing the course.`}
+            </Text>
+          ) : null}
         </Card>
 
         {/* Tee time */}
         <SectionLabel style={{ marginTop: layout.section - layout.stack }}>Tee time</SectionLabel>
         <View style={{ flexDirection: 'row', gap: space[2] }}>
           {days.map((d) => (
-            <Chip key={d.key} label={d.label} selected={d.key === day} onPress={() => setTee(d.key, picked?.slot ?? TEE_SLOTS[1])} />
+            <Chip key={d.key} label={d.label} selected={d.key === day} onPress={() => (picked ? setTee(d.key, picked.slot) : setDayChoice(d.key))} />
           ))}
         </View>
         <Card style={{ gap: space[3] }}>
@@ -364,25 +378,6 @@ export default function BetScreen() {
         </View>
       </Sheet>
 
-      <Sheet visible={confirmReplace} onClose={() => setConfirmReplace(false)} title="Start a new round?" subtitle="The round in play will be discarded.">
-        <View style={{ gap: space[2] }}>
-          <Button
-            label="Discard and start"
-            onPress={() => {
-              if (live) trackRoundDiscarded(live);
-              discardRound();
-              setConfirmReplace(false);
-              const r = startRound(fitting);
-              if (r) {
-                trackRoundStarted(r);
-                setGames([]);
-                router.push('/round/play');
-              }
-            }}
-          />
-          <Button label="Keep playing" variant="secondary" onPress={() => setConfirmReplace(false)} />
-        </View>
-      </Sheet>
     </Screen>
   );
 }

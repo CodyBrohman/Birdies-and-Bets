@@ -69,12 +69,12 @@ export default function SummaryScreen() {
           <>
             <SectionLabel style={{ marginTop: space[3] }}>Game results</SectionLabel>
             <GameResultsList results={results} />
-            {round.holeResults.some((r) => r.note) ? (
-              <>
-                <SectionLabel style={{ marginTop: space[3] }}>Notes</SectionLabel>
-                <HoleNotesList results={round.holeResults} order={order} />
-              </>
-            ) : null}
+          </>
+        ) : null}
+        {round.holeResults.some((r) => r.note) ? (
+          <>
+            <SectionLabel style={{ marginTop: space[3] }}>Notes</SectionLabel>
+            <HoleNotesList results={round.holeResults} order={order} />
           </>
         ) : null}
 

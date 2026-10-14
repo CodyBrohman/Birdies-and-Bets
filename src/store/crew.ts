@@ -60,9 +60,17 @@ export function ensureMeInCrew(me: PlayerProfile | undefined): void {
   setDraftPlayers([playerFromProfile(me, newId('p'), draft.teeBoxId ?? '')]);
 }
 
+/** Whether the round being set up holds anything besides the owner: a course, other players or games. */
+export function draftIsDirty(): boolean {
+  const { draft } = useRoundStore.getState();
+  const meId = usePreferences.getState().meProfileId;
+  return !!draft.course || draft.games.length > 0 || draft.players.some((p) => p.name.trim() && (!meId || p.profileId !== meId));
+}
+
 /** Line up the same course, tees and people as a past round (Friends "Rematch"). */
 export function rematch(round: Round): void {
-  const { setDraftCourse, setDraftPlayers } = useRoundStore.getState();
+  const { setDraftCourse, setDraftPlayers, setDraftGames } = useRoundStore.getState();
+  setDraftGames([]);
   const course = useCourseStore.getState().byId(round.course.id) ?? round.course;
   const teeBoxId = course.teeBoxes.some((t) => t.id === round.teeBoxId) ? round.teeBoxId : course.teeBoxes[0]?.id;
   if (!teeBoxId) return;

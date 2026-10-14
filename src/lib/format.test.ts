@@ -1,4 +1,4 @@
-import { describeHoleRow, describeProgression, describeScore, describeStandingsLine, describeTotalsRow, formatIndex, formatMatchStatus, formatShortDate, formatSigned, formatStake, formatToPar, initials, isSymbolLabel, joinMeta, plural, scoreChipLabel } from './format';
+import { describeHoleRow, describeProgression, describeScore, describeStandingsLine, describeTotalsRow, formatIndex, formatMatchStatus, formatShortDate, formatSigned, formatStake, formatToPar, initials, isSymbolLabel, joinMeta, parseIndex, plural, scoreChipLabel, withoutName } from './format';
 
 describe('formatToPar', () => {
   it('uses E and a true minus sign', () => {
@@ -91,5 +91,30 @@ describe('VoiceOver descriptions', () => {
     expect(describeStandingsLine('Cody & Dan · 3 holes won', 'Cody')).toBe('Cody & Dan, 3 holes won');
     expect(describeProgression([{ holeNumber: 1, tone: 'a' }, { holeNumber: 2, tone: 'half' }, { holeNumber: 3, tone: 'b' }, { holeNumber: 4, tone: 'none' }], 'Cody', 'Marcus')).toBe('Holes: 1 Cody, 2 halved, 3 Marcus');
     expect(describeProgression([{ holeNumber: 1, tone: 'win' }], 'Cody', 'Marcus')).toBeNull();
+  });
+});
+
+describe('withoutName', () => {
+  it("drops the player's own name and the separator after it", () => {
+    expect(withoutName('Marcus · in the seat 2×', 'Marcus')).toBe('in the seat 2×');
+    expect(withoutName('Jay · 3 holes won', 'Jay')).toBe('3 holes won');
+    expect(withoutName('Someone else · 2 up', 'Jay')).toBe('Someone else · 2 up');
+  });
+
+  it('treats names as text, so brackets and plus signs never break a row', () => {
+    expect(withoutName('Bob (Jr · 2 skins', 'Bob (Jr')).toBe('2 skins');
+    expect(withoutName('+Al · 38 (+3)', '+Al')).toBe('38 (+3)');
+  });
+});
+
+describe('parseIndex', () => {
+  it('reads plus handicaps, rounds to one decimal and keeps to the WHS range', () => {
+    expect(parseIndex('12.4')).toBe(12.4);
+    expect(parseIndex('+1.8')).toBe(-1.8);
+    expect(parseIndex('12.46')).toBe(12.5);
+    expect(parseIndex('99')).toBe(54);
+    expect(parseIndex('+15')).toBe(-10);
+    expect(parseIndex('')).toBeUndefined();
+    expect(parseIndex('abc')).toBeUndefined();
   });
 });

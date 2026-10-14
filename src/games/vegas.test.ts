@@ -25,6 +25,17 @@ describe('Vegas', () => {
     expect(run.settlement?.entries[0]).toEqual({ from: 'marcus', to: 'cody', amount: 29, reason: 'Vegas · 29 pts × 1' });
   });
 
+  it('waits for every score on a hole: a score not entered yet is not a pick-up', () => {
+    // Hole 2: Dan has no score yet. Only hole 1 counts (46 v 55 → A +9).
+    const results = resultsFrom({ cody: [4, 4], dan: [6], marcus: [5, 5], priya: [5, 6] });
+    const run = runGame(makeRound({ results }), teams(), vegas);
+    expect(run.standings.headline).toBe('Cody & Dan +9 thru 1');
+    expect(run.standings.subline).toBe('Cody & Dan vs Marcus & Priya · hole 2 needs every score');
+    // A real pick-up (null) still counts as 10. Hole 2 (par 5): Cody 5 & Dan picked up = 105 v 56 → B +49, so B leads by 40.
+    const picked = resultsFrom({ cody: [4, 5], dan: [6, null], marcus: [5, 5], priya: [5, 6] });
+    expect(runGame(makeRound({ results: picked }), teams(), vegas).standings.headline).toBe('Marcus & Priya +40 thru 2');
+  });
+
   it('with flip off, the birdie does not change the other number', () => {
     const results = resultsFrom({ cody: [4, 4], dan: [6, 5], marcus: [5, 5], priya: [5, 6] });
     const run = runGame(makeRound({ results }), teams({ flip: false }), vegas);

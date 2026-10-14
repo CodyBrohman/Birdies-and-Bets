@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Avatar, Badge, Button, Card, IconButton, LivePill, Screen, Sheet, Text, TextField, Pressable } from '@/components/ui';
+import { ask, Avatar, Badge, Button, Card, confirm, IconButton, LivePill, Screen, Sheet, Text, TextField, Pressable } from '@/components/ui';
 import { NineCard } from '@/components/scorecard';
 import { HoleInputCard, missingInputs } from '@/components/games';
 import { haptic, useTheme } from '@/theme';
 import { MAX_NOTE_LENGTH, useGameRuns, useHandicaps, useMe, usePlayOrder, useRound, useRoundStore } from '@/store';
 import type { GrossScore, Player, PlayerScores, Round } from '@/types';
-import { backNine, frontNine, holePosition, holesPlayed, nextHoleNumber, prevHoleNumber, scoreOn, scoreOptions, totals } from '@/lib/scoring';
+import { backNine, frontNine, holePosition, holesPlayed, nextHoleNumber, prevHoleNumber, scoreOn, scoreOptions, stepScore, totals, unscoredHoles } from '@/lib/scoring';
 import { formatIndex, formatToPar, joinMeta, plural } from '@/lib/format';
 import { dayLabel, formatSlot, parseTeeTime } from '@/lib/teeTime';
 
@@ -62,9 +62,12 @@ export default function PlayScreen() {
 
   const played = holesPlayed(round.holeResults, order);
   const coursePar = order.reduce((sum, h) => sum + h.par, 0);
-  const mine = round.players.find((p) => me && p.profileId === me.id) ?? round.players[0];
-  const myTotals = mine ? totals(round.holeResults, order, mine.id, 'gross') : null;
-  const isMe = (p: Player) => p.id === mine?.id && !!me && p.profileId === me.id;
+  // "You" only when the phone's owner is playing; otherwise the card features the first player, by name.
+  const mine = round.players.find((p) => me && p.profileId === me.id);
+  const featured = mine ?? round.players[0];
+  const myTotals = featured ? totals(round.holeResults, order, featured.id, 'gross') : null;
+  const isMe = (p: Player) => !!mine && p.id === mine.id;
+  const featuredLabel = mine ? 'Your score' : `${featured?.name.trim().split(/\s+/)[0] ?? 'Score'}`;
 
   // Games that need more than strokes on this hole, with their saved answers.
   const inputGames = runs.filter((r) => (r.mode.holeInputs?.length ?? 0) > 0);
@@ -88,14 +91,19 @@ export default function PlayScreen() {
   const nameOf = (id: string) => round.players.find((p) => p.id === id)?.name ?? 'Player';
   const describe = (id: string, score: GrossScore | undefined) => `${nameOf(id)} ${score === null ? 'pick up' : score == null ? 'blank' : score}`;
 
-  // Stepper: blank (or picked up) starts at par on the first tap, then moves one stroke at a time.
+  // Stepper: from no score, − is a birdie and + a bogey (tap the number for par); then one stroke at a time.
   const maxScore = Math.max(...scoreOptions(hole.par));
-  const step = (playerId: string, delta: number) => {
+  const step = (playerId: string, delta: 1 | -1) => {
     const saved = scores[playerId];
-    const value = saved == null ? hole.par : Math.max(1, Math.min(maxScore, saved + delta));
+    const value = stepScore(saved, delta, hole.par, maxScore);
     if (saved === value) return;
     haptic.light();
     change(playerId, value);
+  };
+  const setPar = (playerId: string) => {
+    if (scores[playerId] === hole.par) return;
+    haptic.light();
+    change(playerId, hole.par);
   };
 
   // "Everyone par": fill only the players who have no score yet.
@@ -127,11 +135,30 @@ export default function PlayScreen() {
     setNoteOpen(false);
   };
 
-  const goNext = () => {
+  const goNext = async () => {
+    // An open game prompt (a greenie, the wolf's pick) is easy to miss: offer to answer it, or skip for now.
+    if (unanswered.length > 0 && round.players.every((p) => p.id in scores)) {
+      const choice = await ask(`${unanswered.map((r) => r.mode.name).join(' and ')} not answered on hole ${holeNumber}`, 'You can come back to this hole and answer it later.', [
+        { label: 'Answer now', value: 'answer', style: 'cancel' },
+        { label: 'Skip for now', value: 'skip' },
+      ]);
+      if (choice !== 'skip') return;
+    }
     if (Object.keys(scores).length > 0) recordHole(holeNumber, scores);
     haptic.light();
-    if (next == null) router.push('/round/summary');
-    else setCurrentHole(next);
+    if (next == null) {
+      const missing = unscoredHoles(round.holeResults, order, round.players.map((p) => p.id));
+      if (missing.length > 0) {
+        const ok = await confirm({
+          title: missing.length === 1 ? `Hole ${missing[0]} has missing scores` : `${missing.length} holes have missing scores`,
+          message: missing.length > 1 ? `Holes ${missing.join(', ')}. Finish anyway? Missing scores count as not played.` : 'Finish anyway? Missing scores count as not played.',
+          confirmLabel: 'Finish round',
+          cancelLabel: 'Keep scoring',
+        });
+        if (!ok) return;
+      }
+      router.push('/round/summary');
+    } else setCurrentHole(next);
   };
 
   const front = frontNine(order).sort((a, b) => a.number - b.number);
@@ -198,7 +225,7 @@ export default function PlayScreen() {
           </View>
           <View style={{ flexDirection: 'row' }}>
             {[
-              { label: 'Your score', value: myTotals?.holesScored ? String(myTotals.strokes) : '–' },
+              { label: featuredLabel, value: myTotals?.holesScored ? String(myTotals.strokes) : '–' },
               { label: 'To par', value: myTotals?.holesScored ? formatToPar(myTotals.toPar) : '–' },
               { label: 'Holes played', value: String(played), of: `/${order.length}` },
             ].map((s, i) => (
@@ -235,7 +262,7 @@ export default function PlayScreen() {
         >
           {order.map((h) => {
             const current = h.number === holeNumber;
-            const s = mine ? scoreOn(round.holeResults, mine.id, h.number, 'gross') : undefined;
+            const s = featured ? scoreOn(round.holeResults, featured.id, h.number, 'gross') : undefined;
             const scored = s !== undefined;
             return (
               <Pressable
@@ -316,14 +343,14 @@ export default function PlayScreen() {
                   style={{ flexDirection: 'row', alignItems: 'center', gap: space[2] }}
                 >
                   <StepButton icon="remove" label={`${p.name} one fewer`} disabled={saved != null && saved <= 1} onPress={() => step(p.id, -1)} testID={`stepper-minus-${i}`} />
-                  <View style={{ minWidth: 40, alignItems: 'center' }}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={`${p.name}: par ${hole.par}`} onPress={() => setPar(p.id)} hitSlop={6} testID={`score-${i}`} style={{ minWidth: 40, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}>
                     <Text step="total" style={{ fontSize: 20, lineHeight: 24, color: saved === undefined ? c.textTertiary : c.textPrimary }}>
-                      {shown}
+                      {saved === undefined ? hole.par : shown}
                     </Text>
                     <Text step="overline" tone="tertiary" style={{ fontSize: 8, lineHeight: 10 }}>
-                      Strokes
+                      {saved === undefined ? 'Tap for par' : 'Strokes'}
                     </Text>
-                  </View>
+                  </Pressable>
                   <StepButton icon="add" label={`${p.name} one more`} accent disabled={saved != null && saved >= maxScore} onPress={() => step(p.id, 1)} testID={`stepper-plus-${i}`} />
                 </View>
               </View>
@@ -364,11 +391,6 @@ export default function PlayScreen() {
           const participants = activeGame?.playerIds ? round.players.filter((pl) => activeGame.playerIds!.includes(pl.id)) : round.players;
           return <HoleInputCard key={r.gameId} mode={r.mode} participants={participants} answers={answersFor(r.gameId)} onAnswer={(k, v) => answer(r.gameId, k, v)} />;
         })}
-        {unanswered.length > 0 && round.players.every((p) => p.id in scores) ? (
-          <Text step="label" tone="secondary" align="center">
-            Answer the game prompts before you move on.
-          </Text>
-        ) : null}
 
         {/* Scorecard overview */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: space[3] }}>
@@ -386,7 +408,7 @@ export default function PlayScreen() {
         {/* Previous / Next */}
         <View style={{ flexDirection: 'row', gap: space[3], marginTop: space[4] }}>
           <Button label="Previous" variant="secondary" icon="arrow-back" disabled={prev == null} onPress={() => prev != null && setCurrentHole(prev)} style={{ flex: 1 }} />
-          <Button label={next == null ? 'Finish round' : 'Next hole'} icon={next == null ? 'flag' : 'arrow-forward'} onPress={goNext} style={{ flex: 1.4 }} testID="next-hole" />
+          <Button label={next == null ? 'Finish round' : 'Next hole'} icon={next == null ? 'flag' : 'arrow-forward'} onPress={() => void goNext()} style={{ flex: 1.4 }} testID="next-hole" />
         </View>
       </ScrollView>
 

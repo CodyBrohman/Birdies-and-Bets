@@ -4,13 +4,12 @@ import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Avatar, AvatarStack, Button, Card, HeroCard, IconTile, Screen, SectionLabel, Sheet, Text, Pressable } from '@/components/ui';
 import { BrandMark } from '@/components/BrandMark';
+import { PastRoundCard } from '@/components/round';
 import { HERO_PHOTO, coursePhoto } from '@/components/courseArt';
 import { useTheme } from '@/theme';
 import { useHistoryInsights, usePlayOrder, usePreferences, useRoundStore, useMe } from '@/store';
 import { holePosition, holesPlayed } from '@/lib/scoring';
-import { formatIndex, formatShortDate, formatToPar, joinMeta, plural } from '@/lib/format';
-import { findMe, formatNet, type RoundInsight } from '@/lib/stats';
-import { stakeUnit } from '@/lib/history';
+import { formatIndex, joinMeta, plural } from '@/lib/format';
 import { analyticsAvailable } from '@/services';
 import type { PlayerProfile } from '@/types';
 
@@ -191,7 +190,7 @@ export default function Home() {
 
         {insights.length > 0 ? (
           <>
-            <SectionLabel trailing={<Text step="caption" tone="tertiary" tabular={false}>{plural(insights.length, 'round')}</Text>} style={{ marginTop: layout.section - layout.stack }}>
+            <SectionLabel trailing={<Text step="caption" tone="tertiary" tabular={false}>{plural(insights.length, 'round')}</Text>} action={insights.length > 5 ? { label: 'See all', onPress: () => router.push('/history') } : undefined} style={{ marginTop: layout.section - layout.stack }}>
               Recent rounds
             </SectionLabel>
             {insights.slice(0, 5).map((i) => (
@@ -221,35 +220,4 @@ function indexTrend(me: PlayerProfile | undefined): string {
   if (h.length < 2) return 'Looking sharp';
   const [prev, last] = [h[h.length - 2]!.index!, h[h.length - 1]!.index!];
   return last < prev ? 'Looking sharp' : last > prev ? 'Room to grow' : 'Holding steady';
-}
-
-/** Course and date, the featured player's gross with its to-par, and net points. */
-function PastRoundCard({ insight, me, onPress }: { insight: RoundInsight; me?: { id: string; name: string }; onPress: () => void }) {
-  const { space } = useTheme();
-  const { summary } = insight;
-  const featured = (me && findMe(insight, me)) ?? summary.players.find((p) => p.id === summary.leaderId) ?? summary.players[0];
-  const net = featured ? insight.netByPlayer[featured.id] : undefined;
-  const unit = stakeUnit(insight.stakeLabel);
-  const leaderName = summary.players.find((p) => p.id === summary.leaderId)?.name;
-  return (
-    <Card accessibilityLabel={`${summary.courseName}, ${formatShortDate(summary.completedAt)}`} onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
-      <IconTile icon="flag-outline" />
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text step="title" numberOfLines={1}>
-          {summary.courseName}
-        </Text>
-        <Text step="caption" tone="tertiary" tabular={false} numberOfLines={1}>
-          {joinMeta([formatShortDate(summary.completedAt), leaderName ? `${leaderName} won` : null, ...summary.gameNames])}
-        </Text>
-      </View>
-      {featured ? (
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text step="total">{featured.gross}</Text>
-          <Text step="caption" tone={featured.grossToPar < 0 ? 'accent' : featured.grossToPar > 0 ? 'goldText' : 'tertiary'}>
-            {net != null && net !== 0 ? `${formatNet(net)} ${unit}` : formatToPar(featured.grossToPar)}
-          </Text>
-        </View>
-      ) : null}
-    </Card>
-  );
 }

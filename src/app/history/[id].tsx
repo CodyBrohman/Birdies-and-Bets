@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { Avatar, Button, Card, Footer, Screen, SectionLabel, Segmented, Sheet, StatTile, Text } from '@/components/ui';
+import { Avatar, Button, Card, confirm, Footer, Screen, SectionLabel, Segmented, StatTile, Text } from '@/components/ui';
 import { SetupHeader } from '@/components/SetupHeader';
 import { goBackOr } from '@/components/navigation';
 import { ScoreTable } from '@/components/scorecard';
@@ -27,7 +27,6 @@ export default function HistoryDetailScreen() {
   const runs = useGameRuns(round);
   const anyHandicap = Object.values(handicaps).some((h) => h.playingHandicap !== 0);
   const [basis, setBasis] = useState<ScoringBasis>(anyHandicap ? 'net' : 'gross');
-  const [confirm, setConfirm] = useState(false);
   const netted = useMemo(() => netSettlements(runs.map((r) => r.settlement), round?.players.map((p) => p.id) ?? []), [runs, round]);
 
   if (!entry) {
@@ -40,12 +39,13 @@ export default function HistoryDetailScreen() {
   }
   const { summary } = entry;
   const leader = summary.players.find((p) => p.id === summary.leaderId) ?? summary.players[0];
+  // The "Low gross" tile really is the lowest gross (the leader is ranked on net when anyone gets strokes).
+  const lowGross = [...summary.players].sort((a, b) => a.grossToPar - b.grossToPar || a.gross - b.gross)[0];
   const results = runs.map((r) => ({ mode: r.mode, standings: r.standings }));
   const betting = runs.filter((r) => r.mode.category === 'betting');
 
   const del = () => {
     remove(summary.id);
-    setConfirm(false);
     goBackOr('/');
   };
 
@@ -55,7 +55,7 @@ export default function HistoryDetailScreen() {
       <ScrollView contentContainerStyle={{ gap: space[3], paddingBottom: space[4] }} showsVerticalScrollIndicator={false}>
         {leader ? (
           <View style={{ flexDirection: 'row', gap: space[2] }}>
-            <StatTile label="Low gross" value={leader.name.split(/\s+/)[0]!} sub={`${leader.gross} · ${formatToPar(leader.grossToPar)}`} subTone={leader.grossToPar < 0 ? 'accent' : leader.grossToPar > 0 ? 'goldText' : 'secondary'} />
+            {lowGross ? <StatTile label="Low gross" value={lowGross.name.split(/\s+/)[0]!} sub={`${lowGross.gross} · ${formatToPar(lowGross.grossToPar)}`} subTone={lowGross.grossToPar < 0 ? 'accent' : lowGross.grossToPar > 0 ? 'goldText' : 'secondary'} /> : null}
             <StatTile label="Net" value={formatNet(netted.totals[leader.id] ?? 0)} tone={(netted.totals[leader.id] ?? 0) > 0 ? 'accent' : (netted.totals[leader.id] ?? 0) < 0 ? 'goldText' : 'primary'} sub={round ? stakeUnit(round.settings.stakeLabel) : 'pts'} />
             <StatTile label="Games" value={String(summary.gameNames.length)} sub={summary.gameNames.length ? undefined : 'card only'} />
           </View>
@@ -82,12 +82,12 @@ export default function HistoryDetailScreen() {
               <>
                 <SectionLabel style={{ marginTop: space[3] }}>Game results</SectionLabel>
                 <GameResultsList results={results} />
-                {round.holeResults.some((r) => r.note) ? (
-                  <>
-                    <SectionLabel style={{ marginTop: space[3] }}>Notes</SectionLabel>
-                    <HoleNotesList results={round.holeResults} order={holes} />
-                  </>
-                ) : null}
+              </>
+            ) : null}
+            {round.holeResults.some((r) => r.note) ? (
+              <>
+                <SectionLabel style={{ marginTop: space[3] }}>Notes</SectionLabel>
+                <HoleNotesList results={round.holeResults} order={holes} />
               </>
             ) : null}
             {betting.length > 0 ? (
@@ -121,14 +121,15 @@ export default function HistoryDetailScreen() {
       </ScrollView>
       <Footer>
         {round ? <ShareCardButton round={round} holes={holes} handicaps={handicaps} results={results} completedAt={summary.completedAt} /> : null}
-        <Button label="Delete round" variant="secondary" onPress={() => setConfirm(true)} />
+        <Button
+          label="Delete round"
+          variant="secondary"
+          destructive
+          onPress={async () => {
+            if (await confirm({ title: 'Delete this round?', message: 'It is removed from your rounds and stats. This cannot be undone.', confirmLabel: 'Delete round', destructive: true })) del();
+          }}
+        />
       </Footer>
-      <Sheet visible={confirm} onClose={() => setConfirm(false)} title="Delete this round?" subtitle="This cannot be undone.">
-        <View style={{ gap: space[2] }}>
-          <Button label="Delete" onPress={del} />
-          <Button label="Keep it" variant="secondary" onPress={() => setConfirm(false)} />
-        </View>
-      </Sheet>
     </Screen>
   );
 }
