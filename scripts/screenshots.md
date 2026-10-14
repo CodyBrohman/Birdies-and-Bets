@@ -8,7 +8,7 @@ Golf first; the points tally is never the first picture.
 
 | File | Screen | On it |
 |---|---|---|
-| `01-round.png` | The round in progress | Hole 17 at Harbour Pines, four players with their scores, the hole chips, the standings line, and the Wolf prompt ("Alex Morgan is the wolf") |
+| `01-round.png` | The round in progress | Hole 17 at Heronmere, four players with their scores, the hole chips, the standings line, and the Wolf prompt ("Alex Morgan is the wolf") |
 | `02-scorecard.png` | A finished round's page | The paper scorecard in net (circles, squares, stroke dots, OUT / IN / TOT), then who won |
 | `03-standings.png` | Standings | "Maya Chen leads with 5 skins" with the hole-by-hole strip, then the Nassau (Alex v Sam) |
 | `04-new-round.png` | New round | Maple Hollow, White tees, 18 holes, a tee time tomorrow at 8:10, and the players with HCP and CH (Skins and a 2 v 2 Nassau are further down) |
@@ -20,7 +20,7 @@ Golf first; the points tally is never the first picture.
 `src/store/demo.ts`. A build made with `EXPO_PUBLIC_DEMO_DATA=1` writes it on first launch, only when nothing is
 saved yet:
 - five people, with Alex Morgan as you;
-- two made-up courses (Harbour Pines Golf Club, Maple Hollow Golf Club) on the bundled sample course's holes;
+- two made-up courses (Heronmere Golf Club, Maple Hollow Golf Club) on the bundled sample course's holes;
 - three finished rounds;
 - a round in progress on hole 17 of 18 with Skins, Nassau and Wolf;
 - a New round draft for tomorrow.
@@ -78,7 +78,8 @@ From Apple's Screenshot specifications (App Store Connect Help, 2026):
 
 Our own:
 - Show the app in use, with no real person's name and no real club's name or logo. The demo names and both course
-  names are made up.
+  names are made up. Search a new course name before using it: the first demo course was called Harbour Pines until
+  it turned out a Harbor Pines Golf Club exists (New Jersey).
 
 ## When a screen changes
 

@@ -103,10 +103,10 @@ export function demoData(now: Date = new Date()): Record<string, unknown> {
   const iso = (d: Date) => d.toISOString();
   const settings: RoundSettings = { holeCount: 18, allowance: 100, stakeLabel: 'points' };
 
-  const harbour = demoCourse('demo-harbour-pines', 'Harbour Pines Golf Club', 'Oakville, ON');
+  const heronmere = demoCourse('demo-heronmere', 'Heronmere Golf Club', 'Oakville, ON');
   const maple = demoCourse('demo-maple-hollow', 'Maple Hollow Golf Club', 'Caledon, ON');
-  const blue = harbour.teeBoxes[0]!.id;
-  const white = harbour.teeBoxes[1]?.id ?? blue;
+  const blue = heronmere.teeBoxes[0]!.id;
+  const white = heronmere.teeBoxes[1]?.id ?? blue;
 
   const profile = (id: string, name: string, index: number, earlier?: number): PlayerProfile => ({
     id,
@@ -143,7 +143,7 @@ export function demoData(now: Date = new Date()): Record<string, unknown> {
   const history: HistoryEntry[] = [
     finished(
       'r_demo_1',
-      harbour,
+      heronmere,
       [alex, maya, jordan, sam],
       (p) => [game('skins', { stake: 1 }), game('nassau', { format: 'teams', teams: [p[0]!.id, p[1]!.id] })],
       overPar(5, [0, 1, 2, 3], { 2: [0, 0, 0, 1], 5: [1, 0, 0, 0], 6: [0, 0, -1, 0], 8: [0, 0, -1, 0], 11: [1, 0, 0, 0], 13: [0, 1, 0, 0] }),
@@ -160,7 +160,7 @@ export function demoData(now: Date = new Date()): Record<string, unknown> {
     ),
     finished(
       'r_demo_3',
-      harbour,
+      heronmere,
       [alex, jordan],
       (p) => [game('match-play', {}, [p[0]!.id, p[1]!.id])],
       overPar(13, [0, 2], { 3: [1, 0], 16: [0, -1] }),
@@ -175,12 +175,12 @@ export function demoData(now: Date = new Date()): Record<string, unknown> {
     createdAt: iso(new Date(now.getTime() - 4 * 60 * 60 * 1000)),
     updatedAt: iso(now),
     status: 'in-progress',
-    course: harbour,
+    course: heronmere,
     teeBoxId: blue,
     players: livePlayers,
     games: [game('skins', { stake: 2 }), game('nassau', {}, [livePlayers[0]!.id, livePlayers[3]!.id]), game('wolf')],
     settings,
-    holeResults: scoreHoles(harbour, livePlayers, overPar(0, [0, 1, 2, 3]), 17, { alone: [2, 10, 14] }, { 6: 'Alex holed a 20-footer for birdie', 14: 'Jordan lost a ball in the creek' }),
+    holeResults: scoreHoles(heronmere, livePlayers, overPar(0, [0, 1, 2, 3]), 17, { alone: [2, 10, 14] }, { 6: 'Alex holed a 20-footer for birdie', 14: 'Jordan lost a ball in the creek' }),
     currentHole: 17,
   };
 
@@ -205,7 +205,7 @@ export function demoData(now: Date = new Date()): Record<string, unknown> {
     defaultAllowance: 100,
     onboarded: true,
     meProfileId: alex.id,
-    homeCourseId: harbour.id,
+    homeCourseId: heronmere.id,
     crashReports: false,
     analytics: false,
     // Saving the round in the screenshot flow is the fourth finished round: no rating prompt over the next screen.
@@ -217,8 +217,8 @@ export function demoData(now: Date = new Date()): Record<string, unknown> {
     [STORAGE_KEYS.preferences]: preferences,
     [STORAGE_KEYS.playerProfiles]: [alex, maya, jordan, sam, priya].map(lastPlayed),
     [STORAGE_KEYS.playerGroups]: [group],
-    [STORAGE_KEYS.userCourses]: [harbour, maple],
-    [STORAGE_KEYS.recentCourses]: [harbour.id, maple.id],
+    [STORAGE_KEYS.userCourses]: [heronmere, maple],
+    [STORAGE_KEYS.recentCourses]: [heronmere.id, maple.id],
     [STORAGE_KEYS.roundHistory]: history,
     [STORAGE_KEYS.activeRound]: live,
     [STORAGE_KEYS.draft]: draft,

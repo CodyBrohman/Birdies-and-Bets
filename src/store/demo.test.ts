@@ -36,7 +36,7 @@ describe('demo data', () => {
     expect(prefs.reviewPrompted).toBe(true);
     expect(useProfileStore.getState().profiles).toHaveLength(5);
     expect(useProfileStore.getState().groups).toHaveLength(1);
-    expect(useCourseStore.getState().byId(prefs.homeCourseId!)?.name).toBe('Harbour Pines Golf Club');
+    expect(useCourseStore.getState().byId(prefs.homeCourseId!)?.name).toBe('Heronmere Golf Club');
 
     const { round, draft, hydrateError } = useRoundStore.getState();
     expect(hydrateError).toBeNull();

@@ -28,7 +28,7 @@ fs.mkdirSync(OUT, { recursive: true });
   };
   const btn = (name) => page.getByRole('button', { name }).first();
 
-  // The round in progress (demo: hole 17 at Harbour Pines) and its standings.
+  // The round in progress (demo: hole 17 at Heronmere) and its standings.
   await open('/');
   const seeded = await page.evaluate(() => localStorage.getItem('bb:round:active') != null);
   if (!seeded) throw new Error('No demo data: start the web build with EXPO_PUBLIC_DEMO_DATA=1, then run this again.');
