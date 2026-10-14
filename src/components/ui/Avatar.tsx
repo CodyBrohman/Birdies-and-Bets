@@ -66,24 +66,3 @@ export function Avatar({ name, seat, size = 40, photoUri, ring, style }: AvatarP
     </View>
   );
 }
-
-/** Overlapping avatars with a "+n" disc. */
-export function AvatarStack({ names, max = 3, size = 30 }: { names: string[]; max?: number; size?: number }) {
-  const { c, w } = useTheme();
-  const shown = names.slice(0, max);
-  const extra = names.length - shown.length;
-  return (
-    <View style={{ flexDirection: 'row' }}>
-      {shown.map((n, i) => (
-        <Avatar key={`${n}-${i}`} name={n} size={size} ring style={{ marginLeft: i === 0 ? 0 : -size * 0.3 }} />
-      ))}
-      {extra > 0 ? (
-        <View style={{ width: size, height: size, borderRadius: 999, marginLeft: -size * 0.3, backgroundColor: c.neutralChip, borderWidth: 2, borderColor: c.surfaceRaised, alignItems: 'center', justifyContent: 'center' }}>
-          <Text step="caption2" style={{ color: c.textPrimary, fontWeight: w.semibold }}>
-            +{extra}
-          </Text>
-        </View>
-      ) : null}
-    </View>
-  );
-}

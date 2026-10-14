@@ -1,8 +1,7 @@
-import { useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { useMemo, useState, type ComponentProps } from 'react';
+import { TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Button, Card, Chip, confirm, Footer, IconButton, Screen, Segmented, Text, TextField, Toggle } from '@/components/ui';
-import { SetupHeader } from '@/components/SetupHeader';
+import { Button, confirm, FormRow, HeaderButton, ListItem, ListSection, ScrollScreen, SegmentedControl, Text } from '@/components/ui';
 import { goBackOr } from '@/components/navigation';
 import { useTheme } from '@/theme';
 import { useCourseStore, useRoundStore } from '@/store';
@@ -65,9 +64,9 @@ function draftFrom(course: Course, copy: boolean, name: string): EditorDraft {
 }
 
 /**
- * Manual course entry, editing and duplicating. Name, one to three tees with optional rating/slope, then par chips,
- * stroke index and optional yardages per hole. Every field validates as you type; Save is enabled only when the
- * card can be scored.
+ * Adding, editing and duplicating a course, as one grouped form: the name; one to three tees with optional rating and
+ * slope; 18 or 9 holes; then par, stroke index and (optionally) yardages for each hole. Every field checks itself as
+ * you type; Save is on only when the card can be scored.
  */
 export default function AddCourseScreen() {
   const router = useRouter();
@@ -113,7 +112,7 @@ export default function AddCourseScreen() {
   }, [name, allCourses, editing, source]);
 
   const canSave = name.trim().length > 0 && !nameTaken && !si.message && teesOk && yardsOk;
-  const blocker = !name.trim() ? 'Name the course to continue' : nameTaken ? 'A course with that name is already saved' : !teesOk ? 'Fix the tee details above' : si.message ? 'Fix the stroke indexes above' : !yardsOk ? 'Fix the yardages above' : null;
+  const blocker = !name.trim() ? 'Name the course to continue.' : nameTaken ? 'A course with that name is already saved.' : !teesOk ? 'Fix the tee details above.' : si.message ? 'Fix the stroke indexes above.' : !yardsOk ? 'Fix the yardages above.' : null;
 
   const setHole = (i: number, patch: Partial<HoleDraft>) => setHoles((hs) => hs.map((h, j) => (j === i ? { ...h, ...patch } : h)));
   const setTee = (i: number, patch: Partial<TeeDraft>) => setTees((ts) => ts.map((t, j) => (j === i ? { ...t, ...patch } : t)));
@@ -183,161 +182,176 @@ export default function AddCourseScreen() {
   };
 
   const title = editing ? 'Edit course' : copying ? 'Duplicate course' : 'Add course';
-  const parMeta = holeCount === 18 ? `Par ${totalPar} (${frontPar} / ${backPar})` : `Par ${totalPar}`;
+  const parMeta = holeCount === 18 ? `Par ${totalPar} (${frontPar} out, ${backPar} in)` : `Par ${totalPar}`;
+  const teeProblem = teeProblems.map((p) => [p.name, p.rating, p.slope].filter(Boolean).join('. ')).find(Boolean);
 
   return (
-    <Screen noBottomInset>
-      <SetupHeader title={title} meta={parMeta} fallback="/courses" />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ gap: space[3], paddingBottom: space[4] }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false}>
-          {copying && source ? (
-            <Text step="body" tone="secondary">
-              Copy of {source.name}.
-            </Text>
-          ) : null}
-          <TextField placeholder="Course name" value={name} onChangeText={setName} accessibilityLabel="Course name" autoCapitalize="words" style={nameTaken ? { borderColor: c.negative } : undefined} />
-          {nameTaken ? <Problem>A course with that name is already saved.</Problem> : null}
-
-          {tees.map((t, i) => {
-            const p = teeProblems[i];
-            return (
-              <View key={t.id} style={{ gap: space[1] }}>
-                <View style={{ flexDirection: 'row', gap: space[2], alignItems: 'center' }}>
-                  <TextField style={[{ flex: 1 }, p.name ? { borderColor: c.negative } : null]} placeholder="Tee" value={t.name} onChangeText={(v) => setTee(i, { name: v })} accessibilityLabel={`Tee ${i + 1} name`} autoCapitalize="words" />
-                  <TextField style={[{ width: 88 }, p.rating ? { borderColor: c.negative } : null]} placeholder="Rating" value={t.rating} onChangeText={(v) => setTee(i, { rating: v.replace(/[^0-9.]/g, '') })} keyboardType="decimal-pad" maxLength={5} accessibilityLabel={`Tee ${i + 1} rating`} />
-                  <TextField style={[{ width: 80 }, p.slope ? { borderColor: c.negative } : null]} placeholder="Slope" value={t.slope} onChangeText={(v) => setTee(i, { slope: v.replace(/[^0-9]/g, '') })} keyboardType="number-pad" maxLength={3} accessibilityLabel={`Tee ${i + 1} slope`} />
-                  {tees.length > 1 ? <IconButton icon="close" label={`Remove tee ${i + 1}`} variant="plain" size={40} onPress={() => setTees((ts) => ts.filter((_, j) => j !== i))} /> : null}
-                </View>
-                {p.name || p.rating || p.slope ? <Problem>{[p.name, p.rating, p.slope].filter(Boolean).join('. ')}</Problem> : null}
-              </View>
-            );
-          })}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space[3] }}>
-            <Text step="caption" tone="tertiary" tabular={false} style={{ flex: 1 }}>
-              Rating and slope optional.
-            </Text>
-            {tees.length < MAX_TEES ? <Button label="Add tee" variant="secondary" size="md" onPress={() => setTees((ts) => [...ts, { id: newId('tee'), name: '', rating: '', slope: '' }])} /> : null}
-          </View>
-
-          {!editing ? (
-            <Segmented
-              options={[
-                { value: '18', label: '18 holes' },
-                { value: '9', label: '9 holes' },
-              ]}
-              value={String(holeCount)}
-              onChange={(v) => setHoleCount(v === '9' ? 9 : 18)}
-              accessibilityLabel="Hole count"
-            />
-          ) : null}
-
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text step="bodyStrong">Yardages</Text>
-            <Toggle value={yardages} onChange={setYardages} accessibilityLabel="Enter yardages per hole" />
-          </View>
-
-          <Card padding="dense">
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: space[1], height: 32, gap: space[2] }}>
-              <Text step="overline" tone="tertiary" style={{ width: 40 }}>
-                Hole
-              </Text>
-              <Text step="overline" tone="tertiary" style={{ flex: 1 }}>
-                Par
-              </Text>
-              <Text step="overline" tone="tertiary" style={{ width: 64 }}>
-                SI
-              </Text>
-            </View>
-            {visibleHoles.map((h, i) => (
-              <View key={i} style={{ paddingHorizontal: space[1], paddingVertical: space[2], borderTopWidth: 1, borderTopColor: c.dividerSoft, gap: space[2] }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[2] }}>
-                  <Text step="total" style={{ width: 40 }}>
-                    {i + 1}
-                  </Text>
-                  <View style={{ flex: 1, flexDirection: 'row', gap: space[1] }}>
-                    {([3, 4, 5, 6] as const).map((p) => (
-                      <Chip key={p} label={String(p)} accessibilityLabel={`Par ${p}`} selected={h.par === p} onPress={() => setHole(i, { par: p })} haptic={false} style={{ paddingHorizontal: 0, width: 44 }} />
-                    ))}
-                  </View>
-                  <TextField
-                    style={[{ width: 64, height: 44 }, si.badHoles.has(i) ? { borderColor: c.negative, borderWidth: 1.5 } : null]}
-                    inputStyle={{ textAlign: 'center' }}
-                    value={h.si}
-                    onChangeText={(v) => setHole(i, { si: v.replace(/[^0-9]/g, '') })}
-                    keyboardType="number-pad"
-                    maxLength={2}
-                    accessibilityLabel={`Hole ${i + 1} stroke index`}
-                    selectTextOnFocus
-                  />
-                </View>
-                {yardages ? (
-                  <View style={{ flexDirection: 'row', gap: space[2], paddingLeft: 48 }}>
-                    {tees.map((t) => {
-                      const bad = !!yardageProblem(h.yards[t.id] ?? '');
-                      return (
-                        <TextField
-                          key={t.id}
-                          style={[{ flex: 1, height: 40 }, bad ? { borderColor: c.negative, borderWidth: 1.5 } : null]}
-                          inputStyle={{ textAlign: 'center' }}
-                          placeholder={t.name || 'yds'}
-                          value={h.yards[t.id] ?? ''}
-                          onChangeText={(v) => setHole(i, { yards: { ...h.yards, [t.id]: v.replace(/[^0-9]/g, '') } })}
-                          keyboardType="number-pad"
-                          maxLength={3}
-                          accessibilityLabel={`Hole ${i + 1} ${t.name} yardage`}
-                        />
-                      );
-                    })}
-                  </View>
-                ) : null}
-              </View>
-            ))}
-            {yardages ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[2], paddingHorizontal: space[1], paddingTop: space[2], borderTopWidth: 1, borderTopColor: c.dividerSoft }}>
-                <Text step="overline" tone="tertiary" style={{ width: 40 }}>
-                  Total
-                </Text>
-                <Text step="label" tone="secondary" tabular style={{ flex: 1 }} numberOfLines={2}>
-                  {tees.map((t) => `${t.name || 'Tees'} ${totals[t.id] != null ? `${totals[t.id]!.toLocaleString()} yds` : '—'}`).join(' · ')}
-                </Text>
-              </View>
-            ) : null}
-          </Card>
-
-          {si.message ? <Problem>{si.message}</Problem> : null}
-          {!yardsOk ? <Problem>Yardages are whole numbers from 50 to 700.</Problem> : null}
-          {parNote ? (
-            <Text step="label" tone="secondary">
-              {parNote}
-            </Text>
-          ) : null}
-          {!siInOrder ? <Button label="Reset stroke index to hole order" variant="secondary" size="md" onPress={resetStrokeIndexes} /> : null}
-          {saveError ? <Problem>{saveError}</Problem> : null}
-
-          {editing && source ? (
-            <View style={{ gap: space[2], marginTop: space[2] }}>
-              <Button label="Duplicate course" variant="secondary" onPress={() => router.replace({ pathname: '/new-round/add-course', params: { id: source.id, duplicate: '1' } })} />
-              <Button label="Delete course" variant="secondary" destructive onPress={() => void del()} />
-            </View>
-          ) : null}
-        </ScrollView>
-        <Footer>
+    <ScrollScreen
+      title={title}
+      gap={space[6]}
+      headerLeft={() => <HeaderButton label="Cancel" onPress={() => goBackOr('/courses')} />}
+      footer={
+        <>
           {blocker ? (
-            <Text step="caption" tone="tertiary" tabular={false} align="center">
+            <Text step="footnote" tone="secondary" align="center">
               {blocker}
             </Text>
           ) : null}
-          <Button label={editing ? 'Save changes' : copying ? 'Save copy and choose players' : 'Save and choose players'} disabled={!canSave} onPress={() => void save()} />
-        </Footer>
-      </KeyboardAvoidingView>
-    </Screen>
+          <Button label={editing ? 'Save changes' : 'Save course'} disabled={!canSave} onPress={() => void save()} testID="save-course" />
+        </>
+      }
+    >
+      {copying && source ? (
+        <Text step="subhead" tone="secondary" style={{ marginBottom: -space[3] }}>
+          Copy of {source.name}.
+        </Text>
+      ) : null}
+
+      <ListSection header="Course" footer={nameTaken ? 'A course with that name is already saved.' : undefined}>
+        <FormRow placeholder="Course name" value={name} onChangeText={setName} accessibilityLabel="Course name" autoCapitalize="words" invalid={nameTaken} testID="course-name" />
+      </ListSection>
+
+      <ListSection header="Tees" footer={teeProblem ?? 'Rating and slope are optional. Without them everyone plays off scratch.'}>
+        {tees.map((t, i) => {
+          const p = teeProblems[i]!;
+          return (
+            <View key={t.id} style={{ paddingLeft: space[4] }}>
+              {i > 0 ? <View style={{ height: 1, backgroundColor: c.divider }} /> : null}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[2], minHeight: 52, paddingRight: space[2] }}>
+                <CellInput style={{ flex: 1 }} invalid={!!p.name} placeholder="Tee name" value={t.name} onChangeText={(v) => setTee(i, { name: v })} accessibilityLabel={`Tee ${i + 1} name`} autoCapitalize="words" />
+                <CellInput style={{ width: 72 }} invalid={!!p.rating} placeholder="Rating" value={t.rating} onChangeText={(v) => setTee(i, { rating: v.replace(/[^0-9.]/g, '') })} keyboardType="decimal-pad" maxLength={5} accessibilityLabel={`Tee ${i + 1} rating`} />
+                <CellInput style={{ width: 60 }} invalid={!!p.slope} placeholder="Slope" value={t.slope} onChangeText={(v) => setTee(i, { slope: v.replace(/[^0-9]/g, '') })} keyboardType="number-pad" maxLength={3} accessibilityLabel={`Tee ${i + 1} slope`} />
+                {tees.length > 1 ? <HeaderButton label={`Remove tee ${i + 1}`} icon="minus" onPress={() => setTees((ts) => ts.filter((_, j) => j !== i))} /> : null}
+              </View>
+            </View>
+          );
+        })}
+        {tees.length < MAX_TEES ? <ListItem title="Add tee" action onPress={() => setTees((ts) => [...ts, { id: newId('tee'), name: '', rating: '', slope: '' }])} /> : null}
+      </ListSection>
+
+      <ListSection header={`Holes · ${parMeta}`} footer={parNote ?? undefined}>
+        {!editing ? (
+          <ListItem
+            title="Holes"
+            trailing={
+              <SegmentedControl
+                accessibilityLabel="Hole count"
+                options={[
+                  { value: '18', label: '18' },
+                  { value: '9', label: '9' },
+                ]}
+                value={holeCount === 9 ? '9' : '18'}
+                onChange={(v) => setHoleCount(v === '9' ? 9 : 18)}
+                style={{ width: 120 }}
+              />
+            }
+          />
+        ) : null}
+        <ListItem title="Yardages per hole" accessory={{ switch: yardages, onChange: setYardages }} accessibilityLabel="Enter yardages per hole" />
+      </ListSection>
+
+      <View style={{ gap: space[2] }}>
+        <View style={{ backgroundColor: c.surfaceRaised, borderRadius: 12, borderWidth: 1, borderColor: c.divider, paddingHorizontal: space[3] }}>
+          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ flexDirection: 'row', alignItems: 'center', height: 32, gap: space[2] }}>
+            <Text step="tableHeader" tone="tertiary" style={{ width: 32 }}>
+              Hole
+            </Text>
+            <Text step="tableHeader" tone="tertiary" style={{ flex: 1 }}>
+              Par
+            </Text>
+            <Text step="tableHeader" tone="tertiary" align="center" style={{ width: 56 }}>
+              SI
+            </Text>
+          </View>
+          {visibleHoles.map((h, i) => (
+            <View key={i} style={{ paddingVertical: space[2], borderTopWidth: 1, borderTopColor: c.divider, gap: space[2] }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[2] }}>
+                <Text step="rowTitle" tabular style={{ width: 32 }}>
+                  {i + 1}
+                </Text>
+                <View style={{ flex: 1 }}>
+                  <SegmentedControl
+                    accessibilityLabel={`Hole ${i + 1} par`}
+                    options={[
+                      { value: '3', label: '3' },
+                      { value: '4', label: '4' },
+                      { value: '5', label: '5' },
+                      { value: '6', label: '6' },
+                    ]}
+                    value={String(h.par) as '3' | '4' | '5' | '6'}
+                    onChange={(v) => setHole(i, { par: Number(v) as HoleDraft['par'] })}
+                  />
+                </View>
+                <CellInput
+                  style={{ width: 56, textAlign: 'center' }}
+                  invalid={si.badHoles.has(i)}
+                  value={h.si}
+                  onChangeText={(v) => setHole(i, { si: v.replace(/[^0-9]/g, '') })}
+                  keyboardType="number-pad"
+                  maxLength={2}
+                  accessibilityLabel={`Hole ${i + 1} stroke index`}
+                  selectTextOnFocus
+                />
+              </View>
+              {yardages ? (
+                <View style={{ flexDirection: 'row', gap: space[2], paddingLeft: 40 }}>
+                  {tees.map((t) => (
+                    <CellInput
+                      key={t.id}
+                      style={{ flex: 1, textAlign: 'center' }}
+                      invalid={!!yardageProblem(h.yards[t.id] ?? '')}
+                      placeholder={`${t.name || 'Tee'} yds`}
+                      value={h.yards[t.id] ?? ''}
+                      onChangeText={(v) => setHole(i, { yards: { ...h.yards, [t.id]: v.replace(/[^0-9]/g, '') } })}
+                      keyboardType="number-pad"
+                      maxLength={3}
+                      accessibilityLabel={`Hole ${i + 1} ${t.name} yardage`}
+                    />
+                  ))}
+                </View>
+              ) : null}
+            </View>
+          ))}
+          {yardages ? (
+            <View style={{ paddingVertical: space[3], borderTopWidth: 1, borderTopColor: c.divider }}>
+              <Text step="subhead" tone="secondary" tabular>
+                {tees.map((t) => `${t.name || 'Tees'} ${totals[t.id] != null ? `${totals[t.id]!.toLocaleString('en-US')} yds` : '—'}`).join(' · ')}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        {si.message ? <Problem>{si.message}</Problem> : null}
+        {!yardsOk ? <Problem>Yardages are whole numbers from 50 to 700.</Problem> : null}
+        {!siInOrder ? <Button label="Reset stroke index to hole order" variant="plain" onPress={resetStrokeIndexes} /> : null}
+        {saveError ? <Problem>{saveError}</Problem> : null}
+      </View>
+
+      {editing && source ? (
+        <ListSection>
+          <ListItem title="Duplicate course" action onPress={() => router.replace({ pathname: '/new-round/add-course', params: { id: source.id, duplicate: '1' } })} />
+          <ListItem title="Delete course" destructive onPress={() => void del()} />
+        </ListSection>
+      ) : null}
+    </ScrollScreen>
   );
 }
 
-/** Validation copy. Announced by VoiceOver as it appears; the red field border is the visual cue. */
+/** A compact recessed input inside a form row: tee name, rating and slope; stroke index; yardages. Coral when wrong. */
+function CellInput({ style, invalid, ...input }: ComponentProps<typeof TextInput> & { invalid?: boolean }) {
+  const { c, t, space } = useTheme();
+  return (
+    <TextInput
+      placeholderTextColor={c.textTertiary}
+      {...input}
+      style={[{ minHeight: 40, paddingHorizontal: space[2], borderRadius: 8, backgroundColor: c.surfaceRaised2, color: invalid ? c.destructive : c.textPrimary, fontSize: t.rowBody.fontSize, borderWidth: invalid ? 1.5 : 0, borderColor: c.destructive }, style]}
+    />
+  );
+}
+
+/** Validation copy. Announced by VoiceOver as it appears; the coral field is the visual cue. */
 function Problem({ children }: { children: string }) {
   return (
-    <Text step="label" tone="negative" tabular={false} accessibilityRole="alert" accessibilityLiveRegion="polite">
+    <Text step="footnote" tone="negative" accessibilityRole="alert" accessibilityLiveRegion="polite">
       {children}
     </Text>
   );

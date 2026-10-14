@@ -12,3 +12,4 @@ export * from './games';
 export * from './crew';
 export * from './liveRound';
 export * from './gamesTarget';
+export * from './courseStats';

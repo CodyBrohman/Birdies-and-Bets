@@ -1,57 +1,43 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { Button, Card, Chip, IconTile, PhotoCard, Screen, ScreenHeader, Sheet, StickyBar, Text, TextField, Pressable } from '@/components/ui';
-import { EmptyState } from '@/components/EmptyState';
-import { AreaSheet } from '@/components/AreaSheet';
-import { courseFacts, coursePhoto, courseTag } from '@/components/courseArt';
+import { confirm, HeaderButton, ListItem, ListSection, ScrollScreen, SearchField, Text } from '@/components/ui';
+import { CourseRow } from '@/components/CourseRow';
+import { LiveRoundBanner } from '@/components/round';
 import { useTheme } from '@/theme';
-import { useCourseStore, usePreferences, useRoundStore, type CourseSearchResult } from '@/store';
+import { useCourseStats, useCourseStore, useRoundStore, type CourseSearchResult, type CourseStat } from '@/store';
 import { courseSearchAvailable, fetchCourse, searchCourses, track } from '@/services';
 import type { Course } from '@/types';
-import { joinMeta, plural } from '@/lib/format';
+import { formatShortDate, joinMeta } from '@/lib/format';
 import { friendlyCourseError } from '@/lib/errors';
 
-type Filter = 'all' | 'recent' | 'yours';
-
-/** Courses: where you browse, the search, and photo cards. Tapping one puts it on your round and opens Bet. */
+/**
+ * Courses: recently played and saved courses, identified by their data, and the course directory when you search. A
+ * course opens its page; long press for Play, Edit, Duplicate and Delete.
+ */
 export default function CoursesScreen() {
   const router = useRouter();
-  const { c, w, space, layout } = useTheme();
+  const { c, space } = useTheme();
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<Filter>('all');
-  const [areaOpen, setAreaOpen] = useState(false);
-  const [optionsFor, setOptionsFor] = useState<Course | null>(null);
-
   const search = useCourseStore((s) => s.search);
   const userCourses = useCourseStore((s) => s.userCourses);
   const recentIds = useCourseStore((s) => s.recentIds);
   const markRecent = useCourseStore((s) => s.markRecent);
   const importCourse = useCourseStore((s) => s.importCourse);
+  const removeUserCourse = useCourseStore((s) => s.removeUserCourse);
   const cachedSearch = useCourseStore((s) => s.cachedSearch);
   const cacheSearch = useCourseStore((s) => s.cacheSearch);
   const draft = useRoundStore((s) => s.draft);
-  const round = useRoundStore((s) => s.round);
   const setDraftCourse = useRoundStore((s) => s.setDraftCourse);
-  const homeArea = usePreferences((s) => s.homeArea);
+  const stats = useCourseStats();
 
-  // userCourses/recentIds in deps so the list refreshes after hydration or an add (search reads the store).
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const all = useMemo(() => search(query), [search, query, userCourses, recentIds]);
-  const list = useMemo(() => {
-    const ranked = [...all].sort((a, b) => rank(a) - rank(b));
-    if (filter === 'recent') return ranked.filter((x) => recentIds.includes(x.id));
-    if (filter === 'yours') return ranked.filter((x) => x.userEntered);
-    return ranked;
-    function rank(x: Course) {
-      const i = recentIds.indexOf(x.id);
-      return i === -1 ? 100 : i;
-    }
-  }, [all, filter, recentIds]);
+  // Reading the saved list subscribes to it, so the rows refresh after an add or an edit (search reads the store).
+  void userCourses;
+  const matches = search(query);
+  const recent = recentIds.map((id) => matches.find((k) => k.id === id)).filter((k): k is Course => !!k);
+  const saved = matches.filter((k) => !recent.includes(k));
 
-  // Remote search: debounced, cached, quiet when offline or not configured. Results are kept per query, so a new
-  // query needs no reset: what to show (cached, fetched, searching or failed) is derived during render.
+  // The course directory: debounced, cached per query, quiet when offline or not configured.
   const [fetched, setFetched] = useState<{ q: string; results: CourseSearchResult[]; failed?: string } | null>(null);
   const [importing, setImporting] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
@@ -82,14 +68,14 @@ export default function CoursesScreen() {
     };
   }, [q, needsFetch, cacheSearch]);
 
-  const choose = (course: Course) => {
+  const play = (course: Course) => {
     const tee = course.teeBoxes.find((t) => t.id === draft.teeBoxId) ?? course.teeBoxes[0];
     if (!tee) return;
     setDraftCourse(course, tee.id);
     void markRecent(course.id);
     router.navigate('/play');
   };
-  const importAndChoose = async (r: CourseSearchResult) => {
+  const importAndOpen = async (r: CourseSearchResult) => {
     setImportError(null);
     setImporting(r.providerId);
     try {
@@ -97,165 +83,83 @@ export default function CoursesScreen() {
       await importCourse(course);
       track('course_imported');
       setQuery('');
-      choose(course);
+      router.push({ pathname: '/courses/[id]', params: { id: course.id } });
     } catch (e) {
       setImportError(friendlyCourseError(e));
     } finally {
       setImporting(null);
     }
   };
+  const del = async (course: Course) => {
+    if (await confirm({ title: `Delete ${course.name}?`, message: 'Rounds already played there keep their own copy.', confirmLabel: 'Delete course', destructive: true })) await removeUserCourse(course.id);
+  };
   const alreadyImported = (r: CourseSearchResult) => userCourses.find((u) => u.providerId === r.providerId);
 
-  const live = round && round.status === 'in-progress' ? round : null;
-  const sticky = live
-    ? { title: live.course.name, onPress: () => router.push('/round/play') }
-    : draft.course
-      ? { title: draft.course.name, onPress: () => router.navigate('/play') }
-      : null;
+  const valueFor = (stat: CourseStat | undefined) => (stat?.best != null ? `Best ${stat.best}` : stat ? formatShortDate(stat.last) : undefined);
+  const row = (course: Course) => (
+    <CourseRow
+      key={course.id}
+      course={course}
+      value={valueFor(stats.get(course.id))}
+      onPress={() => router.push({ pathname: '/courses/[id]', params: { id: course.id } })}
+      testID={`course-${course.id}`}
+      menu={[
+        { label: 'Play this course', onPress: () => play(course) },
+        ...(course.userEntered ? [{ label: 'Edit course', onPress: () => router.push({ pathname: '/new-round/add-course', params: { id: course.id } }) }] : []),
+        { label: 'Duplicate and edit', onPress: () => router.push({ pathname: '/new-round/add-course', params: { id: course.id, duplicate: '1' } }) },
+        ...(course.userEntered ? [{ label: 'Delete course', destructive: true, onPress: () => void del(course) }] : []),
+      ]}
+    />
+  );
 
   return (
-    <Screen noBottomInset>
-      <ScrollView contentContainerStyle={{ gap: layout.stack, paddingTop: space[6], paddingBottom: sticky ? 96 : layout.section }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <ScreenHeader eyebrow="The local loop" title="Find your fairway." subtitle="Good tracks, a little closer to home." style={{ marginBottom: space[2] }} />
+    <ScrollScreen title="Courses" largeTitle gap={space[6]} headerRight={() => <HeaderButton label="Add a course" icon="plus" onPress={() => router.push('/new-round/add-course')} testID="add-course" />}>
+      <LiveRoundBanner />
+      <SearchField value={query} onChangeText={setQuery} placeholder={courseSearchAvailable() ? 'Search courses or the directory' : 'Search your courses'} accessibilityLabel="Search courses" />
 
-        <Card variant="tinted" style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
-          <IconTile icon="navigate-outline" tone="white" />
-          <View style={{ flex: 1 }}>
-            <Text step="eyebrow" tone="tertiary" style={{ fontSize: 10 }}>
-              Browsing near
-            </Text>
-            <Text step="title" numberOfLines={1}>
-              {homeArea ?? 'Anywhere'}
-            </Text>
-          </View>
-          <Pressable accessibilityRole="button" accessibilityLabel="Set your area" onPress={() => setAreaOpen(true)} hitSlop={12} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 4, opacity: pressed ? 0.6 : 1 })}>
-            <Text step="label" style={{ fontWeight: w.bold, color: c.accentTintText, fontSize: 13 }}>
-              {homeArea ? 'Change area' : 'Set my area'}
-            </Text>
-            <Ionicons name="arrow-up-outline" size={14} color={c.accentTintText} style={{ transform: [{ rotate: '45deg' }] }} />
-          </Pressable>
-        </Card>
+      {recent.length > 0 ? <ListSection header="Recently played">{recent.map(row)}</ListSection> : null}
+      {saved.length > 0 ? <ListSection header={recent.length > 0 || q ? 'Saved' : 'Courses'}>{saved.map(row)}</ListSection> : null}
+      {q && recent.length + saved.length === 0 ? (
+        <Text step="subhead" tone="secondary" align="center">
+          {`No saved course matches “${q}”.`}
+        </Text>
+      ) : null}
 
-        <TextField
-          variant="search"
-          placeholder="Search a course or town"
-          value={query}
-          onChangeText={setQuery}
-          accessibilityLabel="Search courses"
-          returnKeyType="search"
-          leading={<Ionicons name="search-outline" size={20} color={c.textTertiary} />}
-        />
-
-        <View style={{ flexDirection: 'row', gap: space[2], flexWrap: 'wrap' }}>
-          <Chip label="All courses" selected={filter === 'all'} onPress={() => setFilter('all')} />
-          <Chip label="Recent" selected={filter === 'recent'} onPress={() => setFilter('recent')} />
-          <Chip label="Yours" selected={filter === 'yours'} onPress={() => setFilter('yours')} />
-        </View>
-
-        <View style={{ marginTop: space[3], gap: 2 }}>
-          <Text accessibilityRole="header" step="headline">
-            {list.length ? `${plural(list.length, 'course')} to explore` : query ? 'No saved matches' : 'Nothing here yet'}
-          </Text>
-          <Text step="caption" tone="tertiary" tabular={false}>
-            {homeArea ? `Saved on this phone · ${homeArea}` : 'Saved on this phone'}
-          </Text>
-        </View>
-
-        {list.map((course) => (
-          <PhotoCard
-            key={course.id}
-            image={coursePhoto(course.id)}
-            tag={courseTag(course, recentIds)}
-            checked={draft.course?.id === course.id}
-            title={course.name}
-            titleTrailing={
-              <Text step="label" tone="secondary" style={{ fontWeight: w.bold }}>
-                {course.teeBoxes[0]?.rating ? `${course.teeBoxes[0].rating.toFixed(1)} / ${course.teeBoxes[0].slope ?? '—'}` : ''}
+      {remoteActive ? (
+        <ListSection header="Course directory" footer={importError ?? (remoteState === 'error' ? current?.failed : remote.length ? 'Download a course to play it and keep it here.' : undefined)}>
+          {remoteState === 'searching' && remote.length === 0 ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3], padding: space[4] }}>
+              <ActivityIndicator size="small" color={c.accent} />
+              <Text step="rowBody" tone="secondary">
+                Searching
               </Text>
-            }
-            subtitle={course.location ?? (course.userEntered ? 'Added by you' : 'Bundled course')}
-            facts={courseFacts(course)}
-            accessibilityLabel={`${course.name}. ${courseFacts(course).join(', ')}. Play here.`}
-            onPress={() => choose(course)}
-            onLongPress={() => setOptionsFor(course)}
-          />
-        ))}
-
-        {list.length === 0 && remote.length === 0 && remoteState === 'idle' ? (
-          <EmptyState icon="location-outline" title={query ? `No saved course matches “${query}”.` : 'No courses in this list yet.'} body="Add it by hand instead." action={{ label: 'Add your course', onPress: () => router.push('/new-round/add-course') }} />
-        ) : null}
-
-        {remote.length > 0 || remoteState !== 'idle' ? (
-          <View style={{ gap: layout.stack, marginTop: space[3] }}>
-            <Text accessibilityRole="header" step="headline">
-              More courses
-            </Text>
-            {remoteState === 'searching' && remote.length === 0 ? (
-              <Text step="label" tone="tertiary">
-                Searching…
-              </Text>
-            ) : null}
-            {remoteState === 'error' ? (
-              <Text step="label" tone="tertiary">
-                {current?.failed}
-              </Text>
-            ) : null}
-            {remote.map((r) => {
-              const have = alreadyImported(r);
-              return (
-                <Card key={r.providerId} accessibilityLabel={`${have ? 'Use' : 'Download'} ${r.name}`} disabled={importing != null} onPress={() => (have ? choose(have) : void importAndChoose(r))} style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
-                  {importing === r.providerId ? (
-                    <View style={{ width: 44, alignItems: 'center' }}>
-                      <ActivityIndicator size="small" color={c.accent} />
-                    </View>
-                  ) : (
-                    <IconTile icon={have ? 'checkmark-outline' : 'cloud-download-outline'} />
-                  )}
-                  <View style={{ flex: 1 }}>
-                    <Text step="title" numberOfLines={1}>
-                      {r.name}
-                    </Text>
-                    <Text step="caption" tone="tertiary" tabular={false} numberOfLines={1}>
-                      {joinMeta([r.location, r.holeCount ? `${r.holeCount} holes` : null, importing === r.providerId ? 'Loading…' : null])}
-                    </Text>
-                  </View>
-                  <Ionicons name="arrow-forward" size={18} color={c.textPrimary} />
-                </Card>
-              );
-            })}
-            {importError ? (
-              <Text step="caption" tone="negative" tabular={false}>
-                {importError}
-              </Text>
-            ) : null}
-          </View>
-        ) : null}
-
-        <Card onPress={() => router.push('/new-round/add-course')} accessibilityLabel="Add your course" style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
-          <IconTile icon="add" />
-          <View style={{ flex: 1 }}>
-            <Text step="title">Add your course</Text>
-            <Text step="caption" tone="tertiary" tabular={false}>
-              Pars, stroke index and tees, by hand.
-            </Text>
-          </View>
-          <Ionicons name="arrow-forward" size={18} color={c.textPrimary} />
-        </Card>
-      </ScrollView>
-
-      {sticky ? <StickyBar eyebrow={live ? 'Round in play' : 'On your round'} title={sticky.title} actionLabel="Continue" onPress={sticky.onPress} style={{ position: 'absolute', left: 20, right: 20, bottom: 12 }} /> : null}
-
-      <AreaSheet visible={areaOpen} onClose={() => setAreaOpen(false)} />
-
-      <Sheet visible={!!optionsFor} onClose={() => setOptionsFor(null)} title={optionsFor?.name} subtitle={optionsFor ? courseFacts(optionsFor).join(' · ') : undefined}>
-        <View style={{ gap: space[2] }}>
-          {optionsFor ? <Button label="Play this course" onPress={() => (setOptionsFor(null), choose(optionsFor))} /> : null}
-          {optionsFor?.userEntered ? (
-            <Button label="Edit course" variant="secondary" onPress={() => (setOptionsFor(null), router.push({ pathname: '/new-round/add-course', params: { id: optionsFor.id } }))} />
+            </View>
           ) : null}
-          {optionsFor ? <Button label="Duplicate and edit" variant="secondary" onPress={() => (setOptionsFor(null), router.push({ pathname: '/new-round/add-course', params: { id: optionsFor.id, duplicate: '1' } }))} /> : null}
-        </View>
-      </Sheet>
-    </Screen>
+          {remote.map((r) => {
+            const have = alreadyImported(r);
+            return (
+              <ListItem
+                key={r.providerId}
+                title={r.name}
+                strong
+                subtitle={joinMeta([r.location, r.holeCount ? `${r.holeCount} holes` : null])}
+                value={importing === r.providerId ? 'Downloading' : have ? 'Saved' : 'Download'}
+                disabled={importing != null}
+                onPress={() => (have ? router.push({ pathname: '/courses/[id]', params: { id: have.id } }) : void importAndOpen(r))}
+              />
+            );
+          })}
+          {remoteState === 'idle' && remote.length === 0 ? (
+            <Text step="rowBody" tone="secondary" style={{ padding: space[4] }}>
+              No courses found
+            </Text>
+          ) : null}
+        </ListSection>
+      ) : null}
+
+      <ListSection footer="Pars, stroke index and tees, typed in by hand.">
+        <ListItem title="Add a course by hand" action onPress={() => router.push('/new-round/add-course')} />
+      </ListSection>
+    </ScrollScreen>
   );
 }
