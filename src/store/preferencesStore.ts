@@ -3,7 +3,7 @@ import { useHapticsPreference } from '@/theme';
 import { ALLOWANCE_OPTIONS, DEFAULT_ALLOWANCE } from '@/lib/handicap';
 import { storage, STORAGE_KEYS } from './storage';
 
-/** App-wide preferences. Theme lives in theme/preference (persisted by themeStore). */
+/** App-wide preferences. (The app is light only; there is no theme preference.) */
 export interface Preferences {
   haptics: boolean;
   /** Stake label every new round starts with. */

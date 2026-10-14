@@ -18,7 +18,7 @@ export interface ChipProps {
 
 /** Filter pill: white with a hairline and a pine label; selected = pine fill, white label. 40pt with hitSlop to 48. */
 export function Chip({ label, selected = false, onPress, accessibilityLabel, disabled, haptic: useHaptic = true, shape = 'pill', style }: ChipProps) {
-  const { c, f, hit, radius } = useTheme();
+  const { c, w, hit, radius } = useTheme();
   const time = shape === 'time';
   return (
     <Pressable
@@ -52,7 +52,7 @@ export function Chip({ label, selected = false, onPress, accessibilityLabel, dis
         ];
       }}
     >
-      <Text step="label" style={{ color: selected ? c.onInverse : c.accentText, fontFamily: f.uiBold, fontSize: time ? 13 : 14 }} numberOfLines={1}>
+      <Text step="label" style={{ color: selected ? c.onInverse : c.accentText, fontWeight: w.bold, fontSize: time ? 13 : 14 }} numberOfLines={1}>
         {label}
       </Text>
     </Pressable>

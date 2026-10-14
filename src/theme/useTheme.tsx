@@ -1,14 +1,17 @@
-import { createContext, useContext, type ReactNode } from 'react';
-import { color, type ColorScheme, elevation, type ElevationSet, type, font, space, layout, radius, hit, motion } from './tokens';
-import type { Scheme } from './preference';
+import { color, type ColorScheme, elevation, type ElevationSet, type, weight, space, layout, radius, hit, motion, seatColors } from './tokens';
 
+export type Scheme = 'light' | 'dark';
 
 export interface Theme {
+  /** Always 'light' for now; dark mode is a post-launch item. */
   scheme: Scheme;
   c: ColorScheme;
   e: ElevationSet;
   t: typeof type;
-  f: typeof font;
+  /** Font weights for the rare override (the step usually carries the weight). */
+  w: typeof weight;
+  /** A player's colour by seat in a round. */
+  seats: typeof seatColors;
   space: typeof space;
   layout: typeof layout;
   radius: typeof radius;
@@ -16,21 +19,9 @@ export interface Theme {
   motion: typeof motion;
 }
 
-export function resolveTheme(scheme: Scheme): Theme {
-  return { scheme, c: color[scheme], e: elevation[scheme], t: type, f: font, space, layout, radius, hit, motion };
-}
+const LIGHT: Theme = { scheme: 'light', c: color.light, e: elevation.light, t: type, w: weight, seats: seatColors, space, layout, radius, hit, motion };
 
-const ThemeOverride = createContext<Scheme | null>(null);
-
-/** Force a scheme for a subtree (the share card always renders light). */
-export function ThemeScope({ scheme, children }: { scheme: Scheme; children: ReactNode }) {
-  return <ThemeOverride.Provider value={scheme}>{children}</ThemeOverride.Provider>;
-}
-
-const LIGHT = resolveTheme('light');
-
-/** The app is light only (2026-10-01 redesign). The scheme override is kept for API compatibility. */
+/** The app is light only. */
 export function useTheme(): Theme {
-  useContext(ThemeOverride);
   return LIGHT;
 }

@@ -18,7 +18,7 @@ type Filter = 'all' | 'recent' | 'yours';
 /** Courses: where you browse, the search, and photo cards. Tapping one puts it on your round and opens Bet. */
 export default function CoursesScreen() {
   const router = useRouter();
-  const { c, f, space, layout } = useTheme();
+  const { c, w, space, layout } = useTheme();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [areaOpen, setAreaOpen] = useState(false);
@@ -129,7 +129,7 @@ export default function CoursesScreen() {
             </Text>
           </View>
           <Pressable accessibilityRole="button" accessibilityLabel="Set your area" onPress={() => setAreaOpen(true)} hitSlop={12} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 4, opacity: pressed ? 0.6 : 1 })}>
-            <Text step="label" style={{ fontFamily: f.uiBold, color: c.accentTintText, fontSize: 13 }}>
+            <Text step="label" style={{ fontWeight: w.bold, color: c.accentTintText, fontSize: 13 }}>
               {homeArea ? 'Change area' : 'Set my area'}
             </Text>
             <Ionicons name="arrow-up-outline" size={14} color={c.accentTintText} style={{ transform: [{ rotate: '45deg' }] }} />
@@ -169,7 +169,7 @@ export default function CoursesScreen() {
             checked={draft.course?.id === course.id}
             title={course.name}
             titleTrailing={
-              <Text step="label" tone="secondary" style={{ fontFamily: f.uiBold }}>
+              <Text step="label" tone="secondary" style={{ fontWeight: w.bold }}>
                 {course.teeBoxes[0]?.rating ? `${course.teeBoxes[0].rating.toFixed(1)} / ${course.teeBoxes[0].slope ?? '—'}` : ''}
               </Text>
             }

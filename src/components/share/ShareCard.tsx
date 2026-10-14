@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import { View } from 'react-native';
-import { ThemeScope, useTheme } from '@/theme';
+import { useTheme } from '@/theme';
 import { Text } from '@/components/ui';
 import { BrandMark } from '@/components/BrandMark';
 import { ContourField } from '@/components/ContourField';
@@ -20,17 +20,13 @@ export interface ShareCardProps {
   width?: number;
 }
 
-/** The scorecard as an image: always the dark brand look, contour header, card, game results, no-money footer. */
+/** The scorecard as an image: contour header, card, game results, no-money footer. */
 export const ShareCard = forwardRef<View, ShareCardProps>(function ShareCard({ round, holes, handicaps, results, basis, completedAt, width = 540 }, ref) {
-  return (
-    <ThemeScope scheme="dark">
-      <Body ref={ref} round={round} holes={holes} handicaps={handicaps} results={results} basis={basis} completedAt={completedAt} width={width} />
-    </ThemeScope>
-  );
+  return <Body ref={ref} round={round} holes={holes} handicaps={handicaps} results={results} basis={basis} completedAt={completedAt} width={width} />;
 });
 
 const Body = forwardRef<View, Required<Pick<ShareCardProps, 'width'>> & ShareCardProps>(function Body({ round, holes, handicaps, results, basis, completedAt, width }, ref) {
-  const { c, space } = useTheme();
+  const { c, w, space } = useTheme();
   const anyHandicap = Object.values(handicaps).some((h) => h.playingHandicap !== 0);
   const tee = round.course.teeBoxes.find((t) => t.id === round.teeBoxId);
   return (
@@ -38,9 +34,9 @@ const Body = forwardRef<View, Required<Pick<ShareCardProps, 'width'>> & ShareCar
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3], paddingVertical: space[2] }}>
         <ContourField style={{ top: -space[8], bottom: -space[2], left: -space[8], right: -space[8] }} />
         <BrandMark size={36} />
-        <Text step="display" serif style={{ flex: 1 }}>
+        <Text step="display" style={{ flex: 1, fontWeight: w.heavy }}>
           Birdies{' '}
-          <Text step="display" serif italic tone="accent">
+          <Text step="display" tone="accent" style={{ fontWeight: w.heavy }}>
             & Bets
           </Text>
         </Text>

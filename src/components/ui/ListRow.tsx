@@ -35,7 +35,7 @@ export interface ListRowProps {
  * Interactive pieces (`action`, `footer`) sit beside the pressable area, never inside it (no nested buttons on web).
  */
 export function ListRow({ leading, title, titleAccessory, meta, accent, children, trailing, action, footer, onPress, accessibilityLabel, divider, style }: ListRowProps) {
-  const { c, f, space } = useTheme();
+  const { c, w, space } = useTheme();
   const body = (
     <>
       {leading}
@@ -47,7 +47,7 @@ export function ListRow({ leading, title, titleAccessory, meta, accent, children
           {titleAccessory}
         </View>
         {accent ? (
-          <Text step="caption" tone="accent" tabular={false} numberOfLines={1} style={{ fontFamily: f.uiSemibold }}>
+          <Text step="caption" tone="accent" tabular={false} numberOfLines={1} style={{ fontWeight: w.semibold }}>
             {accent}
           </Text>
         ) : null}

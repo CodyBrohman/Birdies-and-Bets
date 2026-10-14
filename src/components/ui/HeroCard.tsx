@@ -23,7 +23,7 @@ export interface HeroCardProps {
 
 /** The Home hero: a golf photo with the next round written over it and one full-width action. */
 export function HeroCard({ image, pill, title, subtitle, cta, height = 270, children, style }: HeroCardProps) {
-  const { c, f, radius, space } = useTheme();
+  const { c, w, radius, space } = useTheme();
   return (
     <View style={[{ borderRadius: radius.hero, overflow: 'hidden', backgroundColor: c.hero, minHeight: height, justifyContent: 'flex-end' }, style]}>
       {image ? (
@@ -41,7 +41,7 @@ export function HeroCard({ image, pill, title, subtitle, cta, height = 270, chil
             </Text>
           </View>
         ) : null}
-        <Text step="headline" style={{ color: c.onHero, fontSize: 24, lineHeight: 29, fontFamily: f.uiBold, letterSpacing: -0.5 }}>
+        <Text step="headline" style={{ color: c.onHero, fontSize: 24, lineHeight: 29, fontWeight: w.bold, letterSpacing: -0.5 }}>
           {title}
         </Text>
         {subtitle ? (
@@ -92,7 +92,7 @@ export interface PhotoCardProps {
 
 /** Course card: photo on top, name and town, facts with an arrow disc. */
 export function PhotoCard({ image, tag, checked, title, titleTrailing, subtitle, facts, onPress, onLongPress, accessibilityLabel, style }: PhotoCardProps) {
-  const { c, e, f, radius, space } = useTheme();
+  const { c, e, w, radius, space } = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
@@ -113,7 +113,7 @@ export function PhotoCard({ image, tag, checked, title, titleTrailing, subtitle,
         <Image source={image} resizeMode="cover" style={{ width: '100%', height: '100%' }} accessibilityIgnoresInvertColors />
         {tag ? (
           <View style={{ position: 'absolute', top: 12, left: 12, backgroundColor: c.surfaceRaised, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 }}>
-            <Text step="caption" tabular={false} style={{ fontFamily: f.uiBold, fontSize: 11, lineHeight: 14, color: c.textPrimary }}>
+            <Text step="caption" tabular={false} style={{ fontWeight: w.bold, fontSize: 11, lineHeight: 14, color: c.textPrimary }}>
               {tag}
             </Text>
           </View>
@@ -138,7 +138,7 @@ export function PhotoCard({ image, tag, checked, title, titleTrailing, subtitle,
         ) : null}
         {facts?.length ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: space[3] }}>
-            <Text step="caption" tone="tertiary" style={{ flex: 1, fontFamily: f.uiSemibold, fontSize: 12 }} numberOfLines={1}>
+            <Text step="caption" tone="tertiary" style={{ flex: 1, fontWeight: w.semibold, fontSize: 12 }} numberOfLines={1}>
               {facts.join('  ·  ')}
             </Text>
             <View style={{ width: 24, height: 24, borderRadius: 999, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center' }}>
@@ -161,14 +161,14 @@ export interface StickyBarProps {
 
 /** The dark "ON YOUR ROUND · Eagles Nest Golf Club · Continue" bar that floats above the tab bar. */
 export function StickyBar({ eyebrow, title, actionLabel, onPress, style }: StickyBarProps) {
-  const { c, f, radius, space } = useTheme();
+  const { c, w, radius, space } = useTheme();
   return (
     <View style={[{ flexDirection: 'row', alignItems: 'center', gap: space[3], backgroundColor: c.hero, borderRadius: radius.xl, paddingLeft: space[4], paddingRight: space[2], paddingVertical: space[2], boxShadow: '0 8px 24px rgba(23,55,45,0.25)' } as ViewStyle, style]}>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text step="eyebrow" style={{ color: c.onHeroSoft, fontSize: 10 }}>
           {eyebrow}
         </Text>
-        <Text step="label" numberOfLines={1} style={{ color: c.onHero, fontFamily: f.uiBold }}>
+        <Text step="label" numberOfLines={1} style={{ color: c.onHero, fontWeight: w.bold }}>
           {title}
         </Text>
       </View>

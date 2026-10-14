@@ -36,7 +36,7 @@ export interface ButtonProps extends Omit<PressableProps, 'style' | 'children'> 
 
 /** Rounded-rectangle buttons (16pt corners, 12 when smaller). States: pressed (deeper fill), hover, focus ring, loading, disabled 40%. */
 export function Button({ label, variant = 'primary', size, icon, trailingIcon, haptic: hapticProp, destructive, loading, disabled, onPress, style, ...rest }: ButtonProps) {
-  const { c, e, f, hit } = useTheme();
+  const { c, e, w, hit } = useTheme();
   const filled = variant === 'primary' || variant === 'hero';
   const useHaptic = hapticProp ?? filled;
   const resolved = size ?? (filled ? 'lg' : 'md');
@@ -92,7 +92,7 @@ export function Button({ label, variant = 'primary', size, icon, trailingIcon, h
       {...rest}
     >
       {loading ? <ActivityIndicator size="small" color={labelColor} /> : icon ? <Ionicons name={icon} size={resolved === 'sm' ? 16 : 18} color={labelColor} /> : null}
-      <Text step={resolved === 'sm' ? 'label' : 'button'} style={{ color: labelColor, fontFamily: f.uiBold }} numberOfLines={1}>
+      <Text step={resolved === 'sm' ? 'label' : 'button'} style={{ color: labelColor, fontWeight: w.bold }} numberOfLines={1}>
         {label}
       </Text>
       {trailingIcon ? <View style={{ alignItems: 'center', justifyContent: 'center' }}>{trailingIcon}</View> : null}

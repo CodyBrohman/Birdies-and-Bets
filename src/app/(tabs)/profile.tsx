@@ -14,7 +14,7 @@ import { formatIndex, plural } from '@/lib/format';
 /** Profile: your golfer card (photo, name, area, index) and the clubs in your bag. Settings live one tap away. */
 export default function ProfileScreen() {
   const router = useRouter();
-  const { c, f, radius, space, layout } = useTheme();
+  const { c, w, radius, space, layout } = useTheme();
   const { me } = useMe();
   const updateProfile = useProfileStore((s) => s.updateProfile);
   const homeArea = usePreferences((s) => s.homeArea);
@@ -83,7 +83,7 @@ export default function ProfileScreen() {
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Ionicons name="location-outline" size={14} color={c.onHero} />
-                <Text step="caption" tabular={false} numberOfLines={1} style={{ color: c.onHero, fontFamily: f.uiSemibold }}>
+                <Text step="caption" tabular={false} numberOfLines={1} style={{ color: c.onHero, fontWeight: w.semibold }}>
                   {homeArea ?? 'Set your area'}
                 </Text>
               </View>
@@ -99,7 +99,7 @@ export default function ProfileScreen() {
           </View>
           <Pressable accessibilityRole="button" onPress={() => void pickPhoto()} hitSlop={10} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', opacity: pressed ? 0.6 : 1 })}>
             <Ionicons name="pencil-outline" size={15} color={c.onHero} />
-            <Text step="caption" tabular={false} style={{ color: c.onHero, fontFamily: f.uiBold }}>
+            <Text step="caption" tabular={false} style={{ color: c.onHero, fontWeight: w.bold }}>
               {photoUri ? 'Change profile photo' : 'Add a profile photo'}
             </Text>
           </Pressable>

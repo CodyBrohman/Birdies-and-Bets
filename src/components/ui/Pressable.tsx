@@ -12,9 +12,8 @@ export interface PressableProps extends Omit<RNPressableProps, 'style' | 'childr
 }
 
 /**
- * Drop-in Pressable that resolves function styles itself and hands React Native a plain style.
- * On iOS the NativeWind-wrapped Pressable dropped function styles entirely (cards lost their fill,
- * buttons their background, the tab bar its flex), so every pressable in the app goes through this.
+ * The one Pressable: resolves function styles and children with pressed, hovered and focused state (hover and focus
+ * matter on the web preview), so every tappable in the app shares one way of showing it is pressed.
  */
 export const Pressable = forwardRef<View, PressableProps>(function Pressable({ style, children, onPressIn, onPressOut, onHoverIn, onHoverOut, onFocus, onBlur, ...rest }, ref) {
   const [pressed, setPressed] = useState(false);

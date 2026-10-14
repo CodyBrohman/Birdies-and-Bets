@@ -23,9 +23,9 @@ const ROW = 30;
  * Columns flex to the card width so nothing scrolls sideways; the current hole's column is tinted. Tap a column to jump to it.
  */
 export function NineCard({ title, holes, players, results, currentHole, labelFor, onPressHole }: NineCardProps) {
-  const { c, f, radius, space } = useTheme();
+  const { c, w, radius, space } = useTheme();
   const par = holes.reduce((sum, h) => sum + h.par, 0);
-  const small = { fontFamily: f.uiSemibold, fontSize: 12, lineHeight: 16 };
+  const small = { fontWeight: w.semibold, fontSize: 12, lineHeight: 16 };
 
   return (
     <Card style={{ gap: space[3] }}>

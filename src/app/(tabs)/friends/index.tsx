@@ -20,7 +20,7 @@ type GroupDraft = { id?: string; name: string; memberIds: string[] };
 /** Friends: your circle, the rounds you've played together, and everyone you can add to the next round. */
 export default function FriendsScreen() {
   const router = useRouter();
-  const { c, f, space, layout } = useTheme();
+  const { c, w, space, layout } = useTheme();
   const { me, friends } = useMe();
   const entries = useHistoryStore((s) => s.entries);
   const round = useRoundStore((s) => s.round);
@@ -241,7 +241,7 @@ export default function FriendsScreen() {
                 {status}
               </Text>
             </View>
-            <Text step="caption" tone="accent" tabular={false} numberOfLines={1} style={{ fontFamily: f.uiSemibold }}>
+            <Text step="caption" tone="accent" tabular={false} numberOfLines={1} style={{ fontWeight: w.semibold }}>
               {course}
             </Text>
             <Text step="caption" tone="tertiary" tabular={false} numberOfLines={1} style={{ fontSize: 12 }}>

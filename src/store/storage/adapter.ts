@@ -24,6 +24,7 @@ export const STORAGE_KEYS = {
   recentCourses: 'bb:courses:recent',
   userCourses: 'bb:courses:user',
   courseCache: 'bb:courses:cache',
+  /** Legacy: the old light/dark choice. Nothing reads it; kept so backups and Clear all data still handle it. */
   themePreference: 'bb:theme:preference',
   preferences: 'bb:preferences',
 } as const;

@@ -16,7 +16,7 @@ import type { PlayerProfile } from '@/types';
 /** Home: greeting, the next (or live) round over a photo, handicap and circle tiles, friends and courses shortcuts. */
 export default function Home() {
   const router = useRouter();
-  const { c, f, space, radius, layout } = useTheme();
+  const { c, w, space, radius, layout } = useTheme();
   const round = useRoundStore((s) => s.round);
   const draftCourse = useRoundStore((s) => s.draft.course);
   const hydrateError = useRoundStore((s) => s.hydrateError);
@@ -73,8 +73,8 @@ export default function Home() {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3], paddingTop: space[3], paddingBottom: space[2] }}>
         <View accessible accessibilityRole="header" accessibilityLabel="Birdies and Bets" style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <BrandMark size={40} />
-          <Text style={{ fontFamily: f.uiBold, fontSize: 18, lineHeight: 22, letterSpacing: -0.3, color: c.textPrimary }}>
-            birdies <Text style={{ fontFamily: f.uiBold, fontSize: 18, color: c.accentText }}>&</Text> bets
+          <Text style={{ fontWeight: w.bold, fontSize: 18, lineHeight: 22, letterSpacing: -0.3, color: c.textPrimary }}>
+            birdies <Text style={{ fontWeight: w.bold, fontSize: 18, color: c.accentText }}>&</Text> bets
           </Text>
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel="Your profile" onPress={() => router.navigate('/profile')} hitSlop={6}>

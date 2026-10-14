@@ -7,7 +7,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 RAW = os.path.join(HERE, 'raw')
 OUT = os.path.join(HERE, 'framed')
 os.makedirs(OUT, exist_ok=True)
-FONT = os.path.join(HERE, '..', '..', 'node_modules', '@expo-google-fonts', 'inter', '600SemiBold', 'Inter_600SemiBold.ttf')
+# The status bar's clock font. The app no longer bundles Inter, so use a system face (SF Pro is not on Windows).
+FONT = next((p for p in ['C:/Windows/Fonts/seguisb.ttf', 'C:/Windows/Fonts/segoeuib.ttf', '/System/Library/Fonts/SFNS.ttf', '/Library/Fonts/Arial.ttf'] if os.path.exists(p)), None)
 
 S = 4  # supersample: 402x874pt drawn at 4x, then scaled to 640 wide
 W, H = 402 * S, 874 * S
@@ -17,7 +18,7 @@ INK = (16, 20, 18)
 
 
 def status_bar(d):
-    f = ImageFont.truetype(FONT, 17 * S)
+    f = ImageFont.truetype(FONT, 17 * S) if FONT else ImageFont.load_default()
     d.text((64 * S, 33 * S), '9:41', font=f, fill=INK, anchor='mm')
     # Signal bars
     x0 = 292 * S

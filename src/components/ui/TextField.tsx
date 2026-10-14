@@ -70,7 +70,7 @@ export function TextField({ variant = 'inline', leading, label, style, inputStyl
             alignSelf: 'stretch',
             color: c.textPrimary,
             ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null),
-            fontFamily: underline ? t.title.fontFamily : t.body.fontFamily,
+            fontWeight: underline ? t.title.fontWeight : t.body.fontWeight,
             fontSize: underline ? 16 : t.body.fontSize,
             paddingVertical: 8,
           },

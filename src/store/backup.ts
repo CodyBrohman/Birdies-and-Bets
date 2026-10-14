@@ -4,7 +4,6 @@ import { migrate } from './storage/migrate';
 import { useRoundStore } from './roundStore';
 import { useCourseStore } from './courseStore';
 import { useHistoryStore } from './historyStore';
-import { hydrateThemePreference } from './themeStore';
 import { usePreferences } from './preferencesStore';
 import { useProfileStore } from './profileStore';
 
@@ -33,7 +32,7 @@ export async function importBackup(file: BackupFile): Promise<void> {
   }
   await storage.set(STORAGE_KEYS.schemaVersion, file.schema);
   await migrate(storage);
-  await Promise.all([useRoundStore.getState().hydrate(), useCourseStore.getState().hydrate(), useHistoryStore.getState().hydrate(), hydrateThemePreference(), usePreferences.getState().hydrate(), useProfileStore.getState().hydrate()]);
+  await Promise.all([useRoundStore.getState().hydrate(), useCourseStore.getState().hydrate(), useHistoryStore.getState().hydrate(), usePreferences.getState().hydrate(), useProfileStore.getState().hydrate()]);
 }
 
 /** Settings-screen "Clear all data": every round, course and player. Theme and preferences stay. */

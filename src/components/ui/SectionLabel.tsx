@@ -19,7 +19,7 @@ export interface SectionLabelProps {
 
 /** Section title from the mockups: 21pt bold forest ("Bring your crew"), an optional link at the right and a sub line. */
 export function SectionLabel({ children, dot, sub, trailing, action, style }: SectionLabelProps) {
-  const { c, f, space } = useTheme();
+  const { c, w, space } = useTheme();
   return (
     <View style={[{ gap: 2 }, style]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[2] }}>
@@ -30,7 +30,7 @@ export function SectionLabel({ children, dot, sub, trailing, action, style }: Se
         {trailing}
         {action ? (
           <Pressable accessibilityRole="link" onPress={action.onPress} hitSlop={12} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-            <Text step="label" tone="accent" style={{ fontFamily: f.uiBold }}>
+            <Text step="label" tone="accent" style={{ fontWeight: w.bold }}>
               {action.label}
             </Text>
           </Pressable>

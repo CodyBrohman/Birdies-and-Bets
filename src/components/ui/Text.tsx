@@ -23,19 +23,15 @@ export interface TextProps extends RNTextProps {
   tone?: TextTone;
   /** Force tabular figures regardless of the step default. */
   tabular?: boolean;
-  /** Playfair Display instead of Inter: the share card's brand header only. */
-  serif?: boolean;
-  /** With `serif`, the italic face (the "& Bets" wordmark). */
-  italic?: boolean;
   align?: TextStyle['textAlign'];
 }
 
 /**
- * The only text primitive. Reads family, size, line height, tracking and case from the type scale
- * and applies tabular lining numerals on the steps that require them.
+ * The only text primitive. The iOS system font (SF Pro); size, line height, weight, tracking and case come from the
+ * type scale, with tabular lining numerals on the steps that require them. Scales with Dynamic Type up to the step's cap.
  */
-export function Text({ step = 'body', tone = 'primary', tabular, serif, italic, align, style, ...rest }: TextProps) {
-  const { c, t, f } = useTheme();
+export function Text({ step = 'body', tone = 'primary', tabular, align, style, ...rest }: TextProps) {
+  const { c, t } = useTheme();
   const spec = t[step] as (typeof t)[TypeStepName] & { letterSpacing?: number; uppercase?: boolean; maxScale: number };
   const colors: Record<Exclude<TextTone, 'inherit'>, string> = {
     primary: c.textPrimary,
@@ -62,9 +58,9 @@ export function Text({ step = 'body', tone = 'primary', tabular, serif, italic, 
       {...rest}
       style={[
         {
-          fontFamily: serif ? (italic ? f.serifItalic : f.serif) : spec.fontFamily,
           fontSize: spec.fontSize,
           lineHeight: spec.lineHeight,
+          fontWeight: spec.fontWeight,
           textAlign: align,
           ...(spec.letterSpacing != null ? { letterSpacing: spec.letterSpacing } : null),
           ...(spec.uppercase ? { textTransform: 'uppercase' as const } : null),

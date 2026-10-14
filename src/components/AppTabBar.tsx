@@ -22,7 +22,7 @@ export interface TabBarProps {
 
 /** Cream tab bar with a hairline top: outline icons, small labels, forest for the active tab (bold label). */
 export function TabBar({ tabs, active, onPress }: TabBarProps) {
-  const { c, f, space } = useTheme();
+  const { c, w, space } = useTheme();
   const insets = useSafeAreaInsets();
   return (
     <View accessibilityRole="tablist" style={{ flexDirection: 'row', paddingHorizontal: space[2], paddingTop: 6, paddingBottom: Math.max(insets.bottom, space[2]), backgroundColor: c.surface, borderTopWidth: 1, borderTopColor: c.divider }}>
@@ -42,7 +42,7 @@ export function TabBar({ tabs, active, onPress }: TabBarProps) {
             style={({ pressed }) => ({ flex: 1, minHeight: 50, alignItems: 'center', justifyContent: 'center', gap: 3, opacity: pressed ? 0.6 : 1 })}
           >
             <Ionicons name={on ? tab.iconActive : tab.icon} size={23} color={on ? c.textPrimary : c.textTertiary} />
-            <Text step="tab" numberOfLines={1} style={{ color: on ? c.textPrimary : c.textTertiary, fontFamily: on ? f.uiBold : f.uiMedium }}>
+            <Text step="tab" numberOfLines={1} style={{ color: on ? c.textPrimary : c.textTertiary, fontWeight: on ? w.semibold : w.medium }}>
               {tab.label}
             </Text>
           </Pressable>

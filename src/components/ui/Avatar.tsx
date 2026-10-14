@@ -26,7 +26,7 @@ export function avatarInitials(name: string): string {
 
 /** Initials in a tinted disc, or the profile photo. */
 export function Avatar({ name, index, size = 40, photoUri, ring, style }: AvatarProps) {
-  const { c, f } = useTheme();
+  const { c, w } = useTheme();
   const fills = [c.avatarA, c.avatarB, c.avatarC, c.avatarD];
   return (
     <View
@@ -51,7 +51,7 @@ export function Avatar({ name, index, size = 40, photoUri, ring, style }: Avatar
       ) : !name.trim() || name === '?' ? (
         <Ionicons name="person-outline" size={Math.round(size * 0.45)} color={c.avatarText} />
       ) : (
-        <Text style={{ color: c.avatarText, fontFamily: f.uiBold, fontSize: Math.round(size * 0.36), lineHeight: Math.round(size * 0.46) }} maxFontSizeMultiplier={1.2} numberOfLines={1}>
+        <Text style={{ color: c.avatarText, fontWeight: w.bold, fontSize: Math.round(size * 0.36), lineHeight: Math.round(size * 0.46) }} maxFontSizeMultiplier={1.2} numberOfLines={1}>
           {avatarInitials(name)}
         </Text>
       )}
@@ -61,7 +61,7 @@ export function Avatar({ name, index, size = 40, photoUri, ring, style }: Avatar
 
 /** Overlapping avatars with a "+n" disc ("Your circle"). */
 export function AvatarStack({ names, max = 3, size = 30 }: { names: string[]; max?: number; size?: number }) {
-  const { c, f } = useTheme();
+  const { c, w } = useTheme();
   const shown = names.slice(0, max);
   const extra = names.length - shown.length;
   return (
@@ -71,7 +71,7 @@ export function AvatarStack({ names, max = 3, size = 30 }: { names: string[]; ma
       ))}
       {extra > 0 ? (
         <View style={{ width: size, height: size, borderRadius: 999, marginLeft: -size * 0.3, backgroundColor: c.neutralChip, borderWidth: 2, borderColor: c.surfaceRaised, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: c.textPrimary, fontFamily: f.uiSemibold, fontSize: 11 }}>+{extra}</Text>
+          <Text style={{ color: c.textPrimary, fontWeight: w.semibold, fontSize: 11 }}>+{extra}</Text>
         </View>
       ) : null}
     </View>

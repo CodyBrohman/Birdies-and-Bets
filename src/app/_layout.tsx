@@ -1,45 +1,22 @@
-import '../../global.css';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Platform, View, useWindowDimensions } from 'react-native';
 import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { useFonts } from 'expo-font';
-// Per-weight subpath imports so Metro bundles only the eight faces the app uses (see tokens.ts `font`).
-import { PlayfairDisplay_900Black } from '@expo-google-fonts/playfair-display/900Black';
-import { PlayfairDisplay_900Black_Italic } from '@expo-google-fonts/playfair-display/900Black_Italic';
-import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
-import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
-import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
-import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
-import { Inter_800ExtraBold } from '@expo-google-fonts/inter/800ExtraBold';
-import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono/500Medium';
-import { JetBrainsMono_700Bold } from '@expo-google-fonts/jetbrains-mono/700Bold';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
-import { hydrateThemePreference, migrate, storage, useAuthStore, useCourseStore, useHistoryStore, usePreferences, useProfileStore, useRoundStore } from '@/store';
+import { migrate, storage, useAuthStore, useCourseStore, useHistoryStore, usePreferences, useProfileStore, useRoundStore } from '@/store';
 import { Button, Text } from '@/components/ui';
 import { captureError, initAuth, initTelemetry, withCrashReporting } from '@/services';
 
 void SplashScreen.preventAutoHideAsync();
-// Before the first render so early crashes are caught; nothing is sent until preferences load and allow it.
+// Crash reports and analytics each start only once preferences have loaded and allow them (see services/telemetry).
 initTelemetry();
 
 export default withCrashReporting(RootLayout);
 
 function RootLayout() {
-  const { c, scheme } = useTheme();
-  const [fontsLoaded, fontError] = useFonts({
-    PlayfairDisplay_900Black,
-    PlayfairDisplay_900Black_Italic,
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
-    JetBrainsMono_500Medium,
-    JetBrainsMono_700Bold,
-  });
+  const { c } = useTheme();
   const roundHydrated = useRoundStore((s) => s.hydrated);
   const courseHydrated = useCourseStore((s) => s.hydrated);
   const historyHydrated = useHistoryStore((s) => s.hydrated);
@@ -67,7 +44,6 @@ function RootLayout() {
       void hydrateCourses();
       void hydrateHistory();
       void hydrateProfiles();
-      void hydrateThemePreference();
     })();
     return () => {
       cancelled = true;
@@ -85,7 +61,8 @@ function RootLayout() {
       });
   }, [hydrated]);
 
-  const ready = (fontsLoaded || !!fontError) && hydrated && authStatus !== 'loading';
+  // The system font needs no loading: ready once local data is in and the account state is known.
+  const ready = hydrated && authStatus !== 'loading';
   // Only 'signed-out' (a backend exists and nothing is chosen yet) closes the app behind the welcome screen. Local mode,
   // a signed-in account (even offline or with an expired session) and local-only builds ('disabled') are all open.
   const appOpen = authStatus !== 'signed-out';
@@ -104,7 +81,7 @@ function RootLayout() {
   return (
     <SafeAreaProvider>
       <PhoneFrame>
-        <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+        <StatusBar style="dark" />
         <Stack
           screenOptions={{
             headerShown: false,

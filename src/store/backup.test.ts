@@ -6,7 +6,6 @@ import { useCourseStore } from './courseStore';
 import { useRoundStore } from './roundStore';
 import { useProfileStore } from './profileStore';
 import { parseBackup } from '../lib/backup';
-import { useThemePreference } from '../theme/preference';
 
 jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 
@@ -16,7 +15,6 @@ beforeEach(async () => {
   useCourseStore.setState({ userCourses: [], recentIds: [], searchCache: {}, hydrated: false });
   useRoundStore.setState({ round: null });
   useProfileStore.setState({ profiles: [], groups: [] });
-  useThemePreference.setState({ preference: 'system' });
 });
 
 describe('backup export / import', () => {
@@ -35,7 +33,7 @@ describe('backup export / import', () => {
     await AsyncStorage.setItem(STORAGE_KEYS.userCourses, JSON.stringify([{ id: 'stale' }]));
     await importBackup(parsed.file);
     expect(useProfileStore.getState().profiles.map((p) => p.name)).toEqual(['Pat']);
-    expect(useThemePreference.getState().preference).toBe('dark');
+    expect(JSON.parse((await AsyncStorage.getItem(STORAGE_KEYS.themePreference)) ?? 'null')).toBe('dark'); // legacy key round-trips untouched
     expect(await AsyncStorage.getItem(STORAGE_KEYS.userCourses)).toBeNull();
     expect(JSON.parse((await AsyncStorage.getItem(STORAGE_KEYS.schemaVersion)) ?? '0')).toBe(SCHEMA_VERSION);
   });

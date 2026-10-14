@@ -32,7 +32,7 @@ const GAME_ICONS: Record<string, IoniconName> = {
 /** Bet: the round builder. Your round card, tee time, your crew, side games, then Start. */
 export default function BetScreen() {
   const router = useRouter();
-  const { c, f, space, layout } = useTheme();
+  const { c, w, space, layout } = useTheme();
   const catalog = useGameCatalog();
   const draft = useRoundStore((s) => s.draft);
   const round = useRoundStore((s) => s.round);
@@ -163,7 +163,7 @@ export default function BetScreen() {
             <Text step="headline" style={{ color: c.onHero, fontSize: 23, lineHeight: 28 }} numberOfLines={2}>
               {course?.name ?? 'No course yet'}
             </Text>
-            <Text step="caption" tabular={false} style={{ color: c.onHeroSoft, fontFamily: f.uiSemibold }}>
+            <Text step="caption" tabular={false} style={{ color: c.onHeroSoft, fontWeight: w.semibold }}>
               {course ? joinMeta([course.location, plural(holes.length, 'hole'), `Par ${holes.reduce((s, h) => s + h.par, 0) || coursePar(course)}`]) : 'Pick a track from Courses.'}
             </Text>
           </View>
@@ -293,7 +293,7 @@ export default function BetScreen() {
                 ) : null}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                  <Text step="caption" tabular={false} style={{ flex: 1, fontFamily: f.uiBold, fontSize: 12, color: mode.category === 'social' ? c.accentText : c.textPrimary }}>
+                  <Text step="caption" tabular={false} style={{ flex: 1, fontWeight: w.bold, fontSize: 12, color: mode.category === 'social' ? c.accentText : c.textPrimary }}>
                     {mode.category === 'social' ? 'Bragging rights only' : `Stakes in ${settings.stakeLabel}`}
                   </Text>
                   <Text step="caption" tone="tertiary" tabular={false} style={{ fontSize: 12 }}>
@@ -383,11 +383,11 @@ export default function BetScreen() {
 }
 
 function HeroFact({ icon, text, chevron }: { icon: IoniconName; text: string; chevron?: boolean }) {
-  const { c, f } = useTheme();
+  const { c, w } = useTheme();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
       <Ionicons name={icon} size={16} color={c.onHero} />
-      <Text step="caption" tabular={false} style={{ color: c.onHero, fontFamily: f.uiBold }}>
+      <Text step="caption" tabular={false} style={{ color: c.onHero, fontWeight: w.bold }}>
         {text}
       </Text>
       {chevron ? <Ionicons name="chevron-down" size={14} color={c.onHeroSoft} /> : null}
@@ -396,10 +396,10 @@ function HeroFact({ icon, text, chevron }: { icon: IoniconName; text: string; ch
 }
 
 function InlineLink({ label, onPress }: { label: string; onPress: () => void }) {
-  const { f } = useTheme();
+  const { w } = useTheme();
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={10} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-      <Text step="caption" tone="accent" tabular={false} style={{ fontFamily: f.uiBold }} numberOfLines={1}>
+      <Text step="caption" tone="accent" tabular={false} style={{ fontWeight: w.bold }} numberOfLines={1}>
         {label}
       </Text>
     </Pressable>

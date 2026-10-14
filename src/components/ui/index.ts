@@ -15,7 +15,6 @@ export * from './Sheet';
 export * from './TextField';
 export * from './StatTile';
 export * from './LivePill';
-export * from './Tile';
 export * from './interaction';
 export * from './ScreenHeader';
 export * from './IconTile';

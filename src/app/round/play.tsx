@@ -22,7 +22,7 @@ const HOLE_GAP = 8;
 
 export default function PlayScreen() {
   const router = useRouter();
-  const { c, f, space, radius, layout } = useTheme();
+  const { c, w, space, radius, layout } = useTheme();
   const round = useRound();
   const order = usePlayOrder(round);
   const handicaps = useHandicaps(round);
@@ -206,7 +206,7 @@ export default function PlayScreen() {
                   {({ pressed }) => (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill, backgroundColor: pressed ? 'rgba(255,255,255,0.26)' : 'rgba(255,255,255,0.14)' }}>
                       <Ionicons name="trophy-outline" size={13} color={c.goldFill} />
-                      <Text step="caption" tabular={false} style={{ color: c.onHero, fontFamily: f.uiSemibold, fontSize: 12 }}>
+                      <Text step="caption" tabular={false} style={{ color: c.onHero, fontWeight: w.semibold, fontSize: 12 }}>
                         {plural(runs.length, 'game')} · standings
                       </Text>
                     </View>
@@ -327,7 +327,7 @@ export default function PlayScreen() {
                       {strokes !== 0 ? <Text step="caption" tone="accent">{` · ${strokes > 0 ? `+${plural(strokes, 'stroke')}` : `gives ${Math.abs(strokes)}`}`}</Text> : null}
                     </Text>
                     <Pressable accessibilityRole="button" accessibilityState={{ selected: saved === null }} accessibilityLabel={`${p.name}: pick up, no score`} onPress={() => change(p.id, null)} hitSlop={10}>
-                      <Text step="caption" tabular={false} tone={saved === null ? 'accent' : 'secondary'} style={{ fontFamily: f.uiSemibold, textDecorationLine: saved === null ? 'none' : 'underline' }}>
+                      <Text step="caption" tabular={false} tone={saved === null ? 'accent' : 'secondary'} style={{ fontWeight: w.semibold, textDecorationLine: saved === null ? 'none' : 'underline' }}>
                         {saved === null ? 'Picked up' : 'Pick up'}
                       </Text>
                     </Pressable>
