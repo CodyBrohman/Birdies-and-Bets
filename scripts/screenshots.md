@@ -87,11 +87,13 @@ The flow finds its way by test ids. If one of these is renamed or removed, updat
 | Screen | Test ids |
 |---|---|
 | Home | `resume-round`, `tab-home`, `round-<id>` |
-| The round | `current-hole`, `open-standings`, `next-hole`, `everyone-par` |
-| Standings | `sheet-close` |
+| The round | `current-hole`, `open-standings`, `next-hole`, `everyone-par`, and the Wolf chip labelled "The wolf went: Alone" |
 | Results | `save-round` |
 | Play tab | `tab-play`, `start-round` |
 | A round's page | `scorecard-in` |
+
+The Standings sheet is photographed without being read: a sheet over the round is missing from the hierarchy Maestro
+reads on iOS, so the flow pauses, takes the picture and restarts the app to close it.
 
 If the demo data changes (`src/store/demo.ts`), update the table at the top. The website's screenshots
 (`../website/assets/img/`) are separate: see `scripts/website-shots/`.

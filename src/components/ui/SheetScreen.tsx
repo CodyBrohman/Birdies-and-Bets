@@ -39,12 +39,16 @@ export function SheetScreen({ title, onClose, closeLabel, action, gap, children 
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ paddingBottom: layout.section }}
     >
-      <View collapsable={false} style={{ flexDirection: 'row', alignItems: 'center', minHeight: 56, paddingHorizontal: space[3], paddingTop: space[2], backgroundColor: c.surface }}>
-        <View style={{ flex: 1, alignItems: 'flex-start' }}>{leading ? close : null}</View>
-        <Text accessibilityRole="header" step="rowTitle" numberOfLines={1} style={{ flexShrink: 1 }}>
-          {title}
-        </Text>
-        <View style={{ flex: 1, alignItems: 'flex-end' }}>{action ? <HeaderButton label={action.label} prominent disabled={action.disabled} onPress={action.onPress} testID={action.testID} /> : leading ? null : close}</View>
+      {/* A sticky child's own style moves to React Native's sticky wrapper (and the child gets flex: 1), so the row lives
+          one level in. */}
+      <View collapsable={false} style={{ backgroundColor: c.surface }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 56, paddingHorizontal: space[3], paddingTop: space[2] }}>
+          <View style={{ flex: 1, alignItems: 'flex-start' }}>{leading ? close : null}</View>
+          <Text accessibilityRole="header" step="rowTitle" numberOfLines={1} style={{ flexShrink: 1 }}>
+            {title}
+          </Text>
+          <View style={{ flex: 1, alignItems: 'flex-end' }}>{action ? <HeaderButton label={action.label} prominent disabled={action.disabled} onPress={action.onPress} testID={action.testID} /> : leading ? null : close}</View>
+        </View>
       </View>
       <View style={{ paddingHorizontal: layout.cardPad + 4, paddingTop: space[2], gap: gap ?? space[4] }}>{children}</View>
     </ScrollView>

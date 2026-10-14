@@ -48,7 +48,7 @@ Run it with `scripts/screenshots-ios.sh`, or on GitHub with Actions → **App St
 `scripts/screenshots.md`.
 
 Its ids, besides the smoke flow's:
-- `resume-round`, `current-hole`, `open-standings`, `sheet-close`
-- `next-hole`, `everyone-par`, `save-round`
+- `resume-round`, `current-hole`, `open-standings`
+- `next-hole`, `everyone-par`, the Wolf chip "The wolf went: Alone", `save-round`
 - `tab-play`, `start-round`, `tab-home`
 - `round-<round id>` on round rows, `scorecard-in` on a round's page
