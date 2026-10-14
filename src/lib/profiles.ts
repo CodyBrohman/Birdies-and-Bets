@@ -92,6 +92,37 @@ export function groupsWithoutProfile(groups: PlayerGroup[], profileId: string): 
   return groups.map((g) => ({ ...g, memberIds: g.memberIds.filter((id) => id !== profileId) })).filter((g) => g.memberIds.length >= MIN_GROUP_SIZE);
 }
 
+/**
+ * Fold `from` into `into` when one person was saved twice (a "me" made on this phone before signing in to an account
+ * that already had one). `into` keeps its name and current index; index history is merged by time, the earliest
+ * "created" and the latest "last played" win.
+ */
+export function mergeProfile(into: PlayerProfile, from: PlayerProfile): PlayerProfile {
+  const seen = new Set<string>();
+  const indexHistory = [...into.indexHistory, ...from.indexHistory]
+    .filter((e) => {
+      const key = `${e.at}|${e.index}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => a.at.localeCompare(b.at));
+  const lastPlayedAt = [into.lastPlayedAt, from.lastPlayedAt].filter((t): t is string => !!t).sort().pop();
+  const createdAt = [into.createdAt, from.createdAt].sort()[0]!;
+  return { ...into, indexHistory, createdAt, ...(lastPlayedAt ? { lastPlayedAt } : {}) };
+}
+
+/** Group seats pointing at `fromId` now point at `toId` (a seat is never listed twice). */
+export function repointGroups(groups: PlayerGroup[], fromId: string, toId: string): PlayerGroup[] {
+  return groups.map((g) => (g.memberIds.includes(fromId) ? { ...g, memberIds: [...new Set(g.memberIds.map((id) => (id === fromId ? toId : id)))] } : g));
+}
+
+/** Round players linked to `fromId` are linked to `toId`. Returns the same object when nothing changes. */
+export function repointRound<T extends { players: { profileId?: string }[] }>(round: T, fromId: string, toId: string): T {
+  if (!round.players.some((p) => p.profileId === fromId)) return round;
+  return { ...round, players: round.players.map((p) => (p.profileId === fromId ? { ...p, profileId: toId } : p)) };
+}
+
 export interface ProfileRound {
   summary: RoundSummary;
   player: RoundSummaryPlayer;

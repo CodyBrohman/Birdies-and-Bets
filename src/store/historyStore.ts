@@ -4,8 +4,6 @@ import type { HistoryEntry, RoundSummary } from '@/types';
 import { isRound, isSummary } from '@/lib/history';
 import { storage, STORAGE_KEYS } from './storage';
 
-export const MAX_HISTORY = 50;
-
 interface HistoryState {
   hydrated: boolean;
   /** Newest first. */
@@ -42,8 +40,10 @@ export const useHistoryStore = create<HistoryState>()((set, get) => {
       }
     },
 
+    // No cap: rounds are small, and dropping old ones here would read as a delete to sync and remove them from the
+    // account on every phone.
     add(entry) {
-      const entries = [entry, ...get().entries.filter((e) => e.summary.id !== entry.summary.id)].slice(0, MAX_HISTORY);
+      const entries = [entry, ...get().entries.filter((e) => e.summary.id !== entry.summary.id)];
       set({ entries });
       persist(entries);
     },

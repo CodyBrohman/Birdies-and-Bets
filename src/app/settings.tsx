@@ -6,18 +6,18 @@ import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { File, Paths } from 'expo-file-system';
 import { useRouter } from 'expo-router';
-import { Button, Card, Screen, SectionLabel, Sheet, Text, Toggle } from '@/components/ui';
+import { ask, Button, Card, confirm, Screen, SectionLabel, Text, Toggle } from '@/components/ui';
 import { SetupHeader } from '@/components/SetupHeader';
 import { AllowanceField, StakeLabelField } from '@/components/round/SettingsFields';
 import { useTheme } from '@/theme';
 import { clearAllData, exportBackup, importBackup, SCHEMA_VERSION, storageBackend, useAuthStore, useMe, usePreferences, useRoundStore, useSyncStatus } from '@/store';
-import { describeBackup, parseBackup, type BackupFile } from '@/lib/backup';
-import { formatShortDate } from '@/lib/format';
-import { deleteAccount, PRIVACY_POLICY_URL, signOut, track } from '@/services';
+import { describeBackup, parseBackup } from '@/lib/backup';
+import { formatShortDate, plural } from '@/lib/format';
+import { deleteAccount, PRIVACY_POLICY_URL, restoreWithSync, retryRejected, signOut, track } from '@/services';
 
 type Busy = 'export' | 'import' | 'clear' | 'signout' | 'delete' | null;
 
-/** Feel, new-round defaults, data (back up / restore / clear), privacy choices and what build this is. Opened from Profile. */
+/** Account, feel, new-round defaults, data (back up / restore / clear), privacy choices and what build this is. Opened from Profile. */
 export default function SettingsScreen() {
   const router = useRouter();
   const { space } = useTheme();
@@ -31,108 +31,131 @@ export default function SettingsScreen() {
 
   const [busy, setBusy] = useState<Busy>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [pending, setPending] = useState<BackupFile | null>(null);
-  const [confirmClear, setConfirmClear] = useState(false);
-  const [confirmSignOut, setConfirmSignOut] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const auth = useAuthStore();
   const sync = useSyncStatus();
   const { me } = useMe();
+  const signedIn = auth.status === 'signed-in';
 
-  const leave = async (kind: 'signout' | 'delete') => {
+  const run = async (kind: Exclude<Busy, null>, work: () => Promise<void>, failure: string) => {
     setMessage(null);
     setBusy(kind);
     try {
-      await (kind === 'delete' ? deleteAccount() : signOut());
+      await work();
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'That did not work. Check your connection and try again.');
+      setMessage(e instanceof Error && e.message ? e.message : failure);
+    } finally {
       setBusy(null);
     }
   };
 
-  const backUp = async () => {
-    setMessage(null);
-    setBusy('export');
-    try {
-      const json = await exportBackup();
-      const name = `birdies-and-bets-backup-${new Date().toISOString().slice(0, 10)}.json`;
-      if (Platform.OS === 'web') {
-        const blob = new Blob([json], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = name;
-        a.click();
+  const askSignOut = async () => {
+    const ok = await confirm({
+      title: 'Sign out?',
+      message: "Your rounds stay in your account. This iPhone's rounds, courses and players are removed; sign back in to get them again.",
+      confirmLabel: 'Sign out',
+    });
+    if (!ok) return;
+    await run(
+      'signout',
+      async () => {
+        const { unsynced } = await signOut();
+        if (unsynced === 0) return;
+        const choice = await ask(`${plural(unsynced, 'change')} not synced yet`, "There's no connection, so they haven't reached your account. Signing out now loses them.", [
+          { label: 'Stay signed in', value: 'stay', style: 'cancel' },
+          { label: 'Sign out anyway', value: 'discard', style: 'destructive' },
+        ]);
+        if (choice === 'discard') await signOut({ discardUnsynced: true });
+      },
+      "Couldn't sign out. Try again.",
+    );
+  };
+
+  const askDelete = async () => {
+    const ok = await confirm({
+      title: 'Delete your account?',
+      message: 'Your account and everything saved with it (rounds, courses, players and settings) are deleted from our servers and from this iPhone. This cannot be undone.',
+      confirmLabel: 'Delete account',
+      destructive: true,
+    });
+    if (ok) await run('delete', deleteAccount, 'Could not delete the account. Check your connection and try again.');
+  };
+
+  const backUp = () =>
+    run(
+      'export',
+      async () => {
+        const json = await exportBackup();
+        const name = `birdies-and-bets-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        if (Platform.OS === 'web') {
+          const blob = new Blob([json], { type: 'application/json' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = name;
+          a.click();
+          track('backup_created');
+          return;
+        }
+        const file = new File(Paths.cache, name);
+        if (file.exists) file.delete();
+        file.write(json);
+        await Sharing.shareAsync(file.uri, { mimeType: 'application/json', UTI: 'public.json', dialogTitle: 'Save backup' });
         track('backup_created');
-        return;
-      }
-      const file = new File(Paths.cache, name);
-      if (file.exists) file.delete();
-      file.write(json);
-      await Sharing.shareAsync(file.uri, { mimeType: 'application/json', UTI: 'public.json', dialogTitle: 'Save backup' });
-      track('backup_created');
-    } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Could not create the backup.');
-    } finally {
-      setBusy(null);
-    }
-  };
+      },
+      'Could not create the backup.',
+    );
 
-  const pickRestore = async () => {
-    setMessage(null);
-    setBusy('import');
-    try {
-      const picked = await DocumentPicker.getDocumentAsync({ type: ['application/json', 'public.json', 'text/plain'], copyToCacheDirectory: true, multiple: false });
-      if (picked.canceled || !picked.assets[0]) return;
-      const asset = picked.assets[0];
-      const text = Platform.OS === 'web' && asset.file ? await asset.file.text() : await new File(asset.uri).text();
-      const parsed = parseBackup(text);
-      if (!parsed.ok) {
-        setMessage(parsed.reason);
-        return;
-      }
-      setPending(parsed.file);
-    } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Could not read that file.');
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const restore = async () => {
-    if (!pending) return;
-    setBusy('import');
-    try {
-      await importBackup(pending);
-      track('backup_restored');
-      setPending(null);
-      router.replace('/');
-    } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Restore failed.');
-      setPending(null);
-    } finally {
-      setBusy(null);
-    }
-  };
+  const restore = () =>
+    run(
+      'import',
+      async () => {
+        const picked = await DocumentPicker.getDocumentAsync({ type: ['application/json', 'public.json', 'text/plain'], copyToCacheDirectory: true, multiple: false });
+        if (picked.canceled || !picked.assets[0]) return;
+        const asset = picked.assets[0];
+        const text = Platform.OS === 'web' && asset.file ? await asset.file.text() : await new File(asset.uri).text();
+        const parsed = parseBackup(text);
+        if (!parsed.ok) {
+          setMessage(parsed.reason);
+          return;
+        }
+        const ok = await confirm({
+          title: 'Restore this backup?',
+          message: `${describeBackup(parsed.file, formatShortDate)}. ${
+            signedIn ? 'It is merged with your account: rounds your account is missing come back, and nothing is deleted.' : 'It replaces every round, course and player on this iPhone.'
+          }${inProgress && !signedIn ? ' The round in progress will be lost.' : ''}`,
+          confirmLabel: 'Restore',
+          destructive: !signedIn,
+        });
+        if (!ok) return;
+        await restoreWithSync(() => importBackup(parsed.file));
+        track('backup_restored');
+        router.replace('/');
+      },
+      'Could not read that file.',
+    );
 
   const clear = async () => {
-    setBusy('clear');
-    try {
-      await clearAllData();
-      setConfirmClear(false);
-      router.replace('/');
-    } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Could not clear the data.');
-      setConfirmClear(false);
-    } finally {
-      setBusy(null);
-    }
+    const ok = await confirm({
+      title: 'Clear all data?',
+      message: `${signedIn ? 'Every round, course and player is deleted from your account and from every phone signed in to it.' : 'Every round, course and player on this iPhone is deleted.'}${inProgress ? ' The round in progress will be lost.' : ''} Settings stay. This cannot be undone.`,
+      confirmLabel: 'Delete everything',
+      destructive: true,
+    });
+    if (!ok) return;
+    await run(
+      'clear',
+      async () => {
+        await clearAllData();
+        router.replace('/');
+      },
+      'Could not clear the data.',
+    );
   };
 
   return (
     <Screen>
       <SetupHeader title="Settings" fallback="/profile" />
       <ScrollView contentContainerStyle={{ gap: space[3], paddingBottom: space[6] }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        {auth.status === 'signed-in' ? (
+        {signedIn ? (
           <>
             <SectionLabel>Account</SectionLabel>
             <Card padding="roomy" style={{ gap: space[3] }}>
@@ -141,17 +164,41 @@ export default function SettingsScreen() {
                 <Text step="label" tone="secondary">
                   {auth.method === 'apple' ? 'Signed in with Apple' : auth.email ? `Signed in as ${auth.email}` : 'Signed in by email'}
                 </Text>
-                <Text step="caption" tone="tertiary" tabular={false} accessibilityLiveRegion="polite">
-                  {syncLine(sync)}
+                <Text step="caption" tone={auth.sessionExpired ? 'negative' : 'tertiary'} tabular={false} accessibilityLiveRegion="polite">
+                  {auth.sessionExpired ? 'Signed out on the server. Sign in again to keep syncing; nothing on this iPhone is lost.' : syncLine(sync)}
                 </Text>
               </View>
-              <Button label={busy === 'signout' ? 'Signing out…' : 'Sign out'} variant="secondary" disabled={busy != null} onPress={() => setConfirmSignOut(true)} />
-              <Button label="Delete account" variant="secondary" destructive disabled={busy != null} onPress={() => setConfirmDelete(true)} />
+              {auth.sessionExpired ? <Button label="Sign in again" onPress={() => router.push('/sign-in')} /> : null}
+              {sync.rejected > 0 ? (
+                <View style={{ gap: space[2] }}>
+                  <Text step="caption" tone="negative" tabular={false}>
+                    {`${plural(sync.rejected, 'item')} couldn't sync.`}
+                  </Text>
+                  <Button label="Retry" variant="secondary" size="sm" onPress={() => void retryRejected()} />
+                </View>
+              ) : null}
+              <Button label={busy === 'signout' ? 'Signing out…' : 'Sign out'} variant="secondary" disabled={busy != null} onPress={() => void askSignOut()} />
+              <Button label={busy === 'delete' ? 'Deleting…' : 'Delete account'} variant="secondary" destructive disabled={busy != null} onPress={() => void askDelete()} />
             </Card>
           </>
         ) : null}
 
-        <SectionLabel style={{ marginTop: auth.status === 'signed-in' ? space[3] : 0 }}>Feel</SectionLabel>
+        {auth.status === 'local' ? (
+          <>
+            <SectionLabel>Account</SectionLabel>
+            <Card padding="roomy" style={{ gap: space[3] }}>
+              <View style={{ gap: 2 }}>
+                <Text step="bodyStrong">Not signed in</Text>
+                <Text step="label" tone="secondary">
+                  Your rounds are saved on this iPhone. Sign in to back them up and use them on another phone.
+                </Text>
+              </View>
+              <Button label="Sign in to back up and sync" onPress={() => router.push('/sign-in')} />
+            </Card>
+          </>
+        ) : null}
+
+        <SectionLabel style={{ marginTop: signedIn || auth.status === 'local' ? space[3] : 0 }}>Feel</SectionLabel>
         <Card padding="roomy">
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space[4] }}>
             <View style={{ flex: 1, gap: 2 }}>
@@ -178,16 +225,16 @@ export default function SettingsScreen() {
         <Card padding="roomy">
           <Text step="bodyStrong">Restore</Text>
           <Text step="label" tone="secondary" style={{ marginTop: 2, marginBottom: space[3] }}>
-            Replace everything with a backup file.
+            {signedIn ? 'Merge a backup file with your account.' : 'Replace everything on this iPhone with a backup file.'}
           </Text>
-          <Button label={busy === 'import' ? 'Reading…' : 'Restore from backup'} variant="secondary" disabled={busy != null} onPress={() => void pickRestore()} />
+          <Button label={busy === 'import' ? 'Reading…' : 'Restore from backup'} variant="secondary" disabled={busy != null} onPress={() => void restore()} />
         </Card>
         <Card padding="roomy" variant="outlined">
           <Text step="bodyStrong">Clear all data</Text>
           <Text step="label" tone="secondary" style={{ marginTop: 2, marginBottom: space[3] }}>
-            {auth.status === 'signed-in' ? 'Rounds, courses and players, here and in your account. Settings stay.' : 'Rounds, courses and players. Settings stay.'}
+            {signedIn ? 'Rounds, courses and players, here and in your account. Settings stay.' : 'Rounds, courses and players on this iPhone. Settings stay.'}
           </Text>
-          <Button label="Clear all data" variant="secondary" destructive disabled={busy != null} onPress={() => setConfirmClear(true)} />
+          <Button label={busy === 'clear' ? 'Clearing…' : 'Clear all data'} variant="secondary" destructive disabled={busy != null} onPress={() => void clear()} />
         </Card>
         {message ? (
           <Text step="caption" tone="negative" tabular={false}>
@@ -211,42 +258,6 @@ export default function SettingsScreen() {
         </Card>
         <Button label="Show the intro again" variant="secondary" onPress={() => router.push('/onboarding')} />
       </ScrollView>
-
-      <Sheet visible={pending != null} onClose={() => setPending(null)} title="Restore this backup?" subtitle={pending ? describeBackup(pending, formatShortDate) : ''}>
-        <View style={{ gap: space[2] }}>
-          <Text tone="secondary">
-            This replaces every round, course and player on this phone.{inProgress ? ' The round in progress will be lost.' : ''}
-          </Text>
-          <Button label="Replace and restore" disabled={busy != null} onPress={() => void restore()} />
-          <Button label="Cancel" variant="secondary" onPress={() => setPending(null)} />
-        </View>
-      </Sheet>
-
-      <Sheet visible={confirmSignOut} onClose={() => setConfirmSignOut(false)} title="Sign out?" subtitle="Your data stays in your account">
-        <View style={{ gap: space[2] }}>
-          <Text tone="secondary">{"Anything not yet synced is sent first. Then this phone's rounds, courses and players are removed; sign back in to get them again."}</Text>
-          <Button label={busy === 'signout' ? 'Signing out…' : 'Sign out'} disabled={busy != null} onPress={() => void leave('signout')} />
-          <Button label="Stay signed in" variant="secondary" onPress={() => setConfirmSignOut(false)} />
-        </View>
-      </Sheet>
-
-      <Sheet visible={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete your account?" subtitle="This cannot be undone">
-        <View style={{ gap: space[2] }}>
-          <Text tone="secondary">Your account and everything saved with it (rounds, history, courses, players and settings) are deleted from our servers and from this phone.</Text>
-          <Button label={busy === 'delete' ? 'Deleting…' : 'Delete my account'} destructive disabled={busy != null} onPress={() => void leave('delete')} />
-          <Button label="Keep my account" variant="secondary" onPress={() => setConfirmDelete(false)} />
-        </View>
-      </Sheet>
-
-      <Sheet visible={confirmClear} onClose={() => setConfirmClear(false)} title="Clear all data?" subtitle="This cannot be undone">
-        <View style={{ gap: space[2] }}>
-          <Text tone="secondary">
-            {auth.status === 'signed-in' ? 'Every round, course and player will be deleted from your account and from every phone you are signed in on.' : 'Every round, course and player on this phone will be deleted.'}{inProgress ? ' The round in progress will be lost.' : ''} Preferences stay.
-          </Text>
-          <Button label={busy === 'clear' ? 'Clearing…' : 'Delete everything'} disabled={busy != null} onPress={() => void clear()} />
-          <Button label="Keep my data" variant="secondary" onPress={() => setConfirmClear(false)} />
-        </View>
-      </Sheet>
     </Screen>
   );
 }

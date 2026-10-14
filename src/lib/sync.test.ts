@@ -1,4 +1,4 @@
-import { applyRemote, coalesceOutbox, diffSnapshots, latestSyncedAt, remoteWins, stableJson, type OutboxChange, type RemoteRow } from './sync';
+import { applyRemote, backoffMs, chunkByBytes, classifySyncError, coalesceOutbox, diffSnapshots, latestSyncedAt, pruneOutbox, pullSince, remoteWins, stableJson, type OutboxChange, type RemoteRow } from './sync';
 
 const row = (id: string, updated_at: string, extra: Partial<RemoteRow> = {}): RemoteRow => ({ id, data: { id, v: updated_at }, updated_at, deleted_at: null, synced_at: updated_at, ...extra });
 
@@ -50,5 +50,67 @@ describe('sync merge', () => {
     expect(latestSyncedAt([], undefined)).toBeUndefined();
     expect(latestSyncedAt([{ synced_at: '2026-10-05T10:00:00Z' }, { synced_at: '2026-10-05T11:00:00Z' }], '2026-10-05T09:00:00Z')).toBe('2026-10-05T11:00:00Z');
     expect(latestSyncedAt([{ synced_at: '2026-10-05T08:00:00Z' }], '2026-10-05T09:00:00Z')).toBe('2026-10-05T09:00:00Z');
+  });
+
+  it('skips untouched entities by reference, so one score tap does not re-serialise all history', () => {
+    let reads = 0;
+    const untouched = {
+      get holes() {
+        reads++;
+        return [1, 2, 3];
+      },
+    };
+    const prev = { a: { data: untouched, status: 'complete' as const }, b: { data: { n: 1 } } };
+    // Snapshots rebuild their wrappers every time; the entity object itself is what stays the same.
+    const next = { a: { data: untouched, status: 'complete' as const }, b: { data: { n: 2 } } };
+    expect(diffSnapshots(prev, next)).toEqual({ upserts: ['b'], deletes: [] });
+    expect(reads).toBe(0);
+    // A changed status still counts, even with the same object.
+    expect(diffSnapshots(prev, { a: { data: untouched, status: 'in-progress' as never }, b: next.b }).upserts).toEqual(['a', 'b']);
+  });
+
+  it('re-reads a few minutes back on every pull, to catch writes that committed late', () => {
+    expect(pullSince(undefined)).toBeUndefined();
+    expect(pullSince('2026-10-05T12:10:00.000Z')).toBe('2026-10-05T12:05:00.000Z');
+    expect(pullSince('not a date')).toBeUndefined();
+  });
+
+  it('sorts write errors into retry, sign-in and set-aside', () => {
+    expect(classifySyncError({ message: 'Network request failed' })).toBe('transient');
+    expect(classifySyncError({ message: 'Bad gateway', status: 502 })).toBe('transient');
+    expect(classifySyncError({ message: 'Too many requests', status: 429 })).toBe('transient');
+    expect(classifySyncError({ message: 'JWT expired', code: 'PGRST301', status: 401 })).toBe('auth');
+    expect(classifySyncError({ message: 'new row violates row-level security policy', code: '42501', status: 403 })).toBe('auth');
+    expect(classifySyncError({ message: 'value too long', code: '22001', status: 400 })).toBe('row');
+    expect(classifySyncError({ message: 'violates check constraint', code: '23514', status: 400 })).toBe('row');
+    expect(classifySyncError({ message: 'Payload too large', status: 413 })).toBe('row');
+    expect(classifySyncError(null)).toBe('transient');
+  });
+
+  it('backs off from 2 s, doubling to a 5 minute cap, with a little jitter', () => {
+    expect(backoffMs(0, () => 0)).toBe(2000);
+    expect(backoffMs(3, () => 0)).toBe(16000);
+    expect(backoffMs(20, () => 0)).toBe(300000);
+    expect(backoffMs(0, () => 1)).toBe(2400);
+  });
+
+  it('splits a big first upload into request-sized batches without losing or reordering rows', () => {
+    const rows = Array.from({ length: 10 }, (_, i) => ({ id: String(i), pad: 'x'.repeat(100) }));
+    const batches = chunkByBytes(rows, 350);
+    expect(batches.length).toBeGreaterThan(1);
+    expect(batches.flat()).toEqual(rows);
+    expect(chunkByBytes([], 10)).toEqual([]);
+    // One row bigger than the limit still goes, alone.
+    expect(chunkByBytes([{ big: 'y'.repeat(500) }], 100)).toHaveLength(1);
+  });
+
+  it('drops queued edits that a newer (or equal) remote row already replaced', () => {
+    const c = (table: OutboxChange['table'], id: string, at: string): OutboxChange => ({ table, id, data: {}, updatedAt: at });
+    const out = [c('people', 'a', '2026-10-05T10:00:00Z'), c('people', 'b', '2026-10-05T10:10:00Z'), c('courses', 'a', '2026-10-05T09:00:00Z')];
+    const pruned = pruneOutbox(out, 'people', [
+      { id: 'a', updated_at: '2026-10-05T10:05:00Z' },
+      { id: 'b', updated_at: '2026-10-05T10:01:00Z' },
+    ]);
+    expect(pruned.map((x) => `${x.table}:${x.id}`)).toEqual(['people:b', 'courses:a']);
   });
 });

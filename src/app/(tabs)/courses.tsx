@@ -11,6 +11,7 @@ import { useCourseStore, usePreferences, useRoundStore, type CourseSearchResult 
 import { courseSearchAvailable, fetchCourse, searchCourses, track } from '@/services';
 import type { Course } from '@/types';
 import { joinMeta, plural } from '@/lib/format';
+import { friendlyCourseError } from '@/lib/errors';
 
 type Filter = 'all' | 'recent' | 'yours';
 
@@ -51,7 +52,7 @@ export default function CoursesScreen() {
 
   // Remote search: debounced, cached, quiet when offline or not configured. Results are kept per query, so a new
   // query needs no reset: what to show (cached, fetched, searching or failed) is derived during render.
-  const [fetched, setFetched] = useState<{ q: string; results: CourseSearchResult[]; failed: boolean } | null>(null);
+  const [fetched, setFetched] = useState<{ q: string; results: CourseSearchResult[]; failed?: string } | null>(null);
   const [importing, setImporting] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const q = query.trim();
@@ -69,10 +70,10 @@ export default function CoursesScreen() {
         .then((r) => {
           if (controller.signal.aborted) return;
           cacheSearch(q, r);
-          setFetched({ q, results: r, failed: false });
+          setFetched({ q, results: r });
         })
-        .catch(() => {
-          if (!controller.signal.aborted) setFetched({ q, results: [], failed: true });
+        .catch((e: unknown) => {
+          if (!controller.signal.aborted) setFetched({ q, results: [], failed: friendlyCourseError(e) });
         });
     }, 350);
     return () => {
@@ -98,7 +99,7 @@ export default function CoursesScreen() {
       setQuery('');
       choose(course);
     } catch (e) {
-      setImportError(e instanceof Error ? e.message : 'Could not load that course.');
+      setImportError(friendlyCourseError(e));
     } finally {
       setImporting(null);
     }
@@ -196,7 +197,7 @@ export default function CoursesScreen() {
             ) : null}
             {remoteState === 'error' ? (
               <Text step="label" tone="tertiary">
-                Search is offline. Saved courses still work.
+                {current?.failed}
               </Text>
             ) : null}
             {remote.map((r) => {

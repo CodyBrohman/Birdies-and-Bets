@@ -7,6 +7,7 @@ import { BrandMark } from '@/components/BrandMark';
 import { ContourField } from '@/components/ContourField';
 import { useTheme } from '@/theme';
 import { usePreferences } from '@/store';
+import { analyticsAvailable } from '@/services';
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -24,7 +25,7 @@ const PAGES: Page[] = [
     icon: 'golf-outline',
     title: 'Keep score.',
     body: 'Tap + and − for each player. Everything is saved.',
-    points: ['Works offline, no account', 'Front nine, back nine or shotgun starts', 'Handicap strokes worked out per hole'],
+    points: ['Works offline, with or without an account', 'Front nine, back nine or shotgun starts', 'Handicap strokes worked out per hole'],
   },
   {
     icon: 'trophy-outline',
@@ -34,9 +35,9 @@ const PAGES: Page[] = [
   },
   {
     icon: 'people-outline',
-    title: 'Settle it on the 19th.',
-    body: 'One tally at the end, netted between players.',
-    points: ['Points by default, or name the stake', 'Nothing is paid through the app', 'Share the card to the group chat'],
+    title: 'Points, not money.',
+    body: 'One points tally at the end, netted between players.',
+    points: ['Points by default, or name your own stake', 'Nothing is paid or collected in the app', 'Share the card to the group chat'],
   },
   {
     icon: 'shield-checkmark-outline',
@@ -49,12 +50,14 @@ const PAGES: Page[] = [
     icon: 'flag-outline',
     title: 'Ready to tee off?',
     body: 'Pick a course, add your crew, pick a game or two.',
-    points: ['A round on your own works too', 'Your scores stay on this phone'],
+    points: ['A round on your own works too', 'Sign in any time to keep rounds in sync'],
   },
 ];
 
 /** First launch: what the app does, the anonymous-usage question, then straight into a round or back to Home. */
 export default function OnboardingScreen() {
+  // The usage question only appears when usage counts can actually be sent.
+  const [pages] = useState(() => PAGES.filter((p) => !p.consent || analyticsAvailable()));
   const router = useRouter();
   const { c, space, radius } = useTheme();
   const { width: windowWidth } = useWindowDimensions();
@@ -63,8 +66,8 @@ export default function OnboardingScreen() {
   const update = usePreferences((s) => s.update);
   const scroller = useRef<ScrollView>(null);
   const [page, setPage] = useState(0);
-  const last = page === PAGES.length - 1;
-  const asking = !!PAGES[page]?.consent;
+  const last = page === pages.length - 1;
+  const asking = !!pages[page]?.consent;
   const analytics = usePreferences((s) => s.analytics);
 
   // Leaving the tour without answering counts as "No thanks".
@@ -95,7 +98,7 @@ export default function OnboardingScreen() {
       </View>
 
       <ScrollView ref={scroller} onLayout={(e) => setWidth(e.nativeEvent.layout.width)} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={onScrollEnd} style={{ flex: 1 }} contentContainerStyle={{ alignItems: 'stretch' }}>
-        {PAGES.map((p) => (
+        {pages.map((p) => (
           <View key={p.title} style={{ width, paddingHorizontal: space[5], justifyContent: 'center', gap: space[4] }}>
             <ContourField opacity={0.06} />
             <View style={{ width: 88, height: 88, borderRadius: radius.pill, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
@@ -122,8 +125,8 @@ export default function OnboardingScreen() {
       </ScrollView>
 
       <View style={{ paddingHorizontal: space[5], gap: space[3], paddingTop: space[3] }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8 }} accessibilityRole="progressbar" accessibilityLabel={`Page ${page + 1} of ${PAGES.length}`}>
-          {PAGES.map((_, i) => (
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8 }} accessibilityRole="progressbar" accessibilityLabel={`Page ${page + 1} of ${pages.length}`}>
+          {pages.map((_, i) => (
             <View key={i} style={{ width: i === page ? 22 : 8, height: 8, borderRadius: radius.pill, backgroundColor: i === page ? c.accent : c.tickUpcoming }} />
           ))}
         </View>

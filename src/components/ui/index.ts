@@ -22,3 +22,4 @@ export * from './IconTile';
 export * from './ListRow';
 export * from './HeroCard';
 export * from './Pressable';
+export * from './confirm';

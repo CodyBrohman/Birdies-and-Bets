@@ -5,7 +5,7 @@ import * as Sharing from 'expo-sharing';
 import { Button, Text } from '@/components/ui';
 import { ShareCard, type ShareCardProps } from './ShareCard';
 import { track } from '@/services';
-import { cardDataFrom, cardUrl } from '@/lib/cardLink';
+import { cardDataFrom, cardUrlWithin } from '@/lib/cardLink';
 
 export interface ShareCardButtonProps extends Omit<ShareCardProps, 'width'> {
   label?: string;
@@ -20,10 +20,11 @@ export function ShareCardButton({ label = 'Share scorecard', ...card }: ShareCar
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /** The card as a link, or null when it is too big to travel as one (the image still goes). */
   const link = () => {
     const anyHandicap = Object.values(card.handicaps).some((h) => h.playingHandicap !== 0);
     const games = card.results.map((r) => ({ name: r.mode.name, basis: r.standings.basis, headline: r.standings.headline, lines: r.standings.lines.map((l) => l.text) }));
-    return cardUrl(cardDataFrom({ round: card.round, holes: card.holes, handicaps: card.handicaps, games, basis: card.basis ?? (anyHandicap ? 'net' : 'gross'), completedAt: card.completedAt }));
+    return cardUrlWithin(cardDataFrom({ round: card.round, holes: card.holes, handicaps: card.handicaps, games, basis: card.basis ?? (anyHandicap ? 'net' : 'gross'), completedAt: card.completedAt }));
   };
 
   const share = async () => {
@@ -34,15 +35,16 @@ export function ShareCardButton({ label = 'Share scorecard', ...card }: ShareCar
       const uri = await captureRef(ref, { format: 'png', quality: 1, result: 'tmpfile' });
       const url = link();
       if (Platform.OS === 'web') {
-        await navigator.clipboard?.writeText(url).catch(() => undefined);
+        if (url) await navigator.clipboard?.writeText(url).catch(() => undefined);
         window.open(uri, '_blank');
         return;
       }
       // The image plus a line of text with the link: the group chat gets both.
-      const result = await Share.share({ url: uri, message: `Our card from ${card.round.course.name}: ${url}` }, { subject: `Scorecard: ${card.round.course.name}` });
+      const message = url ? `Our card from ${card.round.course.name}: ${url}` : `Our card from ${card.round.course.name}`;
+      const result = await Share.share({ url: uri, message }, { subject: `Scorecard: ${card.round.course.name}` });
       if (result.action === Share.sharedAction) track('scorecard_shared');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not share the card.');
+      setError(e instanceof Error && e.message ? e.message : 'Could not share the card.');
     } finally {
       setBusy(false);
     }

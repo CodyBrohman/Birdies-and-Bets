@@ -76,6 +76,31 @@ export function cardUrl(data: CardData): string {
 }
 
 /**
+ * The payload, made to fit the limit both decoders enforce (a longer link would arrive dead). Long cards shed detail in
+ * order: extra game lines, then all game lines, then the games, then long names. Null when even that will not fit.
+ */
+export function encodeCardWithin(data: CardData, max = MAX_CARD_PAYLOAD): string | null {
+  const steps: ((d: CardData) => CardData)[] = [
+    (d) => d,
+    (d) => ({ ...d, g: d.g.map(([n, b, h, lines]) => [n, b, h, lines.slice(0, 3)]) }),
+    (d) => ({ ...d, g: d.g.map(([n, b, h]) => [n, b, h, []]) }),
+    (d) => ({ ...d, g: [] }),
+    (d) => ({ ...d, c: clip(d.c, 40), t: clip(d.t, 20), g: [], p: d.p.map(([name, hcp, scores]) => [clip(name, 12), hcp, scores]) }),
+  ];
+  for (const step of steps) {
+    const payload = encodeCard(step(data));
+    if (payload.length <= max) return payload;
+  }
+  return null;
+}
+
+/** The share link for a card, or null when the card is too big to travel as a link (share the image alone). */
+export function cardUrlWithin(data: CardData): string | null {
+  const payload = encodeCardWithin(data);
+  return payload ? `${CARD_BASE_URL}#${payload}` : null;
+}
+
+/**
  * The payload from an incoming card link, or null when the link is not a card. Accepts the website link
  * (https://www.birdiesandbets.com/card#v1.…, with or without www or a trailing slash), the app scheme
  * (birdiesandbets://card#v1.…) and a bare path (/card#v1.…).

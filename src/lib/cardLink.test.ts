@@ -1,4 +1,4 @@
-import { cardDataFrom, cardPayloadFromUrl, cardUrl, decodeCard, encodeCard, toCardView, type CardSource } from './cardLink';
+import { cardDataFrom, cardPayloadFromUrl, cardUrl, cardUrlWithin, decodeCard, encodeCard, encodeCardWithin, MAX_CARD_PAYLOAD, toCardView, type CardSource } from './cardLink';
 import { computeAllHandicaps, holesInPlay } from './handicap';
 import { totals } from './scoring';
 import { cedarRidge, foursome, throughSix } from './__fixtures__/cedarRidge';
@@ -74,6 +74,25 @@ describe('card links', () => {
   it('a full foursome over 18 holes fits comfortably', () => {
     const results = Array.from({ length: 18 }, (_, i) => ({ holeNumber: i + 1, scores: { cody: 4, marcus: 5, priya: 6, dan: 3 } }));
     expect(encodeCard(cardDataFrom(source({}, results))).length).toBeLessThan(2000);
+  });
+
+  it('a card too long for a link sheds game detail until it fits, and still opens', () => {
+    const src = source();
+    const long = 'Settled on the 18th with a long story about the press '.repeat(3);
+    src.games = Array.from({ length: 8 }, (_, i) => ({ name: `Game ${i + 1}`, basis: 'net' as const, headline: long, lines: Array.from({ length: 8 }, () => long) }));
+    const data = cardDataFrom(src);
+    expect(encodeCard(data).length).toBeGreaterThan(MAX_CARD_PAYLOAD);
+    const payload = encodeCardWithin(data)!;
+    expect(payload.length).toBeLessThanOrEqual(MAX_CARD_PAYLOAD);
+    const back = decodeCard(payload)!;
+    expect(back.p.map((p) => p[2])).toEqual(data.p.map((p) => p[2])); // every score survives
+    expect(cardUrlWithin(data)).toBe(`https://www.birdiesandbets.com/card#${payload}`);
+    // A small card is never trimmed.
+    expect(encodeCardWithin(cardDataFrom(source()))).toBe(encodeCard(cardDataFrom(source())));
+  });
+
+  it('a card that cannot fit at all gives no link (the image is shared alone)', () => {
+    expect(encodeCardWithin(cardDataFrom(source()), 100)).toBeNull();
   });
 
   it('rejects anything that is not a valid v1 card', () => {

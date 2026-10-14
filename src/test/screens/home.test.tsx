@@ -35,11 +35,22 @@ describe('Home', () => {
   });
 
   it('asks about anonymous usage once, and "No thanks" is remembered', () => {
+    process.env.EXPO_PUBLIC_APTABASE_KEY = 'A-US-0000000000';
+    try {
+      seedPrefs({ analytics: undefined });
+      renderScreens(routes, '/');
+      expect(screen.getByText('Help make it better?')).toBeTruthy();
+      fireEvent.press(screen.getByRole('button', { name: 'No thanks' }));
+      expect(usePreferences.getState().analytics).toBe(false);
+      expect(screen.queryByText('Help make it better?')).toBeNull();
+    } finally {
+      delete process.env.EXPO_PUBLIC_APTABASE_KEY;
+    }
+  });
+
+  it('does not ask about usage when analytics is not configured', () => {
     seedPrefs({ analytics: undefined });
     renderScreens(routes, '/');
-    expect(screen.getByText('Help make it better?')).toBeTruthy();
-    fireEvent.press(screen.getByRole('button', { name: 'No thanks' }));
-    expect(usePreferences.getState().analytics).toBe(false);
     expect(screen.queryByText('Help make it better?')).toBeNull();
   });
 

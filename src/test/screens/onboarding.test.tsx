@@ -9,6 +9,11 @@ const routes = { onboarding: Onboarding, index: Empty, courses: Empty };
 beforeEach(async () => {
   await resetStores();
   seedPrefs({ onboarded: false, analytics: undefined });
+  process.env.EXPO_PUBLIC_APTABASE_KEY = 'A-US-0000000000';
+});
+
+afterEach(() => {
+  delete process.env.EXPO_PUBLIC_APTABASE_KEY;
 });
 
 const next = (times: number) => {
@@ -31,6 +36,14 @@ describe('Intro', () => {
     fireEvent.press(screen.getByRole('button', { name: 'No thanks' }));
     expect(usePreferences.getState().analytics).toBe(false);
     expect(screen.getByRole('button', { name: 'Maybe later' })).toBeTruthy();
+  });
+
+  it('without an analytics key, the usage question is not asked at all', () => {
+    delete process.env.EXPO_PUBLIC_APTABASE_KEY;
+    renderScreens(routes, '/onboarding');
+    next(3);
+    expect(screen.queryByRole('button', { name: 'Share anonymous usage' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Start a round' })).toBeTruthy();
   });
 
   it('skipping counts as no and marks the intro seen', () => {

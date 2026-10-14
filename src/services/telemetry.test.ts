@@ -3,11 +3,11 @@ import { DEFAULT_PREFERENCES, usePreferences } from '@/store';
 import { captureError, initTelemetry, resetTelemetryForTests, scrubBreadcrumb, scrubEvent, track } from './telemetry';
 
 jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
-jest.mock('@sentry/react-native', () => ({ init: jest.fn(), captureException: jest.fn(), wrap: jest.fn((c: unknown) => c) }));
+jest.mock('@sentry/react-native', () => ({ init: jest.fn(), close: jest.fn(() => Promise.resolve()), captureException: jest.fn(), wrap: jest.fn((c: unknown) => c) }));
 jest.mock('@aptabase/react-native', () => ({ init: jest.fn(), trackEvent: jest.fn(), dispose: jest.fn() }));
 jest.mock('expo-updates', () => ({ channel: 'test', updateId: null }));
 
-const Sentry = jest.requireMock('@sentry/react-native') as { init: jest.Mock; captureException: jest.Mock };
+const Sentry = jest.requireMock('@sentry/react-native') as { init: jest.Mock; close: jest.Mock; captureException: jest.Mock };
 const Aptabase = jest.requireMock('@aptabase/react-native') as { init: jest.Mock; trackEvent: jest.Mock; dispose: jest.Mock };
 
 const KEYS = { sentryDsn: 'https://key@o0.ingest.sentry.io/1', aptabaseKey: 'A-US-0000000000' };
@@ -82,5 +82,25 @@ describe('telemetry', () => {
     usePreferences.setState({ crashReports: true, hydrated: false });
     expect(scrubEvent(event())).toBeNull();
     expect(scrubBreadcrumb({ category: 'navigation' })).toBeNull();
+  });
+
+  it('with crash reports off the SDK never starts (native crashes would bypass a JavaScript filter)', () => {
+    usePreferences.setState({ crashReports: false });
+    initTelemetry(KEYS);
+    expect(Sentry.init).not.toHaveBeenCalled();
+    captureError(new Error('boom'));
+    expect(Sentry.captureException).not.toHaveBeenCalled();
+  });
+
+  it('waits for preferences to load before starting, then follows the toggle off and on', () => {
+    usePreferences.setState({ hydrated: false });
+    initTelemetry(KEYS);
+    expect(Sentry.init).not.toHaveBeenCalled();
+    usePreferences.setState({ hydrated: true });
+    expect(Sentry.init).toHaveBeenCalledTimes(1);
+    usePreferences.setState({ crashReports: false });
+    expect(Sentry.close).toHaveBeenCalledTimes(1);
+    usePreferences.setState({ crashReports: true });
+    expect(Sentry.init).toHaveBeenCalledTimes(2);
   });
 });

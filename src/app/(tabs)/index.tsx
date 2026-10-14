@@ -11,6 +11,7 @@ import { holePosition, holesPlayed } from '@/lib/scoring';
 import { formatIndex, formatShortDate, formatToPar, joinMeta, plural } from '@/lib/format';
 import { findMe, formatNet, type RoundInsight } from '@/lib/stats';
 import { stakeUnit } from '@/lib/history';
+import { analyticsAvailable } from '@/services';
 import type { PlayerProfile } from '@/types';
 
 /** Home: greeting, the next (or live) round over a photo, handicap and circle tiles, friends and courses shortcuts. */
@@ -201,7 +202,7 @@ export default function Home() {
       </ScrollView>
 
       {/* Once, for people who finished the intro before it asked: the anonymous-usage question. */}
-      <Sheet visible={prefsHydrated && onboarded && !analyticsAsked} onClose={() => updatePreferences({ analytics: false })} title="Help make it better?" subtitle="Anonymous usage counts, your choice">
+      <Sheet visible={prefsHydrated && onboarded && !analyticsAsked && analyticsAvailable()} onClose={() => updatePreferences({ analytics: false })} title="Help make it better?" subtitle="Anonymous usage counts, your choice">
         <View style={{ gap: space[2] }}>
           <Text tone="secondary">Share counts like how many rounds get started. Never names, scores or courses. Crash reports are anonymous too. Change either one in Settings.</Text>
           <Button label="Share anonymous usage" onPress={() => updatePreferences({ analytics: true })} style={{ marginTop: space[2] }} />

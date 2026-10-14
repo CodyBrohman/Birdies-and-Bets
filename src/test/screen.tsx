@@ -1,6 +1,7 @@
 // Helpers for screen tests: seed the stores the way the app would, then render real screens through Expo Router.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { ComponentType } from 'react';
+import { Alert, type AlertButton } from 'react-native';
 import { renderRouter } from 'expo-router/testing-library';
 import { DEFAULT_PREFERENCES, DEFAULT_SETTINGS, useAuthStore, useHistoryStore, usePreferences, useProfileStore, useRoundStore, useSyncStatus, type Preferences } from '@/store';
 import { cedarRidge, cody, marcus } from '@/lib/__fixtures__/cedarRidge';
@@ -16,8 +17,28 @@ export async function resetStores(): Promise<void> {
   useRoundStore.setState({ round: null, undo: [], draft: { course: null, teeBoxId: null, players: [], settings: { ...DEFAULT_SETTINGS } } });
   usePreferences.setState({ ...DEFAULT_PREFERENCES, onboarded: true, analytics: false, meProfileId: undefined, hydrated: true });
   // Local-only by default (as with no backend keys); account tests sign in explicitly.
-  useAuthStore.setState({ status: 'disabled', finishing: false, userId: undefined, email: undefined, method: undefined });
-  useSyncStatus.setState({ phase: 'idle', pending: 0, lastSyncedAt: undefined, error: undefined });
+  useAuthStore.setState({ status: 'disabled', sessionExpired: false, pendingSwitch: undefined, userId: undefined, email: undefined, method: undefined });
+  useSyncStatus.setState({ phase: 'idle', pending: 0, rejected: 0, authPaused: false, lastSyncedAt: undefined, error: undefined });
+  alertSpy.mockClear();
+}
+
+// Native alerts (confirm/ask) render nothing in Jest: record them, and let a test press a button by its label.
+const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+
+/** The most recent native alert: its title, message and button labels. */
+export function lastAlert(): { title: string; message?: string; buttons: string[] } | undefined {
+  const call = alertSpy.mock.calls.at(-1);
+  if (!call) return undefined;
+  const [title, message, buttons] = call;
+  return { title, message, buttons: ((buttons ?? []) as AlertButton[]).map((b) => b.text ?? '') };
+}
+
+/** Press a button on the most recent native alert, as the person would. */
+export function pressAlert(label: string): void {
+  const buttons = (alertSpy.mock.calls.at(-1)?.[2] ?? []) as AlertButton[];
+  const button = buttons.find((b) => b.text === label);
+  if (!button) throw new Error(`No "${label}" on the last alert (${lastAlert()?.buttons.join(', ') ?? 'none shown'})`);
+  button.onPress?.();
 }
 
 export function seedPrefs(patch: Partial<Preferences>): void {

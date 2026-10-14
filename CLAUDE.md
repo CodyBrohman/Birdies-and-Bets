@@ -18,8 +18,11 @@ Expo SDK 57 · Expo Router · NativeWind 4 · Zustand · TypeScript strict.
 
 ## Hard rules
 - No money movement, no payment links, no "settle up" action. Settlement is display only.
-- Accounts are required once Supabase keys are set: Sign in with Apple, or an emailed code. Without keys the app runs
-  local-only (auth status `disabled`), which is what tests and the Maestro e2e build use.
+- Accounts are optional (2026-10-14). With Supabase keys set, the welcome screen offers Sign in with Apple, an emailed
+  code, or "Continue without an account" (status `local`: everything works on the phone; signing in later uploads it).
+  Without keys the app runs local-only (status `disabled`, no account UI), which is what tests and the Maestro e2e build use.
+- The app never signs out by itself and never waits on the network to open: a lapsed session keeps the data and asks
+  to sign in again (`sessionExpired`). Another account's data on a phone is never uploaded without asking.
 - Stakes are abstract "points" by default.
 - A round with zero games must work end to end.
 - Persist the round on every score entry. Offline-first.
@@ -63,10 +66,27 @@ The 2026-10-01 redesign matches the owner's ten reference mockups. Tokens in `sr
   `synced_at` (server time, used for pulls). RLS: owner only. `delete_my_account()` RPC.
 - `services/sync.ts` watches the stores and diffs snapshots, so stores need no sync code. Changes queue in a persisted
   outbox, which flushes when debounced, on foreground and when signal returns. Pulls write into the stores with echo
-  suppressed. A new phone pulls first, then uploads what the account lacks. The pure rules are in `lib/sync.ts`.
+  suppressed. A new phone pulls first, then uploads what the account lacks (only after a pull got through). The pure
+  rules are in `lib/sync.ts`.
+- Write errors are classified (`classifySyncError`): network/5xx back off and retry; auth errors pause sync until the
+  same person signs in again (`resumeSync`); a row the server refuses is set aside in `meta.rejected` (Settings › Retry)
+  so it never blocks the queue. Pulls re-read 5 minutes back. `supabase/migrations/0002_sync_guards.sql` makes the
+  server keep the newest edit too (`keep_newest` trigger) and caps phone clocks at now + 5 min.
+- Never cap or trim a synced collection in a store: sync reads a dropped entity as a delete and removes it from the
+  account on every phone (history had a 50-round cap until 2026-10-14).
+- Restoring a backup while signed in merges it with the account (`restoreWithSync`); local-only restore replaces.
 - Adding a synced collection means a `TABLES` entry in `services/sync.ts` and a table in a new migration.
-- Auth: `services/auth.ts`, state in `store/authStore.ts`, `app/sign-in.tsx`. The root layout gates with
-  `Stack.Protected`. `finishing` keeps sign-in open through the name step.
+- Auth: `services/auth.ts`, state in `store/authStore.ts`, `app/sign-in.tsx`. The choice is remembered in `bb:auth`
+  (`local`, or the account), so launch reads storage only. The root layout closes the app routes only when
+  `signed-out`; sign-in stays reachable whenever a backend exists (welcome screen, or a sheet from Settings/Profile).
+- Sign-out sends unsynced changes first and returns the count it could not send (the screen then asks); it ends the
+  session on this phone only (`scope: 'local'`) and removes the stored session even offline.
+- Delete account goes through the `delete-account` Edge Function (`supabase/functions/`), which revokes Sign in with
+  Apple tokens first (Apple asks the person once more for a one-time code; nothing Apple is stored) and deletes nothing
+  unless Apple confirms. `delete_my_account()` is no longer callable by users. Deploy with
+  `npx supabase functions deploy delete-account`; secrets APPLE_TEAM_ID, APPLE_KEY_ID, APPLE_CLIENT_ID, APPLE_PRIVATE_KEY.
+  `supabase/functions` is Deno code, excluded from tsc and eslint; its pure Apple logic is tested from
+  `src/services/deleteAccount.test.ts`.
 - Phase 2 (shared live rounds) and phase 3 (friends feed) are planned. See the plan notes in `Next items to do.txt`.
 
 ## Card links

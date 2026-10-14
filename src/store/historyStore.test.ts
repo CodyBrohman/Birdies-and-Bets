@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MAX_HISTORY, useHistoryStore } from './historyStore';
+import { useHistoryStore } from './historyStore';
 import { STORAGE_KEYS } from './storage';
 import type { HistoryEntry, RoundSummary } from '../types';
 import { makeRound } from '../games/__fixtures__/round';
@@ -39,11 +39,12 @@ describe('historyStore', () => {
     expect(saved[0]?.round?.status).toBe('complete');
   });
 
-  it('caps the list and de-duplicates by id', () => {
-    for (let i = 0; i < MAX_HISTORY + 5; i++) useHistoryStore.getState().add(entry(`r${i}`));
-    expect(useHistoryStore.getState().entries).toHaveLength(MAX_HISTORY);
-    useHistoryStore.getState().add(entry(`r${MAX_HISTORY + 4}`));
-    expect(useHistoryStore.getState().entries).toHaveLength(MAX_HISTORY);
+  it('keeps every round (no cap, so sync never reads an old round as deleted) and de-duplicates by id', () => {
+    for (let i = 0; i < 60; i++) useHistoryStore.getState().add(entry(`r${i}`));
+    expect(useHistoryStore.getState().entries).toHaveLength(60);
+    useHistoryStore.getState().add(entry('r10'));
+    expect(useHistoryStore.getState().entries).toHaveLength(60);
+    expect(useHistoryStore.getState().entries[0]!.summary.id).toBe('r10');
   });
 
   it('removes a round and persists the shorter list', async () => {

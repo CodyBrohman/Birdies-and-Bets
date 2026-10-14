@@ -27,7 +27,7 @@ export interface ButtonProps extends Omit<PressableProps, 'style' | 'children'> 
   trailingIcon?: ReactNode;
   /** Light haptic on press. On by default for primary. */
   haptic?: boolean;
-  /** Secondary only: label in the negative colour (Clear all data). */
+  /** A destructive action: filled buttons turn coral, others get a coral label. Never a green "Delete". */
   destructive?: boolean;
   /** Spinner in place of the icon; the button keeps its size and ignores presses. */
   loading?: boolean;
@@ -59,7 +59,9 @@ export function Button({ label, variant = 'primary', size, icon, trailingIcon, h
         const { pressed, hovered } = interaction(s);
         const active = pressed || hovered;
         const bg =
-          variant === 'primary'
+          filled && destructive
+            ? c.negative
+            : variant === 'primary'
             ? active ? c.accentSoft : c.accent
             : variant === 'hero'
               ? active ? c.accentSoft : c.heroRaised

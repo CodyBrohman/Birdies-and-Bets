@@ -15,7 +15,7 @@
     "@react-native-segmented-control/segmented-control": "2.5.7",
     "@react-navigation/bottom-tabs": "^7.19.2",
     "@sentry/react-native": "~7.11.0",
-    "@supabase/supabase-js": "^2.117.2",
+    "@supabase/supabase-js": "2.117.2",
     "expo": "~57.0.22",
     "expo-apple-authentication": "~57.0.2",
     "expo-asset": "~57.0.18",

@@ -52,6 +52,9 @@ export function diffSnapshots(prev: Snapshot, next: Snapshot): { upserts: string
   const deletes: string[] = [];
   for (const [id, item] of Object.entries(next)) {
     const before = prev[id];
+    // Stores replace only what changed, so an untouched entity keeps its object: skip the JSON compare for it. This keeps
+    // a score tap from re-serialising every finished round.
+    if (before && before.data === item.data && before.status === item.status) continue;
     if (!before || before.status !== item.status || stableJson(before.data) !== stableJson(item.data)) upserts.push(id);
   }
   for (const id of Object.keys(prev)) if (!(id in next)) deletes.push(id);
@@ -94,4 +97,66 @@ export function applyRemote(snapshot: Snapshot, rows: RemoteRow[]): Snapshot {
 /** The newest server time among rows, for the next "synced since" pull. */
 export function latestSyncedAt(rows: Pick<RemoteRow, 'synced_at'>[], since: string | undefined): string | undefined {
   return rows.reduce<string | undefined>((max, r) => (!max || r.synced_at > max ? r.synced_at : max), since);
+}
+
+/** How far back each pull re-reads. A slow write can commit with a `synced_at` just before a pull that already ran. */
+export const PULL_OVERLAP_MS = 5 * 60 * 1000;
+
+/** The `synced_at` lower bound for the next pull: the newest seen, minus the overlap. Re-pulled rows are no-ops. */
+export function pullSince(lastPulledAt: string | undefined, overlapMs = PULL_OVERLAP_MS): string | undefined {
+  if (!lastPulledAt) return undefined;
+  const t = Date.parse(lastPulledAt);
+  return Number.isNaN(t) ? undefined : new Date(t - overlapMs).toISOString();
+}
+
+/**
+ * What a failed write means for the outbox:
+ * - 'transient': no signal, a timeout, the server busy (5xx, 429). Keep it and retry with backoff.
+ * - 'auth': the session is missing, expired or not allowed (401, 403, PGRST301, 42501). Pause until signed in again.
+ * - 'row': this data can never be stored as it is (22xxx data errors, 23xxx constraints, 413 too large). Set it aside so
+ *   it stops blocking everything queued behind it.
+ */
+export type SyncErrorKind = 'transient' | 'auth' | 'row';
+
+export function classifySyncError(error: { message?: string; code?: string; status?: number } | null | undefined): SyncErrorKind {
+  const code = error?.code ?? '';
+  const status = error?.status;
+  if (status === 401 || status === 403 || code === 'PGRST301' || code === '42501') return 'auth';
+  if (status === 413 || /^2[23]/.test(code)) return 'row';
+  return 'transient';
+}
+
+/** Wait before retry number `attempt` (0-based): 2 s doubling to a 5 min cap, with up to 20% jitter so phones spread out. */
+export function backoffMs(attempt: number, random: () => number = Math.random): number {
+  const base = Math.min(2000 * 2 ** Math.max(0, attempt), 5 * 60 * 1000);
+  return Math.round(base * (1 + 0.2 * random()));
+}
+
+/** Split rows into batches of roughly `maxBytes` of JSON each (a first upload of many rounds must not be one request). */
+export function chunkByBytes<T>(rows: T[], maxBytes = 256 * 1024): T[][] {
+  const out: T[][] = [];
+  let batch: T[] = [];
+  let size = 0;
+  for (const row of rows) {
+    const bytes = JSON.stringify(row)?.length ?? 0;
+    if (batch.length && size + bytes > maxBytes) {
+      out.push(batch);
+      batch = [];
+      size = 0;
+    }
+    batch.push(row);
+    size += bytes;
+  }
+  if (batch.length) out.push(batch);
+  return out;
+}
+
+/** Drop queued changes that a remote row already beat (edited at or before it), so a stale edit is never re-sent. */
+export function pruneOutbox(outbox: OutboxChange[], table: SyncTable, applied: Pick<RemoteRow, 'id' | 'updated_at'>[]): OutboxChange[] {
+  const newest = new Map(applied.map((r) => [r.id, r.updated_at]));
+  return outbox.filter((c) => {
+    if (c.table !== table) return true;
+    const remote = newest.get(c.id);
+    return remote === undefined || c.updatedAt > remote;
+  });
 }

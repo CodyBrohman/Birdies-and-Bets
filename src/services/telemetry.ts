@@ -32,6 +32,7 @@ export interface TelemetryKeys {
 /** Breadcrumb categories that can carry on-screen text (player names) and are never kept. */
 const DROPPED_BREADCRUMBS = /^(console|touch|ui\.|xhr|fetch)/;
 
+let sentryDsn: string | undefined;
 let sentryOn = false;
 let aptabaseKey: string | undefined;
 let aptabaseOn = false;
@@ -74,13 +75,16 @@ function syncAnalytics() {
 }
 
 /**
- * Start whatever has a key. Safe to call more than once. Sentry starts at once (so early crashes are caught) but drops
- * everything until preferences load; Aptabase starts and stops as the analytics answer changes.
+ * Crash reports follow the toggle at the SDK level: Sentry starts only once preferences have loaded with crash reports
+ * on, and closes when they are turned off. (A filter alone is not enough: native crashes are sent by the native SDK on
+ * the next launch and never pass through JavaScript.) The cost is that a crash in the first moments of launch, before
+ * preferences load, is not reported.
  */
-export function initTelemetry(keys: TelemetryKeys = { sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN, aptabaseKey: process.env.EXPO_PUBLIC_APTABASE_KEY }): void {
-  if (keys.sentryDsn && !sentryOn) {
+function syncCrashReports() {
+  const want = !!sentryDsn && crashReportsAllowed();
+  if (want && !sentryOn) {
     Sentry.init({
-      dsn: keys.sentryDsn,
+      dsn: sentryDsn,
       sendDefaultPii: false,
       attachScreenshot: false,
       attachViewHierarchy: false,
@@ -92,12 +96,30 @@ export function initTelemetry(keys: TelemetryKeys = { sentryDsn: process.env.EXP
       beforeBreadcrumb: scrubBreadcrumb,
     });
     sentryOn = true;
+  } else if (!want && sentryOn) {
+    void Sentry.close();
+    sentryOn = false;
   }
+}
+
+/**
+ * Start whatever has a key and is allowed. Safe to call more than once. Both follow the preferences from then on:
+ * crash reports start, stop and start again with the toggle; Aptabase with the analytics answer.
+ */
+export function initTelemetry(keys: TelemetryKeys = { sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN, aptabaseKey: process.env.EXPO_PUBLIC_APTABASE_KEY }): void {
+  sentryDsn = keys.sentryDsn || undefined;
   aptabaseKey = keys.aptabaseKey || undefined;
+  syncCrashReports();
   syncAnalytics();
   unsubscribe ??= usePreferences.subscribe((s, prev) => {
+    if (s.hydrated !== prev.hydrated || s.crashReports !== prev.crashReports) syncCrashReports();
     if (s.analytics !== prev.analytics) syncAnalytics();
   });
+}
+
+/** Whether the analytics question makes sense to ask: only when usage counts can actually be sent. */
+export function analyticsAvailable(): boolean {
+  return !!(aptabaseKey ?? process.env.EXPO_PUBLIC_APTABASE_KEY);
 }
 
 /** Send one usage event. A no-op unless the person said yes and a key is set. */
@@ -137,6 +159,7 @@ export function withCrashReporting(Root: ComponentType): ComponentType {
 export function resetTelemetryForTests(): void {
   unsubscribe?.();
   unsubscribe = undefined;
+  sentryDsn = undefined;
   sentryOn = false;
   aptabaseOn = false;
   aptabaseKey = undefined;

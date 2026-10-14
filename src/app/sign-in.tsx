@@ -1,23 +1,52 @@
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, Linking, Platform, ScrollView, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { Button, Screen, Text, TextField } from '@/components/ui';
+import { Button, Pressable, Screen, Text, TextField } from '@/components/ui';
 import { BrandMark } from '@/components/BrandMark';
 import { ContourField } from '@/components/ContourField';
 import { useTheme } from '@/theme';
 import { useAuthStore } from '@/store';
-import { accountName, afterSignIn, appleSignInAvailable, needsName, sendEmailCode, setAccountName, signInWithApple, verifyEmailCode } from '@/services';
+import { friendlySignInError } from '@/lib/errors';
+import {
+  accountName,
+  afterSignIn,
+  appleSignInAvailable,
+  cancelAccountSwitch,
+  confirmAccountSwitch,
+  continueWithoutAccount,
+  needsName,
+  PRIVACY_POLICY_URL,
+  sendEmailCode,
+  setAccountName,
+  signInWithApple,
+  verifyEmailCode,
+} from '@/services';
 
-type Step = 'choose' | 'email' | 'code' | 'name';
+type Step = 'choose' | 'email' | 'code' | 'name' | 'switch';
+
+/** Seconds before another code can be sent. */
+const RESEND_AFTER = 60;
+
+const TITLES: Record<Step, string> = {
+  choose: 'Birdies & Bets',
+  email: 'Sign in with email',
+  code: 'Check your email',
+  name: 'What name goes on the scorecard?',
+  switch: "Replace this iPhone's data?",
+};
 
 /**
- * Sign in before anything else: Sign in with Apple on iPhone, or a 6-digit code by email. A first sign-in then asks
- * for a name (Apple shares it only once; email never does) and carries on into the app.
+ * Accounts are optional. As the welcome screen (nothing chosen yet) it offers Sign in with Apple, a 6-digit code by email,
+ * or carrying on without an account. Opened later from Settings or Profile it is a sheet that signs in and closes.
  */
 export default function SignInScreen() {
   const router = useRouter();
-  const { space, radius } = useTheme();
+  const { c, space, radius } = useTheme();
+  const status = useAuthStore((s) => s.status);
+  const pendingSwitch = useAuthStore((s) => s.pendingSwitch);
+  /** Opened from inside the app (no account yet, or signing in again): a sheet with a way out. */
+  const asSheet = status !== 'signed-out';
   const [step, setStep] = useState<Step>('choose');
   const [apple, setApple] = useState(false);
   const [email, setEmail] = useState('');
@@ -25,12 +54,17 @@ export default function SignInScreen() {
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resendIn, setResendIn] = useState(0);
 
   useEffect(() => {
     void appleSignInAvailable().then(setApple);
   }, []);
 
-  const setFinishing = useAuthStore((s) => s.setFinishing);
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setTimeout(() => setResendIn((n) => n - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendIn]);
 
   const run = async (work: () => Promise<void>) => {
     setError(null);
@@ -38,22 +72,27 @@ export default function SignInScreen() {
     try {
       await work();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong. Try again.');
+      setError(friendlySignInError(e));
     } finally {
       setBusy(false);
     }
   };
 
-  /** Into the app. Clearing `finishing` opens the signed-in routes. */
+  /** Into the app: back to where the sheet was opened from, or Home from the welcome screen. */
   const enter = () => {
-    setFinishing(false);
-    router.replace('/' as Href);
+    if (asSheet && router.canGoBack()) router.back();
+    else router.replace('/' as Href);
   };
 
   /** Signed in: wait for the account's data, then ask for a name only if the account has no "me" yet. */
   const finish = async (suggested?: string) => {
-    await afterSignIn();
-    if (needsName()) {
+    const result = await afterSignIn();
+    if (result.kind === 'switch') {
+      setStep('switch');
+      return;
+    }
+    // Only ask once the account's data is here: asking before it arrives could create a second "me".
+    if (result.pulled && needsName()) {
       setName(suggested || (await accountName().catch(() => '')) || email.split('@')[0] || '');
       setStep('name');
       return;
@@ -63,13 +102,8 @@ export default function SignInScreen() {
 
   const withApple = () =>
     run(async () => {
-      setFinishing(true);
-      const result = await signInWithApple().catch((e: unknown) => {
-        setFinishing(false);
-        throw e;
-      });
+      const result = await signInWithApple();
       if (result) await finish(result.name);
-      else setFinishing(false);
     });
 
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -77,15 +111,13 @@ export default function SignInScreen() {
   const sendCode = () =>
     run(async () => {
       await sendEmailCode(email);
+      setCode('');
+      setResendIn(RESEND_AFTER);
       setStep('code');
     });
   const verify = () =>
     run(async () => {
-      setFinishing(true);
-      await verifyEmailCode(email, code).catch((e: unknown) => {
-        setFinishing(false);
-        throw e;
-      });
+      await verifyEmailCode(email, code);
       await finish();
     });
   const saveName = () =>
@@ -93,30 +125,51 @@ export default function SignInScreen() {
       await setAccountName(name);
       enter();
     });
-  const differentEmail = () => {
-    setCode('');
-    setStep('email');
+  const withoutAccount = () =>
+    run(async () => {
+      await continueWithoutAccount();
+      router.replace('/' as Href);
+    });
+  const replaceData = () =>
+    run(async () => {
+      await confirmAccountSwitch();
+      await finish();
+    });
+  const keepData = () =>
+    run(async () => {
+      await cancelAccountSwitch();
+      setStep('choose');
+    });
+
+  const body: Record<Step, string> = {
+    choose: 'Sign in to sync your rounds across phones.',
+    email: "We'll email you a 6-digit code. No password.",
+    code: `We sent a 6-digit code to ${email.trim()}.`,
+    name: 'This is how you show up on scorecards.',
+    switch: `This iPhone has rounds, courses and players from another account. Signing in as ${pendingSwitch?.email ?? 'this account'} replaces them with this account's. Anything the other account had not synced yet is lost.`,
   };
 
   return (
     <Screen style={{ paddingHorizontal: 0 }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        {asSheet && step !== 'switch' ? (
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: space[5], paddingTop: space[2] }}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Not now" onPress={() => (router.canGoBack() ? router.back() : router.replace('/' as Href))} hitSlop={12} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+              <Text step="label" tone="accent">
+                Not now
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: space[5], gap: space[4], paddingVertical: space[6] }} keyboardShouldPersistTaps="handled">
           <ContourField opacity={0.06} />
           <BrandMark size={64} />
           <View style={{ gap: 6 }}>
-            <Text step="eyebrow" tone="accent">
-              {step === 'name' ? 'One last thing' : 'Welcome'}
-            </Text>
-            <Text accessibilityRole="header" step="display" style={{ fontSize: 40, lineHeight: 44 }}>
-              {step === 'name' ? 'What should we call you?' : step === 'code' ? 'Check your email.' : 'Sign in to keep score.'}
+            <Text accessibilityRole="header" step="display">
+              {TITLES[step]}
             </Text>
             <Text step="body" tone="secondary" style={{ fontSize: 17, lineHeight: 24 }}>
-              {step === 'name'
-                ? 'This is how you show up on scorecards and to your friends.'
-                : step === 'code'
-                  ? `We sent a 6-digit code to ${email.trim()}.`
-                  : 'Your rounds, courses and crew follow you to any phone.'}
+              {body[step]}
             </Text>
           </View>
 
@@ -133,7 +186,14 @@ export default function SignInScreen() {
                   }}
                 />
               ) : null}
-              <Button label={apple ? 'Use email instead' : 'Continue with email'} variant={apple ? 'secondary' : 'primary'} icon="mail-outline" disabled={busy} onPress={() => setStep('email')} testID="sign-in-email" />
+              <Button label="Continue with email" variant={apple ? 'secondary' : 'primary'} disabled={busy} onPress={() => setStep('email')} testID="sign-in-email" />
+              {status === 'signed-out' ? (
+                <Pressable accessibilityRole="button" accessibilityLabel="Continue without an account" disabled={busy} onPress={() => void withoutAccount()} testID="continue-without-account" style={({ pressed }) => ({ minHeight: 48, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+                  <Text step="label" tone="accent">
+                    Continue without an account
+                  </Text>
+                </Pressable>
+              ) : null}
             </View>
           ) : null}
 
@@ -175,7 +235,8 @@ export default function SignInScreen() {
                 testID="code-field"
               />
               <Button label={busy ? 'Signing in…' : 'Sign in'} disabled={busy || code.length !== 6} onPress={() => void verify()} testID="verify-code" />
-              <Button label="Use a different email" variant="secondary" disabled={busy} onPress={differentEmail} />
+              <Button label={resendIn > 0 ? `Send a new code in ${resendIn} s` : 'Send a new code'} variant="secondary" disabled={busy || resendIn > 0} onPress={() => void sendCode()} />
+              <Button label="Use a different email" variant="secondary" disabled={busy} onPress={() => setStep('email')} />
             </View>
           ) : null}
 
@@ -186,16 +247,30 @@ export default function SignInScreen() {
             </View>
           ) : null}
 
+          {step === 'switch' ? (
+            <View style={{ gap: space[3], marginTop: space[2] }}>
+              <Button label="Replace with this account" destructive disabled={busy} onPress={() => void replaceData()} />
+              <Button label="Keep this iPhone's data" variant="secondary" disabled={busy} onPress={() => void keepData()} />
+            </View>
+          ) : null}
+
           {error ? (
-            <Text step="caption" tone="negative" tabular={false}>
+            <Text step="caption" tone="negative" tabular={false} accessibilityLiveRegion="polite">
               {error}
             </Text>
           ) : null}
 
           {step === 'choose' ? (
-            <Text step="caption" tone="tertiary" tabular={false}>
-              Points only; nothing is paid through the app. How your data is handled: birdiesandbets.com/privacy
-            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 4 }}>
+              <Text step="caption" tone="tertiary" tabular={false}>
+                Points only. Nothing is paid in the app.
+              </Text>
+              <Pressable accessibilityRole="link" accessibilityLabel="Privacy policy" onPress={() => void Linking.openURL(PRIVACY_POLICY_URL)} hitSlop={12}>
+                <Text step="caption" tabular={false} style={{ color: c.accentText, textDecorationLine: 'underline' }}>
+                  Privacy policy
+                </Text>
+              </Pressable>
+            </View>
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>

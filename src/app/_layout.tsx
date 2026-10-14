@@ -76,15 +76,22 @@ function RootLayout() {
 
   const hydrated = migrated && roundHydrated && courseHydrated && historyHydrated && profilesHydrated;
   const authStatus = useAuthStore((s) => s.status);
-  const finishingSignIn = useAuthStore((s) => s.finishing);
-  // Accounts start once local data is loaded, so the first sync sees everything already on this phone.
+  // Accounts start once local data is loaded, so the first sync sees everything already on this phone. initAuth reads
+  // only local storage; if it ever fails, the welcome screen still opens (and "Continue without an account" works).
   useEffect(() => {
-    if (hydrated) void initAuth();
+    if (hydrated)
+      void initAuth().catch(() => {
+        if (useAuthStore.getState().status === 'loading') useAuthStore.getState().setSignedOut();
+      });
   }, [hydrated]);
 
   const ready = (fontsLoaded || !!fontError) && hydrated && authStatus !== 'loading';
-  // 'disabled' = a local-only build with no backend keys: everything open, as before accounts.
-  const signedIn = (authStatus === 'signed-in' || authStatus === 'disabled') && !finishingSignIn;
+  // Only 'signed-out' (a backend exists and nothing is chosen yet) closes the app behind the welcome screen. Local mode,
+  // a signed-in account (even offline or with an expired session) and local-only builds ('disabled') are all open.
+  const appOpen = authStatus !== 'signed-out';
+  // Sign-in stays reachable whenever a backend exists: the welcome screen when signed out, a sheet from Settings or
+  // Profile otherwise. It is never removed while it is on screen, so finishing sign-in cannot unmount it mid-flow.
+  const accountsOn = authStatus !== 'disabled';
 
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync();
@@ -104,15 +111,15 @@ function RootLayout() {
             contentStyle: { backgroundColor: c.surface },
           }}
         >
-          <Stack.Protected guard={signedIn}>
+          <Stack.Protected guard={appOpen}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
             <Stack.Screen name="new-round" />
             <Stack.Screen name="round" options={{ gestureEnabled: false }} />
             <Stack.Screen name="settings" />
           </Stack.Protected>
-          <Stack.Protected guard={!signedIn}>
-            <Stack.Screen name="sign-in" options={{ gestureEnabled: false }} />
+          <Stack.Protected guard={accountsOn}>
+            <Stack.Screen name="sign-in" options={appOpen ? { presentation: 'modal' } : { gestureEnabled: false }} />
           </Stack.Protected>
           {/* A shared card opens with or without an account. */}
           <Stack.Screen name="card" />
