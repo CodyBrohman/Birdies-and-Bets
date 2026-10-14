@@ -206,9 +206,7 @@ export interface TypeStep {
   maxScale: number;
 }
 
-// Sizes in pt. Two groups while screens are rebuilt:
-// - The iOS ramp (2026-10-14), used by rebuilt screens: largeTitle … caption2, plus numerals and table headers.
-// - Legacy steps (the 2026-10-01 sizes on the system font), kept until every screen has moved over, then removed.
+// Sizes in pt: the iOS text styles (largeTitle … caption2), plus the numerals and the scorecard table headers.
 export const type = {
   // iOS text styles.
   largeTitle: { fontSize: 34, lineHeight: 41, fontWeight: weight.bold, tabular: false, maxScale: 1.4 },
@@ -233,23 +231,6 @@ export const type = {
   scoreMd: { fontSize: 22, lineHeight: 28, fontWeight: weight.semibold, tabular: true, maxScale: 1.4 },
   /** Scorecard cells. */
   cellMd: { fontSize: 17, lineHeight: 22, fontWeight: weight.medium, tabular: true, maxScale: 1.4 },
-
-  // Legacy (2026-10-01 sizes). Removed once no screen uses them.
-  displayXl: { fontSize: 40, lineHeight: 44, fontWeight: weight.heavy, tabular: false, maxScale: 1.4 },
-  display: { fontSize: 32, lineHeight: 38, fontWeight: weight.bold, tabular: false, maxScale: 1.4 },
-  headline: { fontSize: 21, lineHeight: 26, fontWeight: weight.bold, tabular: false, maxScale: 1.6 },
-  title: { fontSize: 16, lineHeight: 21, fontWeight: weight.semibold, tabular: false, maxScale: 1.6 },
-  button: { fontSize: 17, lineHeight: 22, fontWeight: weight.semibold, tabular: false, maxScale: 1.6 },
-  score: { fontSize: 26, lineHeight: 30, fontWeight: weight.semibold, tabular: true, maxScale: 1.4 },
-  total: { fontSize: 18, lineHeight: 22, fontWeight: weight.semibold, tabular: true, maxScale: 1.6 },
-  body: { fontSize: 15, lineHeight: 21, fontWeight: weight.regular, tabular: false, maxScale: 2 },
-  bodyStrong: { fontSize: 15, lineHeight: 21, fontWeight: weight.semibold, tabular: false, maxScale: 2 },
-  cell: { fontSize: 16, lineHeight: 21, fontWeight: weight.semibold, tabular: true, maxScale: 1.6 },
-  label: { fontSize: 14, lineHeight: 19, fontWeight: weight.semibold, tabular: false, maxScale: 2 },
-  caption: { fontSize: 13, lineHeight: 17, fontWeight: weight.medium, tabular: true, maxScale: 2 },
-  eyebrow: { fontSize: 11, lineHeight: 14, fontWeight: weight.semibold, tabular: false, letterSpacing: 0.6, uppercase: true, maxScale: 2 },
-  overline: { fontSize: 11, lineHeight: 14, fontWeight: weight.semibold, tabular: false, letterSpacing: 0.6, uppercase: true, maxScale: 2 },
-  tab: { fontSize: 11, lineHeight: 14, fontWeight: weight.medium, tabular: false, maxScale: 1.6 },
 } as const satisfies Record<string, TypeStep>;
 
 export type TypeStepName = keyof typeof type;

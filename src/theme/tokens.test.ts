@@ -118,13 +118,16 @@ describe('design tokens', () => {
     expect(new Set(seatColors.map((s) => s.fill)).size).toBe(seatColors.length);
   });
 
-  it('keeps every type step at or above the 11pt floor and body at 1.4 line height', () => {
-    for (const step of Object.values(type)) expect(step.fontSize).toBeGreaterThanOrEqual(11);
-    expect(type.body.lineHeight / type.body.fontSize).toBeGreaterThanOrEqual(1.4);
+  it('keeps every type step at or above the 11pt floor, with room between lines for reading text', () => {
+    for (const step of Object.values(type)) {
+      expect(step.fontSize).toBeGreaterThanOrEqual(11);
+      expect(step.lineHeight).toBeGreaterThan(step.fontSize);
+    }
+    for (const step of [type.rowBody, type.callout, type.subhead, type.footnote]) expect(step.lineHeight / step.fontSize).toBeGreaterThanOrEqual(1.25);
   });
 
   it('requires tabular figures on numeric steps', () => {
-    for (const step of [type.score, type.cell, type.total, type.caption, type.scoreXL, type.scoreLg, type.scoreMd, type.cellMd]) expect(step.tabular).toBe(true);
+    for (const step of [type.scoreXL, type.scoreLg, type.scoreMd, type.cellMd]) expect(step.tabular).toBe(true);
   });
 
   it('keeps uppercase to the scorecard table headers among the new steps', () => {

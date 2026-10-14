@@ -29,7 +29,7 @@ export default function SummaryScreen() {
 
   const netted = useMemo(() => netSettlements(runs.map((r) => r.settlement), round?.players.map((p) => p.id) ?? []), [runs, round]);
   const results = useMemo(() => runs.map((r) => ({ mode: r.mode, standings: r.standings })), [runs]);
-  const { share, busy, host } = useShareCard({ round: round!, holes, handicaps, results });
+  const { share, busy, host } = useShareCard({ round: round!, holes, handicaps, results, netted });
   if (!round) return null;
 
   const tee = round.course.teeBoxes.find((t) => t.id === round.teeBoxId);

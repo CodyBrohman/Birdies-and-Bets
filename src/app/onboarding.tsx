@@ -1,65 +1,33 @@
-import { useRef, useState, type ComponentProps } from 'react';
+import { useRef, useState } from 'react';
 import { ScrollView, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { Button, Screen, Text } from '@/components/ui';
-import { BrandMark } from '@/components/BrandMark';
-import { ContourField } from '@/components/ContourField';
+import { Button, HeaderButton, Icon, Screen, Text, type IconName } from '@/components/ui';
+import { Wordmark } from '@/components/BrandMark';
 import { useTheme } from '@/theme';
 import { usePreferences } from '@/store';
 import { analyticsAvailable } from '@/services';
 
-type IoniconName = ComponentProps<typeof Ionicons>['name'];
-
 interface Page {
-  icon: IoniconName;
+  icon: IconName;
   title: string;
   body: string;
-  points: string[];
-  /** The analytics question: its own two buttons, answered before the last page. */
+  /** The analytics question: its own two buttons. */
   consent?: boolean;
 }
 
 const PAGES: Page[] = [
-  {
-    icon: 'golf-outline',
-    title: 'Keep score.',
-    body: 'Tap + and − for each player. Everything is saved.',
-    points: ['Works offline, with or without an account', 'Front nine, back nine or shotgun starts', 'Handicap strokes worked out per hole'],
-  },
-  {
-    icon: 'trophy-outline',
-    title: 'Run the games.',
-    body: 'Stack any side games. Scored live from hole 1.',
-    points: ['Skins, Nassau, Match play, Stableford, Wolf…', 'Gross or net, per game', 'Add or change a game mid-round'],
-  },
-  {
-    icon: 'people-outline',
-    title: 'Points, not money.',
-    body: 'One points tally at the end, netted between players.',
-    points: ['Points by default, or name your own stake', 'Nothing is paid or collected in the app', 'Share the card to the group chat'],
-  },
-  {
-    icon: 'shield-checkmark-outline',
-    title: 'Help make it better.',
-    body: 'Share anonymous usage counts, like how many rounds get started. Your choice.',
-    points: ['Never names, scores or courses', 'Anonymous crash reports help fix bugs', 'Change either one in Settings'],
-    consent: true,
-  },
-  {
-    icon: 'flag-outline',
-    title: 'Ready to tee off?',
-    body: 'Pick a course, add your crew, pick a game or two.',
-    points: ['A round on your own works too', 'Sign in any time to keep rounds in sync'],
-  },
+  { icon: 'flag', title: 'Keep score', body: 'Tap + or − for each player. Every tap is saved, even offline.' },
+  { icon: 'trophy', title: 'Run the games', body: 'Skins, Nassau, match play, Stableford, Wolf and more, scored as you go.' },
+  { icon: 'friends', title: 'Points, not money', body: 'The app keeps a points tally between players. Nothing is paid or collected.' },
+  { icon: 'info', title: 'Share anonymous usage?', body: 'Counts like how many rounds get started help make the app better. Never names, scores or courses. Change it any time in Settings.', consent: true },
 ];
 
-/** First launch: what the app does, the anonymous-usage question, then straight into a round or back to Home. */
+/** First launch: three short pages on what the app does (and the usage question when it is set up), then a round or Home. */
 export default function OnboardingScreen() {
   // The usage question only appears when usage counts can actually be sent.
   const [pages] = useState(() => PAGES.filter((p) => !p.consent || analyticsAvailable()));
   const router = useRouter();
-  const { c, space, radius } = useTheme();
+  const { c, space } = useTheme();
   const { width: windowWidth } = useWindowDimensions();
   // The pager's own width (the web preview frame is narrower than the window).
   const [width, setWidth] = useState(windowWidth);
@@ -68,12 +36,12 @@ export default function OnboardingScreen() {
   const [page, setPage] = useState(0);
   const last = page === pages.length - 1;
   const asking = !!pages[page]?.consent;
-  const analytics = usePreferences((s) => s.analytics);
 
   // Leaving the tour without answering counts as "No thanks".
   const finish = (startRound: boolean) => {
-    update({ onboarded: true, ...(analytics === undefined ? { analytics: false } : {}) });
-    if (startRound) router.replace('/courses');
+    // Read the answer from the store: one given a moment ago is not in this render yet.
+    update({ onboarded: true, ...(usePreferences.getState().analytics === undefined ? { analytics: false } : {}) });
+    if (startRound) router.replace('/play');
     else if (router.canGoBack()) router.back();
     else router.replace('/' as Href);
   };
@@ -83,62 +51,46 @@ export default function OnboardingScreen() {
   };
   const answer = (yes: boolean) => {
     update({ analytics: yes });
-    go(page + 1);
+    finish(false);
   };
   const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => setPage(Math.round(e.nativeEvent.contentOffset.x / width));
 
   return (
     <Screen style={{ paddingHorizontal: 0 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space[5], paddingTop: space[3] }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[2] }}>
-          <BrandMark size={28} />
-          <Text step="bodyStrong">Birdies & Bets</Text>
-        </View>
-        {!last ? <Button label="Skip" variant="secondary" size="md" haptic={false} onPress={() => finish(false)} testID="onboarding-skip" /> : null}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: space[5], paddingRight: space[3], paddingTop: space[2] }}>
+        <Wordmark />
+        {!last ? <HeaderButton label="Skip" onPress={() => finish(false)} testID="onboarding-skip" /> : null}
       </View>
 
       <ScrollView ref={scroller} onLayout={(e) => setWidth(e.nativeEvent.layout.width)} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={onScrollEnd} style={{ flex: 1 }} contentContainerStyle={{ alignItems: 'stretch' }}>
         {pages.map((p) => (
-          <View key={p.title} style={{ width, paddingHorizontal: space[5], justifyContent: 'center', gap: space[4] }}>
-            <ContourField opacity={0.06} />
-            <View style={{ width: 88, height: 88, borderRadius: radius.pill, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name={p.icon} size={40} color={c.accentText} />
-            </View>
-            <Text step="display" style={{ fontSize: 40, lineHeight: 44 }}>
+          <View key={p.title} accessible accessibilityLabel={`${p.title}. ${p.body}`} style={{ width, paddingHorizontal: space[6], justifyContent: 'center', gap: space[4] }}>
+            <Icon name={p.icon} size={44} color={c.accent} filled />
+            <Text accessibilityRole="header" step="title1">
               {p.title}
             </Text>
-            <Text step="body" tone="secondary" style={{ fontSize: 18, lineHeight: 26 }}>
+            <Text step="rowBody" tone="secondary">
               {p.body}
             </Text>
-            <View style={{ gap: space[2], marginTop: space[1] }}>
-              {p.points.map((pt) => (
-                <View key={pt} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space[3] }}>
-                  <Ionicons name="checkmark-circle" size={22} color={c.positive} style={{ marginTop: 1 }} />
-                  <Text step="body" style={{ flex: 1 }}>
-                    {pt}
-                  </Text>
-                </View>
-              ))}
-            </View>
           </View>
         ))}
       </ScrollView>
 
       <View style={{ paddingHorizontal: space[5], gap: space[3], paddingTop: space[3] }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8 }} accessibilityRole="progressbar" accessibilityLabel={`Page ${page + 1} of ${pages.length}`}>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8 }} accessible accessibilityRole="progressbar" accessibilityLabel={`Page ${page + 1} of ${pages.length}`}>
           {pages.map((_, i) => (
-            <View key={i} style={{ width: i === page ? 22 : 8, height: 8, borderRadius: radius.pill, backgroundColor: i === page ? c.accent : c.tickUpcoming }} />
+            <View key={i} style={{ width: 8, height: 8, borderRadius: 999, backgroundColor: i === page ? c.accent : c.tickUpcoming }} />
           ))}
         </View>
-        {last ? (
-          <>
-            <Button label="Start a round" onPress={() => finish(true)} />
-            <Button label="Maybe later" variant="secondary" onPress={() => finish(false)} />
-          </>
-        ) : asking ? (
+        {asking ? (
           <>
             <Button label="Share anonymous usage" onPress={() => answer(true)} />
-            <Button label="No thanks" variant="secondary" onPress={() => answer(false)} />
+            <Button label="No thanks" variant="plain" onPress={() => answer(false)} />
+          </>
+        ) : last ? (
+          <>
+            <Button label="Start a round" onPress={() => finish(true)} />
+            <Button label="Maybe later" variant="plain" onPress={() => finish(false)} />
           </>
         ) : (
           <Button label="Next" onPress={() => go(page + 1)} />

@@ -3,11 +3,11 @@ import { Platform, Share, View } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { ask, Button } from '@/components/ui';
-import { ShareCard, type ShareCardProps } from './ShareCard';
+import { SHARE_CARD_SIZE, ShareCard, type ShareCardProps } from './ShareCard';
 import { track } from '@/services';
 import { cardDataFrom, cardUrlWithin } from '@/lib/cardLink';
 
-export type ShareCardInput = Omit<ShareCardProps, 'width'>;
+export type ShareCardInput = ShareCardProps;
 
 /**
  * Sharing a round: renders the share card off-screen (render `host` somewhere in the screen) and `share()` sends a PNG
@@ -30,7 +30,7 @@ export function useShareCard(card: ShareCardInput): { share: () => Promise<void>
     setBusy(true);
     try {
       if (Platform.OS !== 'web' && !(await Sharing.isAvailableAsync())) throw new Error('Sharing is not available on this device.');
-      const uri = await captureRef(ref, { format: 'png', quality: 1, result: 'tmpfile' });
+      const uri = await captureRef(ref, { format: 'png', quality: 1, result: 'tmpfile', width: SHARE_CARD_SIZE.width * 2, height: SHARE_CARD_SIZE.height * 2 });
       const url = link();
       if (Platform.OS === 'web') {
         if (url) await navigator.clipboard?.writeText(url).catch(() => undefined);

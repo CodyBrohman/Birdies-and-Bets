@@ -30,17 +30,17 @@ Expo SDK 57 · Expo Router · Zustand · TypeScript strict. Styling is React Nat
 
 ## Design
 2026-10-14: evolve the look, drop the template patterns, go native. `design-system/birdies-and-bets/MASTER.md` holds the
-ten rules, the voice and glossary, and the screen anatomy; `src/theme/tokens.ts` is canonical. Screens are rebuilt one
-at a time (TODO.md Phase 3); an unrebuilt screen may still show the old patterns.
+ten rules, the voice and glossary, and the screen anatomy; `src/theme/tokens.ts` is canonical. Every screen was rebuilt
+to it on 2026-10-14 (TODO.md Phase 3); keep new screens to the same kit.
 - **Rules in short:** no eyebrow/tagline headers (native titles); facts, not filler copy; no stock or AI photos; one
   dark surface (the round in progress); inset-grouped lists before cards; SF Symbols, no icon tiles, no arrows in
   buttons; colour means something and never alone; uppercase only in scorecard headers; one primary button, at the
   bottom; native controls first. UI copy never says settle up / owes / pays / wager / bet.
 - **Palette** (light only): cream ground `#F5F4EC`, white cells, forest ink `#17372D`, pine `#245C45` (actions, under
   par), gold (over par), coral (destructive, errors). Four seat colours mark players in a round.
-- **Type:** the iOS system font (SF Pro); weights come from the step. New screens use the iOS ramp (largeTitle,
-  title1-3, rowTitle, rowBody, callout, subhead, footnote, caption1-2, tableHeader, scoreXL/Lg/Md, cellMd). Legacy
-  steps exist only for unrebuilt screens. Never a numeric fontSize in a screen.
+- **Type:** the iOS system font (SF Pro); weights come from the step, on the iOS ramp (largeTitle, title1-3, rowTitle,
+  rowBody (the default), callout, subhead, footnote, caption1-2, tableHeader, scoreXL/Lg/Md, cellMd). Never a numeric
+  fontSize in a screen.
 - **Tabs:** Home · Courses · Play (the new-round form, `/play`) · Friends · Profile, on the native tab bar
   (`expo-router/unstable-native-tabs`, `app/(tabs)/_layout.tsx`); the web preview uses JS tabs (`_layout.web.tsx`).
   Each tab is a route group with its own stack (`(home)`, `(courses)`, `(play)`, `(friends)`, `(profile)`; Settings
@@ -49,11 +49,13 @@ at a time (TODO.md Phase 3); an unrebuilt screen may still show the old patterns
   editors, sign-in, onboarding and the shared card stay in the root stack, over the tabs.
 - **Round in progress on every tab:** iOS 26 shows it in the tab bar's bottom accessory (`LiveRoundAccessory`); older iOS
   and the web show `LiveRoundBanner` at the top of each tab root. `useLiveRound()` summarises it.
-- **Native headers:** `TabStack` styles each tab's stack (cream, pine tint) with headers off; a rebuilt screen turns its
-  header on through `ScrollScreen` (large title on tab roots).
+- **Native headers:** `TabStack` (`stackOptions`) styles each stack (cream, pine tint) with headers off; a screen turns its
+  header on through `ScrollScreen` (large title on tab roots, `headerTitle` for a two-line title, `footer` for the one
+  pinned primary button).
 - **Sheets are routes** (form sheets, registered with `formSheet()` in the layout that owns them; inside, `SheetScreen`
-  draws Cancel · title · Save or title · Done). Round setup lives in `app/new-round/` in the root stack: `course`,
-  `players`, `add-game`, `game/[gameId]`, `options`, `games`. With `?target=round` the game and option sheets edit the
+  draws Cancel · title · Save or title · Done). Root-stack sheets: round setup in `app/new-round/` (`course`,
+  `players`, `add-game`, `game/[gameId]`, `options`, `games`), `friend/add`, `group/[id]`, `handicap`,
+  `home-course`. With `?target=round` the game and option sheets edit the
   round in progress instead of the draft (`useGamesTarget`), so the live round reuses them. The round's own sheets
   (`round/standings`, `round/note`) are in `round/_layout.tsx`.
 - **Logos:** `assets/logo.png` is the master chip (`logo-mark.png` is the same art with the faint square trimmed; it
@@ -62,12 +64,16 @@ at a time (TODO.md Phase 3); an unrebuilt screen may still show the old patterns
 - **Confirmations:** `confirm()` / `ask()` from `@/components/ui` (native Alert, destructive in coral). Screen tests answer
   them with `pressAlert(label)` from `src/test/screen.tsx`.
 - **Interaction:** always import `Pressable` from `@/components/ui` (one pressed state). Never nest Pressables (web errors
-  on button inside button): put row controls in ListRow `action`/`footer`. Min target 44pt (48 preferred).
+  on button inside button): put a row's control beside the pressable part, not inside it. Min target 44pt.
 - **Kit (2026-10-14):** `Icon` (semantic names → SF Symbols, Ionicons fallback; decorative unless given a label),
-  `ListSection`/`ListItem` (inset grouped; chevron, check or switch; `destructive`; long-press `menu` shown with
-  `actionSheet()` and offered to VoiceOver as actions), `Switch`, `SegmentedControl` (native). Screen tests answer action
-  sheets with `pressAction(label)`.
-- **Profile extras** (photo, legacy home area and bag) live in preferences. A tee time is an optional
+  `ListSection`/`ListItem` (inset grouped; value, chevron, check or switch; `action` rows in pine; `destructive` in coral;
+  long-press `menu` shown with `actionSheet()` and offered to VoiceOver as actions), `FormRow`, `SearchField`,
+  `Switch`, `SegmentedControl`, `DateTimeField` (native), `Button` (primary, secondary, plain, hero; `destructive`),
+  `HeaderButton`, `BasisTag`, `Avatar` (seat colour in a round). Scorecard: `NineCard` and `ScoreMark` (circles and
+  squares). Results: `RoundReport` (shared by Results and a round's page). Screen tests answer action sheets with
+  `await pressAction(label)`.
+- **Profile extras:** the photo and `homeCourseId` live in preferences (the 2026-10-01 home area and bag are still
+  stored and synced, but nothing shows them). A tee time is an optional
   `RoundSettings.teeTime`. Crew helpers are in `store/crew.ts`. The draft round persists (`bb:round:draft`).
 
 ## Telemetry

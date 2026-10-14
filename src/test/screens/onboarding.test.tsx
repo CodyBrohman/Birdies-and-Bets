@@ -4,12 +4,11 @@ import { usePreferences } from '@/store';
 import { renderScreens, resetStores, seedPrefs } from '../screen';
 
 const Empty = () => null;
-const routes = { onboarding: Onboarding, index: Empty, courses: Empty };
+const routes = { onboarding: Onboarding, index: Empty, play: Empty };
 
 beforeEach(async () => {
   await resetStores();
   seedPrefs({ onboarded: false, analytics: undefined });
-  process.env.EXPO_PUBLIC_APTABASE_KEY = 'A-US-0000000000';
 });
 
 afterEach(() => {
@@ -21,29 +20,32 @@ const next = (times: number) => {
 };
 
 describe('Intro', () => {
-  it('asks about anonymous usage after the three feature pages; yes is saved', () => {
-    renderScreens(routes, '/onboarding');
-    next(3);
+  it('three short pages, then Start a round opens New round', () => {
+    const r = renderScreens(routes, '/onboarding');
+    expect(screen.getByRole('header', { name: 'Keep score' })).toBeTruthy();
+    next(2);
     expect(screen.queryByRole('button', { name: 'Next' })).toBeNull();
-    fireEvent.press(screen.getByRole('button', { name: 'Share anonymous usage' }));
-    expect(usePreferences.getState().analytics).toBe(true);
-    expect(screen.getByRole('button', { name: 'Start a round' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Share anonymous usage' })).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'Start a round' }));
+    expect(usePreferences.getState()).toMatchObject({ onboarded: true, analytics: false });
+    expect(r.getPathname()).toBe('/play');
   });
 
-  it('"No thanks" is saved and the tour carries on', () => {
+  it('with analytics set up, asks after the three pages; yes is saved and the tour ends', () => {
+    process.env.EXPO_PUBLIC_APTABASE_KEY = 'A-US-0000000000';
+    const r = renderScreens(routes, '/onboarding');
+    next(3);
+    fireEvent.press(screen.getByRole('button', { name: 'Share anonymous usage' }));
+    expect(usePreferences.getState()).toMatchObject({ onboarded: true, analytics: true });
+    expect(r.getPathname()).toBe('/');
+  });
+
+  it('"No thanks" is saved', () => {
+    process.env.EXPO_PUBLIC_APTABASE_KEY = 'A-US-0000000000';
     renderScreens(routes, '/onboarding');
     next(3);
     fireEvent.press(screen.getByRole('button', { name: 'No thanks' }));
     expect(usePreferences.getState().analytics).toBe(false);
-    expect(screen.getByRole('button', { name: 'Maybe later' })).toBeTruthy();
-  });
-
-  it('without an analytics key, the usage question is not asked at all', () => {
-    delete process.env.EXPO_PUBLIC_APTABASE_KEY;
-    renderScreens(routes, '/onboarding');
-    next(3);
-    expect(screen.queryByRole('button', { name: 'Share anonymous usage' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Start a round' })).toBeTruthy();
   });
 
   it('skipping counts as no and marks the intro seen', () => {

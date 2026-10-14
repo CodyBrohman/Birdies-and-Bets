@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Linking, Platform, ScrollView, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { Button, Pressable, Screen, Text, TextField } from '@/components/ui';
-import { BrandMark } from '@/components/BrandMark';
+import { Button, HeaderButton, Pressable, Screen, Text, TextField } from '@/components/ui';
+import { Wordmark } from '@/components/BrandMark';
 import { ContourField } from '@/components/ContourField';
-import { useTheme } from '@/theme';
+import { PRESSED_OPACITY, useTheme } from '@/theme';
 import { useAuthStore } from '@/store';
 import { friendlySignInError } from '@/lib/errors';
 import {
@@ -42,7 +42,7 @@ const TITLES: Record<Step, string> = {
  */
 export default function SignInScreen() {
   const router = useRouter();
-  const { c, space, radius } = useTheme();
+  const { c, space } = useTheme();
   const status = useAuthStore((s) => s.status);
   const pendingSwitch = useAuthStore((s) => s.pendingSwitch);
   /** Opened from inside the app (no account yet, or signing in again): a sheet with a way out. */
@@ -153,52 +153,50 @@ export default function SignInScreen() {
     <Screen style={{ paddingHorizontal: 0 }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         {asSheet && step !== 'switch' ? (
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: space[5], paddingTop: space[2] }}>
-            <Pressable accessibilityRole="button" accessibilityLabel="Not now" onPress={() => (router.canGoBack() ? router.back() : router.replace('/' as Href))} hitSlop={12} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
-              <Text step="label" tone="accent">
-                Not now
-              </Text>
-            </Pressable>
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: space[3], paddingTop: space[2] }}>
+            <HeaderButton label="Not now" onPress={() => (router.canGoBack() ? router.back() : router.replace('/' as Href))} />
           </View>
         ) : null}
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: space[5], gap: space[4], paddingVertical: space[6] }} keyboardShouldPersistTaps="handled">
-          <ContourField opacity={0.06} />
-          <BrandMark size={64} />
-          <View style={{ gap: 6 }}>
-            <Text accessibilityRole="header" step="display">
-              {TITLES[step]}
-            </Text>
-            <Text step="body" tone="secondary" style={{ fontSize: 17, lineHeight: 24 }}>
-              {body[step]}
-            </Text>
-          </View>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: space[5], gap: space[5], paddingVertical: space[6] }} keyboardShouldPersistTaps="handled">
+          {step === 'choose' ? (
+            <View style={{ alignItems: 'center', gap: space[3], paddingVertical: space[6] }}>
+              <ContourField opacity={0.07} />
+              <Wordmark size="lg" />
+              <Text step="callout" tone="secondary" align="center">
+                {body.choose}
+              </Text>
+            </View>
+          ) : (
+            <View style={{ gap: space[2] }}>
+              <Text accessibilityRole="header" step="title1">
+                {TITLES[step]}
+              </Text>
+              <Text step="callout" tone="secondary">
+                {body[step]}
+              </Text>
+            </View>
+          )}
 
           {step === 'choose' ? (
-            <View style={{ gap: space[3], marginTop: space[2] }}>
+            <View style={{ gap: space[3] }}>
               {apple ? (
                 <AppleAuthentication.AppleAuthenticationButton
                   buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
                   buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-                  cornerRadius={radius.lg}
-                  style={{ height: 52, opacity: busy ? 0.6 : 1 }}
+                  cornerRadius={14}
+                  style={{ height: 50, opacity: busy ? 0.6 : 1 }}
                   onPress={() => {
                     if (!busy) void withApple();
                   }}
                 />
               ) : null}
-              <Button label="Continue with email" variant={apple ? 'secondary' : 'primary'} disabled={busy} onPress={() => setStep('email')} testID="sign-in-email" />
-              {status === 'signed-out' ? (
-                <Pressable accessibilityRole="button" accessibilityLabel="Continue without an account" disabled={busy} onPress={() => void withoutAccount()} testID="continue-without-account" style={({ pressed }) => ({ minHeight: 48, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
-                  <Text step="label" tone="accent">
-                    Continue without an account
-                  </Text>
-                </Pressable>
-              ) : null}
+              <Button label="Continue with email" variant={apple ? 'secondary' : 'primary'} size="lg" disabled={busy} onPress={() => setStep('email')} testID="sign-in-email" />
+              {status === 'signed-out' ? <Button label="Continue without an account" variant="plain" disabled={busy} onPress={() => void withoutAccount()} testID="continue-without-account" /> : null}
             </View>
           ) : null}
 
           {step === 'email' ? (
-            <View style={{ gap: space[3], marginTop: space[2] }}>
+            <View style={{ gap: space[3] }}>
               <TextField
                 placeholder="you@example.com"
                 value={email}
@@ -217,12 +215,12 @@ export default function SignInScreen() {
                 testID="email-field"
               />
               <Button label={busy ? 'Sending…' : 'Send code'} disabled={busy || !validEmail} onPress={() => void sendCode()} testID="send-code" />
-              <Button label="Back" variant="secondary" disabled={busy} onPress={() => setStep('choose')} />
+              <Button label="Back" variant="plain" disabled={busy} onPress={() => setStep('choose')} />
             </View>
           ) : null}
 
           {step === 'code' ? (
-            <View style={{ gap: space[3], marginTop: space[2] }}>
+            <View style={{ gap: space[3] }}>
               <TextField
                 placeholder="123456"
                 value={code}
@@ -235,38 +233,38 @@ export default function SignInScreen() {
                 testID="code-field"
               />
               <Button label={busy ? 'Signing in…' : 'Sign in'} disabled={busy || code.length !== 6} onPress={() => void verify()} testID="verify-code" />
-              <Button label={resendIn > 0 ? `Send a new code in ${resendIn} s` : 'Send a new code'} variant="secondary" disabled={busy || resendIn > 0} onPress={() => void sendCode()} />
-              <Button label="Use a different email" variant="secondary" disabled={busy} onPress={() => setStep('email')} />
+              <Button label={resendIn > 0 ? `Send a new code in ${resendIn} s` : 'Send a new code'} variant="plain" disabled={busy || resendIn > 0} onPress={() => void sendCode()} />
+              <Button label="Use a different email" variant="plain" disabled={busy} onPress={() => setStep('email')} />
             </View>
           ) : null}
 
           {step === 'name' ? (
-            <View style={{ gap: space[3], marginTop: space[2] }}>
+            <View style={{ gap: space[3] }}>
               <TextField placeholder="Your name" value={name} onChangeText={setName} autoCapitalize="words" autoFocus maxLength={40} accessibilityLabel="Your name" testID="name-field" />
               <Button label="Continue" disabled={busy || !name.trim()} onPress={() => void saveName()} testID="save-name" />
             </View>
           ) : null}
 
           {step === 'switch' ? (
-            <View style={{ gap: space[3], marginTop: space[2] }}>
+            <View style={{ gap: space[3] }}>
               <Button label="Replace with this account" destructive disabled={busy} onPress={() => void replaceData()} />
-              <Button label="Keep this iPhone's data" variant="secondary" disabled={busy} onPress={() => void keepData()} />
+              <Button label="Keep this iPhone's data" variant="plain" disabled={busy} onPress={() => void keepData()} />
             </View>
           ) : null}
 
           {error ? (
-            <Text step="caption" tone="negative" tabular={false} accessibilityLiveRegion="polite">
+            <Text step="footnote" tone="negative" accessibilityLiveRegion="polite">
               {error}
             </Text>
           ) : null}
 
           {step === 'choose' ? (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 4 }}>
-              <Text step="caption" tone="tertiary" tabular={false}>
+            <View style={{ alignItems: 'center', gap: space[1] }}>
+              <Text step="footnote" tone="tertiary" align="center">
                 Points only. Nothing is paid in the app.
               </Text>
-              <Pressable accessibilityRole="link" accessibilityLabel="Privacy policy" onPress={() => void Linking.openURL(PRIVACY_POLICY_URL)} hitSlop={12}>
-                <Text step="caption" tabular={false} style={{ color: c.accentText, textDecorationLine: 'underline' }}>
+              <Pressable accessibilityRole="link" accessibilityLabel="Privacy policy" onPress={() => void Linking.openURL(PRIVACY_POLICY_URL)} hitSlop={12} style={({ pressed }) => ({ minHeight: 32, justifyContent: 'center', opacity: pressed ? PRESSED_OPACITY : 1 })}>
+                <Text step="footnote" style={{ color: c.accentText, textDecorationLine: 'underline' }}>
                   Privacy policy
                 </Text>
               </Pressable>

@@ -18,7 +18,7 @@ export type TextTone =
   | 'inherit';
 
 export interface TextProps extends RNTextProps {
-  /** Type scale step from tokens. Defaults to body. */
+  /** Type scale step from tokens. Defaults to rowBody (iOS body). */
   step?: TypeStepName;
   tone?: TextTone;
   /** Force tabular figures regardless of the step default. */
@@ -30,7 +30,7 @@ export interface TextProps extends RNTextProps {
  * The only text primitive. The iOS system font (SF Pro); size, line height, weight, tracking and case come from the
  * type scale, with tabular lining numerals on the steps that require them. Scales with Dynamic Type up to the step's cap.
  */
-export function Text({ step = 'body', tone = 'primary', tabular, align, style, ...rest }: TextProps) {
+export function Text({ step = 'rowBody', tone = 'primary', tabular, align, style, ...rest }: TextProps) {
   const { c, t } = useTheme();
   const spec = t[step] as (typeof t)[TypeStepName] & { letterSpacing?: number; uppercase?: boolean; maxScale: number };
   const colors: Record<Exclude<TextTone, 'inherit'>, string> = {

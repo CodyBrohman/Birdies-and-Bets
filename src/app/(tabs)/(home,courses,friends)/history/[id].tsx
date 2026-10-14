@@ -23,7 +23,7 @@ export default function RoundPage() {
   const runs = useGameRuns(round);
   const netted = useMemo(() => netSettlements(runs.map((r) => r.settlement), round?.players.map((p) => p.id) ?? []), [runs, round]);
   const results = useMemo(() => runs.map((r) => ({ mode: r.mode, standings: r.standings })), [runs]);
-  const { share, busy, host } = useShareCard({ round: round!, holes, handicaps, results, completedAt: entry?.summary.completedAt });
+  const { share, busy, host } = useShareCard({ round: round!, holes, handicaps, results, netted, completedAt: entry?.summary.completedAt });
 
   if (!entry) {
     return (

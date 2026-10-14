@@ -5,9 +5,8 @@ the rules behind it.
 
 **2026-10-14: evolve, de-template, go native.** The owner kept the cream/forest/pine palette and the chip logo, and asked
 for an app that looks made by people rather than generated. The 2026-10-01 mockup patterns are retired: the eyebrow +
-"Verb your noun." + tagline header, photo hero cards, icon tiles, arrow buttons, and Inter. Screens are being rebuilt
-one at a time (TODO.md Phase 3); until a screen is rebuilt it may still show the old patterns, and the legacy type steps
-exist only for those screens.
+"Verb your noun." + tagline header, photo hero cards, icon tiles, arrow buttons, and Inter. Every screen was
+rebuilt to these rules on 2026-10-14.
 
 ## The ten rules
 1. **No eyebrow or tagline headers.** Tabs get a native large title that matches the tab name; pushed screens get a
@@ -93,13 +92,12 @@ number step. Dynamic Type scales each step up to its cap; rows grow with it (no 
 | scoreXL / scoreLg / scoreMd | 34 · 28 · 22 | semibold, tabular | the score being entered; stat numbers |
 | cellMd | 17/22 | medium, tabular | scorecard cells |
 
-Legacy steps (display, headline, title, body 15, eyebrow…) remain only for screens not yet rebuilt and are removed
-once none use them. Never set a numeric `fontSize` in a screen.
+Never set a numeric `fontSize` in a screen.
 
 ## Shape, space, motion
 - **Radius:** grouped cells and cards 12–14 (iOS-like); the round-in-progress card 22; pills 999 (filters only).
 - **Space:** a 4pt grid. Gutter 20 (32 from 600pt wide). Sections separate with space and a header, not boxes.
-- **Touch targets:** 44pt minimum (48 preferred); the score buttons 56pt with 16pt between them.
+- **Touch targets:** 44pt minimum (48 preferred); the score − and + 52pt (60pt to the touch), with the number between them.
 - **Pressed state:** one opacity (`PRESSED_OPACITY` 0.6) through `ui/Pressable`; never a layout-shifting transform.
 - **Motion with meaning:** the score number ticks when it changes; Next scrolls to the top with a short cross-fade;
   standings reorder in place. Everything is off under Reduce Motion.

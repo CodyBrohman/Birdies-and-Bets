@@ -24,9 +24,10 @@ describe('Shared card', () => {
   it('a card link opens a read-only card with the players and games', () => {
     const d = payload();
     renderScreens(routes, `/card?d=${encodeURIComponent(d)}`);
-    expect(screen.getByText('Cedar Ridge Golf Club')).toBeTruthy();
-    expect(screen.getByText('Shared scorecard')).toBeTruthy();
-    expect(screen.getAllByText('Cody').length).toBeGreaterThan(0);
+    expect(screen.getByText(/^Shared scorecard · Blue tees · 18 holes$/)).toBeTruthy();
+    expect(screen.getByRole('header', { name: /^Cody won/ })).toBeTruthy();
+    expect(screen.getByLabelText(/^Cody, course handicap \d+, gross/)).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'Scorecard' })).toBeTruthy();
     expect(screen.getByText('Cody leads with 1 skin')).toBeTruthy();
     // Viewing a card never saves it.
     expect(useHistoryStore.getState().entries).toHaveLength(0);

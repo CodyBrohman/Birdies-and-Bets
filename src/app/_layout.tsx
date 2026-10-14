@@ -155,13 +155,13 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   useEffect(() => captureError(error), [error]);
   return (
     <View style={{ flex: 1, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 16 }}>
-      <Text step="display" align="center">
-        Something went wrong.
+      <Text accessibilityRole="header" step="title2" align="center">
+        Something went wrong
       </Text>
-      <Text tone="secondary" align="center">
+      <Text step="rowBody" tone="secondary" align="center">
         Your scores are saved. Try again, and if it keeps happening, start from Home.
       </Text>
-      <Text step="caption" tone="secondary" tabular={false} align="center" numberOfLines={3}>
+      <Text step="footnote" tone="tertiary" align="center" numberOfLines={3}>
         {error.message}
       </Text>
       <Button label="Try again" onPress={retry} style={{ alignSelf: 'stretch' }} />
