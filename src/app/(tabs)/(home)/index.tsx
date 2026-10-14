@@ -58,7 +58,7 @@ export default function Home() {
           pill: 'Ready when you are',
           title: `Next up at ${draftCourse.name}.`,
           subtitle: 'Build a round worth talking about.',
-          cta: { label: 'Continue setup', onPress: () => router.navigate('/bet') },
+          cta: { label: 'Continue setup', onPress: () => router.navigate('/play') },
         }
       : {
           image: HERO_PHOTO,

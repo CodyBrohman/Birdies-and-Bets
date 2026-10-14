@@ -31,7 +31,7 @@ export default function RoundsScreen() {
     <Screen>
       <SetupHeader title="Rounds" fallback="/" />
       {insights.length === 0 ? (
-        <EmptyState fill icon="flag-outline" title="No rounds yet" body="Finished rounds show up here." action={{ label: 'New round', onPress: () => router.navigate('/bet') }} />
+        <EmptyState fill icon="flag-outline" title="No rounds yet" body="Finished rounds show up here." action={{ label: 'New round', onPress: () => router.navigate('/play') }} />
       ) : (
         <SectionList
           sections={sections}

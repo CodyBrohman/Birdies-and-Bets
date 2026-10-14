@@ -105,7 +105,7 @@ export default function GamesScreen() {
 
   return (
     <Screen noBottomInset>
-      <SetupHeader title="Games" meta={editing ? 'Edit' : 'Step 3 of 3'} fallback={editing ? '/round/standings' : '/bet'} />
+      <SetupHeader title="Games" meta={editing ? 'Edit' : 'Step 3 of 3'} fallback={editing ? '/round/standings' : '/play'} />
       <ScrollView contentContainerStyle={{ gap: layout.stack, paddingBottom: layout.section }} showsVerticalScrollIndicator={false}>
         <Card accessibilityLabel={`Round settings: ${settingsLine}`} onPress={() => setSettingsOpen(true)}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>

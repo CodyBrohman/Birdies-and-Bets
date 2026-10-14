@@ -26,3 +26,4 @@ export * from './Icon';
 export * from './List';
 export * from './Switch';
 export * from './SegmentedControl';
+export * from './ScrollScreen';

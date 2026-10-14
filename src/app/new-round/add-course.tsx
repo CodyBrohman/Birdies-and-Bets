@@ -171,7 +171,7 @@ export default function AddCourseScreen() {
     void markRecent(course.id);
     setDraftSettings({ holeCount, nine: 'front', startHole: undefined });
     setDraftCourse(course, course.teeBoxes[0]!.id);
-    router.dismissTo('/bet');
+    router.dismissTo('/play');
   };
 
   const del = async () => {

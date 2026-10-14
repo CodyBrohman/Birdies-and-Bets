@@ -87,7 +87,7 @@ export default function CoursesScreen() {
     if (!tee) return;
     setDraftCourse(course, tee.id);
     void markRecent(course.id);
-    router.navigate('/bet');
+    router.navigate('/play');
   };
   const importAndChoose = async (r: CourseSearchResult) => {
     setImportError(null);
@@ -110,7 +110,7 @@ export default function CoursesScreen() {
   const sticky = live
     ? { title: live.course.name, onPress: () => router.push('/round/play') }
     : draft.course
-      ? { title: draft.course.name, onPress: () => router.navigate('/bet') }
+      ? { title: draft.course.name, onPress: () => router.navigate('/play') }
       : null;
 
   return (

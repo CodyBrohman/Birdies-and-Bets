@@ -41,8 +41,16 @@ at a time (TODO.md Phase 3); an unrebuilt screen may still show the old patterns
 - **Type:** the iOS system font (SF Pro); weights come from the step. New screens use the iOS ramp (largeTitle,
   title1-3, rowTitle, rowBody, callout, subhead, footnote, caption1-2, tableHeader, scoreXL/Lg/Md, cellMd). Legacy
   steps exist only for unrebuilt screens. Never a numeric fontSize in a screen.
-- **Tabs:** Home · Courses · Play (round builder; route still `bet` until the native-tabs step) · Friends · Profile.
-  Settings is a stack screen opened from Profile.
+- **Tabs:** Home · Courses · Play (the new-round form, `/play`) · Friends · Profile, on the native tab bar
+  (`expo-router/unstable-native-tabs`, `app/(tabs)/_layout.tsx`); the web preview uses JS tabs (`_layout.web.tsx`).
+  Each tab is a route group with its own stack (`(home)`, `(courses)`, `(play)`, `(friends)`, `(profile)`; Settings
+  lives in `(profile)` and keeps `/settings`). Round history is shared by three tabs: `(home,courses,friends)/history`
+  pushes inside whichever tab you are on. Plain paths switch tabs (`/play`, `/courses`). The live round, new-round
+  editors, sign-in, onboarding and the shared card stay in the root stack, over the tabs.
+- **Round in progress on every tab:** iOS 26 shows it in the tab bar's bottom accessory (`LiveRoundAccessory`); older iOS
+  and the web show `LiveRoundBanner` at the top of each tab root. `useLiveRound()` summarises it.
+- **Native headers:** `TabStack` styles each tab's stack (cream, pine tint) with headers off; a rebuilt screen turns its
+  header on through `ScrollScreen` (large title on tab roots).
 - **Logos:** `assets/logo.png` is the master chip (`logo-mark.png` is the same art with the faint square trimmed; it
   feeds BrandMark, the splash, the favicon and the website). `assets/app-logo.png` is the app icon source; `icon.png` is
   derived from it, opaque, with the corners filled.

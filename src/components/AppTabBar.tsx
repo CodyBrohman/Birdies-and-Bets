@@ -1,17 +1,14 @@
-import type { ComponentProps } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { haptic, useTheme } from '@/theme';
-import { Text, Pressable } from '@/components/ui';
-
-type IoniconName = ComponentProps<typeof Ionicons>['name'];
+import { Icon, Pressable, Text, type IconName } from '@/components/ui';
 
 export interface TabSpec {
+  /** The route group, e.g. "(home)". */
   name: string;
   label: string;
-  icon: IoniconName;
-  iconActive: IoniconName;
+  icon: IconName;
+  testID: string;
 }
 
 export interface TabBarProps {
@@ -20,29 +17,33 @@ export interface TabBarProps {
   onPress: (name: string) => void;
 }
 
-/** Cream tab bar with a hairline top: outline icons, small labels, forest for the active tab (bold label). */
+/**
+ * Web preview only: a stand-in for the native iOS tab bar (the app uses NativeTabs). White bar with a hairline, the
+ * same symbols filled when selected, pine for the selected tab.
+ */
 export function TabBar({ tabs, active, onPress }: TabBarProps) {
   const { c, w, space } = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <View accessibilityRole="tablist" style={{ flexDirection: 'row', paddingHorizontal: space[2], paddingTop: 6, paddingBottom: Math.max(insets.bottom, space[2]), backgroundColor: c.surface, borderTopWidth: 1, borderTopColor: c.divider }}>
+    <View accessibilityRole="tablist" style={{ flexDirection: 'row', paddingTop: 6, paddingBottom: Math.max(insets.bottom, space[2]), backgroundColor: c.surfaceRaised, borderTopWidth: 1, borderTopColor: c.divider }}>
       {tabs.map((tab) => {
         const on = tab.name === active;
+        const tint = on ? c.accent : c.textTertiary;
         return (
           <Pressable
             key={tab.name}
             accessibilityRole="tab"
             accessibilityLabel={tab.label}
-            testID={`tab-${tab.name}`}
+            testID={tab.testID}
             accessibilityState={{ selected: on }}
             onPress={() => {
               if (!on) haptic.selection();
               onPress(tab.name);
             }}
-            style={({ pressed }) => ({ flex: 1, minHeight: 50, alignItems: 'center', justifyContent: 'center', gap: 3, opacity: pressed ? 0.6 : 1 })}
+            style={({ pressed }) => ({ flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', gap: 2, opacity: pressed ? 0.6 : 1 })}
           >
-            <Ionicons name={on ? tab.iconActive : tab.icon} size={23} color={on ? c.textPrimary : c.textTertiary} />
-            <Text step="tab" numberOfLines={1} style={{ color: on ? c.textPrimary : c.textTertiary, fontWeight: on ? w.semibold : w.medium }}>
+            <Icon name={tab.icon} filled={on} size={26} color={tint} />
+            <Text step="caption2" numberOfLines={1} style={{ color: tint, fontWeight: w.medium }}>
               {tab.label}
             </Text>
           </Pressable>

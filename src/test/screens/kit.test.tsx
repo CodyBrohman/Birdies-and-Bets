@@ -1,5 +1,5 @@
 // The 2026-10-14 kit, checked the way VoiceOver and a thumb meet it.
-import { StyleSheet } from 'react-native';
+import { StyleSheet, type ViewStyle } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { Avatar, Button, Icon, ListItem, ListSection, SegmentedControl, Switch } from '@/components/ui';
 import { color, seatColors } from '@/theme';
@@ -96,8 +96,8 @@ describe('Avatar', () => {
       </>,
     );
     const [inRound, outside] = toJSON() as unknown as { props: { style: unknown } }[];
-    expect(StyleSheet.flatten(inRound!.props.style as never).backgroundColor).toBe(seatColors[1]!.tint);
-    expect(StyleSheet.flatten(outside!.props.style as never).backgroundColor).toBe(color.light.accentTint);
+    expect(StyleSheet.flatten(inRound!.props.style as ViewStyle).backgroundColor).toBe(seatColors[1]!.tint);
+    expect(StyleSheet.flatten(outside!.props.style as ViewStyle).backgroundColor).toBe(color.light.accentTint);
     // Decorative: the name always sits beside it, so VoiceOver skips the initials.
     expect(screen.queryAllByText('ML')).toHaveLength(0);
     expect(screen.getAllByText('ML', { includeHiddenElements: true })).toHaveLength(2);

@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor } from 'expo-router/testing-library';
 import SignIn from '@/app/sign-in';
-import Settings from '@/app/settings';
+import Settings from '@/app/(tabs)/(profile)/settings';
 import { saveMyName, useAuthStore, useSyncStatus } from '@/store';
 import { lastAlert, pressAlert, renderScreens, resetStores } from '../screen';
 

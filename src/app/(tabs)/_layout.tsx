@@ -1,39 +1,49 @@
-import { Tabs } from 'expo-router';
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useTheme } from '@/theme';
-import { TabBar, type TabSpec } from '@/components/AppTabBar';
+import { useLiveRound } from '@/store';
+import { LiveRoundAccessory, TAB_ACCESSORY } from '@/components/round';
 
-const TABS: TabSpec[] = [
-  { name: 'index', label: 'Home', icon: 'home-outline', iconActive: 'home-outline' },
-  { name: 'courses', label: 'Courses', icon: 'map-outline', iconActive: 'map-outline' },
-  { name: 'bet', label: 'Bet', icon: 'flag-outline', iconActive: 'flag-outline' },
-  { name: 'friends', label: 'Friends', icon: 'people-outline', iconActive: 'people-outline' },
-  { name: 'profile', label: 'Profile', icon: 'person-outline', iconActive: 'person-outline' },
-];
-
-/** App-wide tabs: Home · Courses · Bet · Friends · Profile. A live round opens as its own full-screen stack. */
+/**
+ * The native tab bar (Liquid Glass on iOS 26): Home · Courses · Play · Friends · Profile, SF Symbols filled when
+ * selected. Each tab is a group with its own stack. On iOS 26 the round in progress rides in the bar's bottom accessory;
+ * older iOS shows LiveRoundBanner on each tab instead. The web preview uses _layout.web.tsx.
+ */
 export default function TabsLayout() {
   const { c } = useTheme();
+  const live = useLiveRound() != null;
   return (
-    <Tabs
-      tabBar={({ state, navigation }) => (
-        <TabBar
-          tabs={TABS}
-          active={state.routes[state.index]?.name ?? 'index'}
-          onPress={(name) => {
-            const route = state.routes.find((r) => r.name === name);
-            if (!route) return;
-            const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-            if (state.routes[state.index]?.name !== name && !event.defaultPrevented) navigation.navigate(route.name);
-          }}
-        />
-      )}
-      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: c.surface } }}
-    >
-      <Tabs.Screen name="index" options={{ title: 'Home' }} />
-      <Tabs.Screen name="courses" options={{ title: 'Courses' }} />
-      <Tabs.Screen name="bet" options={{ title: 'Bet' }} />
-      <Tabs.Screen name="friends" options={{ title: 'Friends' }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
-    </Tabs>
+    <NativeTabs tintColor={c.accent} minimizeBehavior="onScrollDown">
+      {live && TAB_ACCESSORY ? (
+        <NativeTabs.BottomAccessory>
+          <Accessory />
+        </NativeTabs.BottomAccessory>
+      ) : null}
+      <NativeTabs.Trigger name="(home)" testID="tab-home">
+        <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} />
+        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="(courses)" testID="tab-courses">
+        <NativeTabs.Trigger.Icon sf={{ default: 'map', selected: 'map.fill' }} />
+        <NativeTabs.Trigger.Label>Courses</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="(play)" testID="tab-play">
+        <NativeTabs.Trigger.Icon sf="figure.golf" />
+        <NativeTabs.Trigger.Label>Play</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="(friends)" testID="tab-friends">
+        <NativeTabs.Trigger.Icon sf={{ default: 'person.2', selected: 'person.2.fill' }} />
+        <NativeTabs.Trigger.Label>Friends</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="(profile)" testID="tab-profile">
+        <NativeTabs.Trigger.Icon sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }} />
+        <NativeTabs.Trigger.Label>Profile</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
+}
+
+/** The accessory is rendered twice (inline and regular); each copy asks where it sits. */
+function Accessory() {
+  const placement = NativeTabs.BottomAccessory.usePlacement();
+  return <LiveRoundAccessory placement={placement} />;
 }

@@ -1,10 +1,10 @@
 import { fireEvent, screen, waitFor } from 'expo-router/testing-library';
-import Bet from '@/app/(tabs)/bet';
+import Play from '@/app/(tabs)/(play)/play';
 import { useRoundStore } from '@/store';
 import { cedarRidge, cody, lastAlert, pressAlert, renderScreens, resetStores, seedRound } from '../screen';
 
 const Empty = () => null;
-const routes = { bet: Bet, 'round/play': Empty, courses: Empty, index: Empty, 'new-round/games': Empty };
+const routes = { play: Play, 'round/play': Empty, courses: Empty, index: Empty, 'new-round/games': Empty };
 
 beforeEach(resetStores);
 
@@ -12,7 +12,7 @@ const startButtons = () => screen.getAllByRole('button', { name: /^Start (this|a
 
 describe('Round builder', () => {
   it('without a course, asks for one first', () => {
-    renderScreens(routes, '/bet');
+    renderScreens(routes, '/play');
     expect(screen.getByRole('button', { name: 'Pick a course' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Start this round' })).toBeNull();
   });
@@ -20,7 +20,7 @@ describe('Round builder', () => {
   it('a round on your own starts', () => {
     useRoundStore.getState().setDraftCourse(cedarRidge, 'blue');
     useRoundStore.getState().setDraftPlayers([cody]);
-    const r = renderScreens(routes, '/bet');
+    const r = renderScreens(routes, '/play');
     expect(screen.queryByText('Add yourself to the round.')).toBeNull();
     fireEvent.press(startButtons()[0]!);
     expect(useRoundStore.getState().round?.players).toHaveLength(1);
@@ -29,7 +29,7 @@ describe('Round builder', () => {
 
   it('with nobody in the round, says so and does not start', () => {
     useRoundStore.getState().setDraftCourse(cedarRidge, 'blue');
-    renderScreens(routes, '/bet');
+    renderScreens(routes, '/play');
     expect(screen.getByText('Add yourself to the round.')).toBeTruthy();
     fireEvent.press(startButtons()[0]!);
     expect(useRoundStore.getState().round).toBeNull();
@@ -39,7 +39,7 @@ describe('Round builder', () => {
     const live = seedRound();
     useRoundStore.getState().setDraftCourse(cedarRidge, 'blue');
     useRoundStore.getState().setDraftPlayers([cody]);
-    const r = renderScreens(routes, '/bet');
+    const r = renderScreens(routes, '/play');
     fireEvent.press(startButtons()[0]!);
     expect(lastAlert()).toMatchObject({ title: 'End the round in progress?', buttons: ['Cancel', 'Discard and start'] });
     pressAlert('Cancel');
@@ -54,14 +54,14 @@ describe('Round builder', () => {
   it('remembers picked games with the rest of the draft', () => {
     useRoundStore.getState().setDraftCourse(cedarRidge, 'blue');
     useRoundStore.getState().setDraftPlayers([cody]);
-    renderScreens(routes, '/bet');
+    renderScreens(routes, '/play');
     fireEvent.press(screen.getByRole('button', { name: 'Add Stableford' }));
     expect(useRoundStore.getState().draft.games.map((g) => g.gameId)).toEqual(['stableford']);
   });
 
   it('shows no tee time until one is picked (no hidden default)', () => {
     useRoundStore.getState().setDraftCourse(cedarRidge, 'blue');
-    renderScreens(routes, '/bet');
+    renderScreens(routes, '/play');
     expect(screen.getByText('No tee time')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Tomorrow' }));
     expect(useRoundStore.getState().draft.settings.teeTime).toBeUndefined();

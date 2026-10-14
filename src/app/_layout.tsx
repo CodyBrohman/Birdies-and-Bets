@@ -93,7 +93,6 @@ function RootLayout() {
             <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
             <Stack.Screen name="new-round" />
             <Stack.Screen name="round" options={{ gestureEnabled: false }} />
-            <Stack.Screen name="settings" />
           </Stack.Protected>
           <Stack.Protected guard={accountsOn}>
             <Stack.Screen name="sign-in" options={appOpen ? { presentation: 'modal' } : { gestureEnabled: false }} />

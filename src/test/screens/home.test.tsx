@@ -1,10 +1,10 @@
 import { fireEvent, screen } from 'expo-router/testing-library';
-import Home from '@/app/(tabs)/index';
+import Home from '@/app/(tabs)/(home)/index';
 import { usePreferences } from '@/store';
 import { renderScreens, resetStores, seedPrefs, seedRound } from '../screen';
 
 const Empty = () => null;
-const routes = { index: Home, 'round/play': Empty, courses: Empty, bet: Empty, friends: Empty, profile: Empty, onboarding: Empty };
+const routes = { index: Home, 'round/play': Empty, courses: Empty, play: Empty, friends: Empty, profile: Empty, onboarding: Empty };
 
 beforeEach(resetStores);
 

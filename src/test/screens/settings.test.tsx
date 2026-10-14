@@ -1,6 +1,6 @@
 import { Linking } from 'react-native';
 import { fireEvent, screen } from 'expo-router/testing-library';
-import Settings from '@/app/settings';
+import Settings from '@/app/(tabs)/(profile)/settings';
 import { PRIVACY_POLICY_URL } from '@/services';
 import { usePreferences } from '@/store';
 import { renderScreens, resetStores } from '../screen';

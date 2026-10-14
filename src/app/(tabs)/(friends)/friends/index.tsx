@@ -75,7 +75,7 @@ export default function FriendsScreen() {
             dot="gold"
             course={draftCourse.name}
             when={tee ? `${dayLabel(tee.day, now)} · ${formatSlot(tee.slot)}` : 'Tee time to pick'}
-            primary={{ label: 'Finish setup', onPress: () => router.navigate('/bet') }}
+            primary={{ label: 'Finish setup', onPress: () => router.navigate('/play') }}
           />
         ) : null}
         {past.map((e) => (
@@ -91,7 +91,7 @@ export default function FriendsScreen() {
               onPress: async () => {
                 if (draftIsDirty() && !(await confirmReplaceDraft())) return;
                 rematch(e.round!);
-                router.navigate('/bet');
+                router.navigate('/play');
               },
             }}
           />
@@ -164,7 +164,7 @@ export default function FriendsScreen() {
                         onPress={async () => {
                           if (draftIsDirty() && !(await confirmReplaceDraft())) return;
                           groupAsCrew(g.memberIds);
-                          router.navigate('/bet');
+                          router.navigate('/play');
                         }}
                       />
                     }
@@ -182,7 +182,7 @@ export default function FriendsScreen() {
               Choose a course and invite your crew.
             </Text>
           </View>
-          <Button label="Plan a round" size="md" onPress={() => router.navigate('/bet')} />
+          <Button label="Plan a round" size="md" onPress={() => router.navigate('/play')} />
         </Card>
       </ScrollView>
 
