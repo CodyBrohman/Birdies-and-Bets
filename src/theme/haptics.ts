@@ -28,8 +28,12 @@ export const haptic = {
   light() {
     if (on()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(swallow);
   },
-  /** A hole confirmed. */
+  /** Done: a round saved. */
   success() {
     if (on()) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(swallow);
+  },
+  /** Before something that cannot be undone (a destructive confirmation appears). */
+  warning() {
+    if (on()) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(swallow);
   },
 };

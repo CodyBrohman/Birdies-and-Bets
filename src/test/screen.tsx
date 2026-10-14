@@ -1,7 +1,7 @@
 // Helpers for screen tests: seed the stores the way the app would, then render real screens through Expo Router.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { ComponentType } from 'react';
-import { Alert, type AlertButton } from 'react-native';
+import { ActionSheetIOS, Alert, type AlertButton } from 'react-native';
 import { renderRouter } from 'expo-router/testing-library';
 import { DEFAULT_PREFERENCES, DEFAULT_SETTINGS, useAuthStore, useHistoryStore, usePreferences, useProfileStore, useRoundStore, useSyncStatus, type Preferences } from '@/store';
 import { cedarRidge, cody, marcus } from '@/lib/__fixtures__/cedarRidge';
@@ -20,6 +20,7 @@ export async function resetStores(): Promise<void> {
   useAuthStore.setState({ status: 'disabled', sessionExpired: false, pendingSwitch: undefined, userId: undefined, email: undefined, method: undefined });
   useSyncStatus.setState({ phase: 'idle', pending: 0, rejected: 0, authPaused: false, lastSyncedAt: undefined, error: undefined });
   alertSpy.mockClear();
+  sheetSpy.mockClear();
 }
 
 // Native alerts (confirm/ask) render nothing in Jest: record them, and let a test press a button by its label.
@@ -31,6 +32,25 @@ export function lastAlert(): { title: string; message?: string; buttons: string[
   if (!call) return undefined;
   const [title, message, buttons] = call;
   return { title, message, buttons: ((buttons ?? []) as AlertButton[]).map((b) => b.text ?? '') };
+}
+
+// Native action sheets (long-press menus) likewise.
+type SheetOptions = { options: string[]; title?: string };
+const sheetSpy = jest.spyOn(ActionSheetIOS, 'showActionSheetWithOptions').mockImplementation(() => undefined);
+
+/** The options of the most recent action sheet (Cancel last). */
+export function lastActionSheet(): { title?: string; options: string[] } | undefined {
+  const call = sheetSpy.mock.calls.at(-1);
+  return call ? { title: (call[0] as SheetOptions).title, options: (call[0] as SheetOptions).options } : undefined;
+}
+
+/** Choose an option on the most recent action sheet. */
+export function pressAction(label: string): void {
+  const call = sheetSpy.mock.calls.at(-1);
+  if (!call) throw new Error('No action sheet was shown');
+  const index = (call[0] as SheetOptions).options.indexOf(label);
+  if (index < 0) throw new Error(`No "${label}" in the action sheet (${(call[0] as SheetOptions).options.join(', ')})`);
+  (call[1] as (i: number) => void)(index);
 }
 
 /** Press a button on the most recent native alert, as the person would. */

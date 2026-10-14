@@ -6,7 +6,7 @@ jest.mock('expo-haptics', () => ({
   selectionAsync: jest.fn(() => Promise.resolve()),
   notificationAsync: jest.fn(() => Promise.resolve()),
   ImpactFeedbackStyle: { Light: 'light' },
-  NotificationFeedbackType: { Success: 'success' },
+  NotificationFeedbackType: { Success: 'success', Warning: 'warning' },
 }));
 export {};
 jest.mock('react-native-view-shot', () => ({ captureRef: jest.fn(() => Promise.resolve('file:///tmp/card.png')) }));

@@ -1,6 +1,6 @@
 # Birdies & Bets — iOS golf scorecard that runs the games
 
-Expo SDK 57 · Expo Router · NativeWind 4 · Zustand · TypeScript strict.
+Expo SDK 57 · Expo Router · Zustand · TypeScript strict. Styling is React Native StyleSheet with `src/theme` tokens.
 
 ## Layering (dependencies flow one way; see spec §10.1)
 - `src/types/` imports nothing.
@@ -11,7 +11,7 @@ Expo SDK 57 · Expo Router · NativeWind 4 · Zustand · TypeScript strict.
 - `src/components/ui/` imports only `theme/`.
 - `src/services/` is the only layer that uses `fetch` (course search via the Cloudflare Worker in `../worker/`).
   It may import `types/`, `lib/` and `store/`; nothing below it may import it. Screens call it directly.
-- `src/theme/` never imports `store/`; the theme preference lives in `theme/preference.ts`, persistence in `store/themeStore.ts`.
+- `src/theme/` never imports `store/`. The app is light only; there is no theme preference.
 - Persisted data is versioned: bump `SCHEMA_VERSION` in `src/store/storage/adapter.ts` and add a migration in
   `storage/migrate.ts` whenever a stored shape changes.
 - An import of `react-native` inside `types/`, `lib/` or `games/` is a bug.
@@ -50,6 +50,10 @@ at a time (TODO.md Phase 3); an unrebuilt screen may still show the old patterns
   them with `pressAlert(label)` from `src/test/screen.tsx`.
 - **Interaction:** always import `Pressable` from `@/components/ui` (one pressed state). Never nest Pressables (web errors
   on button inside button): put row controls in ListRow `action`/`footer`. Min target 44pt (48 preferred).
+- **Kit (2026-10-14):** `Icon` (semantic names → SF Symbols, Ionicons fallback; decorative unless given a label),
+  `ListSection`/`ListItem` (inset grouped; chevron, check or switch; `destructive`; long-press `menu` shown with
+  `actionSheet()` and offered to VoiceOver as actions), `Switch`, `SegmentedControl` (native). Screen tests answer action
+  sheets with `pressAction(label)`.
 - **Profile extras** (photo, legacy home area and bag) live in preferences. A tee time is an optional
   `RoundSettings.teeTime`. Crew helpers are in `store/crew.ts`. The draft round persists (`bb:round:draft`).
 

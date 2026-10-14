@@ -22,3 +22,7 @@ export * from './ListRow';
 export * from './HeroCard';
 export * from './Pressable';
 export * from './confirm';
+export * from './Icon';
+export * from './List';
+export * from './Switch';
+export * from './SegmentedControl';
