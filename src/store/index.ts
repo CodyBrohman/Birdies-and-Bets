@@ -13,3 +13,4 @@ export * from './crew';
 export * from './liveRound';
 export * from './gamesTarget';
 export * from './courseStats';
+export * from './headToHead';
